@@ -12,7 +12,7 @@ interface Bake {
   primitives: { key: string; corners: number; offset: number }[];
   uvFloat32Gzip: string; pngChunks: string[]; pngSha256: string;
   probes: { position: number[]; sh: number[][] }[];
-  metadata: { encoding: string; directIncluded: boolean };
+  metadata: { encoding: string; directIncluded: boolean; samples: number; denoiser?: { filter: string } };
 }
 
 /** Run after cafe nodes are complete, before weld/meshopt can reorder vertices. */
@@ -50,6 +50,7 @@ export async function applyCafeLightBake(doc: Document): Promise<void> {
   const bake = JSON.parse(readFileSync(SOURCE, 'utf8')) as Bake;
   if (bake.signature !== signature) throw new Error(`Cafe light bake stale (${signature}); rebake after geometry changes.`);
   if (bake.metadata.encoding !== 'rgbm' || !bake.metadata.directIncluded || !Number.isFinite(bake.exposure) || bake.exposure <= 0) throw new Error('Cafe bake needs full diffuse RGBM irradiance.');
+  if (bake.metadata.samples < 1024 && bake.metadata.denoiser?.filter !== 'RTLightmap') throw new Error('Low-sample cafe light bake needs the RTLightmap denoising pass.');
   if (bake.probes.length < 1 || bake.probes.some(probe => probe.position.length !== 3 || probe.sh.length !== 9 || probe.sh.some(c => c.length !== 3 || c.some(v => !Number.isFinite(v))))) throw new Error('Cafe room probes are invalid.');
   const png = Buffer.from(bake.pngChunks.map(path => (JSON.parse(readFileSync(join(dirname(SOURCE), path), 'utf8')) as { data: string }).data).join(''), 'base64');
   if (createHash('sha256').update(png).digest('hex') !== bake.pngSha256) throw new Error('Cafe RGBM source chunks are corrupt.');

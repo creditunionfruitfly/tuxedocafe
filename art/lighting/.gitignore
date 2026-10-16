@@ -2,3 +2,4 @@
 *.png
 *.png.prov.yaml
 *.hdr.npz
+*.hdr.npz.tmp
