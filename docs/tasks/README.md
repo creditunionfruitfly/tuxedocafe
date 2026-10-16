@@ -19,6 +19,8 @@ The Master writes one file per task (AGENTS.md, Master). Each names its role, bu
 
 M0 totals 7% of week A, with 0.5% held back inside the milestone; M1 totals 13%, with 0.5% held back. M0-2 to M0-5 can run in parallel.
 
-Additional owner-requested work: [M1 first visit](M1-7-first-visit.md) and [M2 production specification](M2-0-cat-production-spec.md). Control optimization: [R2 radial look, 360° room and faster touch navigation](R2-0-radial-controls.md). M2 modeling/behavior implementation has not started.
+Additional owner-requested work: [M1 first visit](M1-7-first-visit.md) and [M2 production specification](M2-0-cat-production-spec.md). Control optimization: [R2 radial look, 360° room and faster touch navigation](R2-0-radial-controls.md).
+
+M2 Cat v1 (Claude Code session; texture generation offline): [M2-1 Master cat mesh, eyes and LODs](M2-1-master-cat-mesh.md) (artist), [M2-2 Cat animation library](M2-2-cat-animation-library.md) (artist), [M2-3 Animation runtime, IK and instancing](M2-3-cat-animation-runtime-ik.md) (engine), [M2-4 Resident cat models](M2-4-resident-cat-models.md) (master, data in place) and, next, [M2-5 Needs, utility AI, touch welfare and SFX hooks](M2-5-behavior-and-sfx-hooks.md) (engine). Contracts: `data/animation-catalog.json`, `data/cat-builds.json` and the `model` block in `data/cats.json`. M2 modeling/behavior implementation has not started.
 
 Implementation preparation for M1 was requested in this session. Milestone acceptance remains open: no frozen snapshot or physical-device performance evidence is inferred from emulator screenshots.

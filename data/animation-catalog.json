@@ -1,0 +1,623 @@
+{
+  "version": 1,
+  "notes": "Clip contract for M2. Artist authors every clip on the shared skeleton at 30 fps in public/assets/art/cats/cat_anims.glb (bone tracks only) and expression curves in cat_expressions.json; Engine binds clips by name. Locomotion is in place with extras.authoredSpeed (m/s at adult scale; the Engine rescales by each cat's leg length); jumps keep root motion. contacts are touchdown phases (0–1) per paw (LF, RF, LH, RH). Event names starting with sfx: are audio event ids from audio/sfx/cat/manifest.json; the behavior phase triggers them and missing files stay silent. Layers: locomotion = speed/turn blend; action = full-body clip; additive = layered over the base pose.",
+  "fps": 30,
+  "gaitThresholdsMps": {"walkMax": 1.1, "trotMax": 2.2},
+  "stackOrder": ["locomotion", "action", "additive", "lookAt", "legIK", "springs"],
+  "morphTargets": [
+    "blink_L",
+    "blink_R",
+    "squint_L",
+    "squint_R",
+    "mouthOpen",
+    "noseWrinkle",
+    "cheekPuff",
+    "whiskerForward",
+    "whiskerBack",
+    "earFlatten_L",
+    "earFlatten_R",
+    "bodyFat",
+    "bodyLean",
+    "headKitten"
+  ],
+  "expressions": [
+    {
+      "name": "blink",
+      "morphs": ["blink_L", "blink_R"],
+      "durationS": 0.18,
+      "notes": "Quick blink about every 3–8 s (seeded per cat); upper lid moves most."
+    },
+    {
+      "name": "slow_blink",
+      "morphs": ["blink_L", "blink_R"],
+      "durationS": 1.8,
+      "notes": "Trust signal: slow close, hold about 0.5 s, slow open."
+    },
+    {
+      "name": "squint_content",
+      "morphs": ["squint_L", "squint_R"],
+      "durationS": 2.0,
+      "notes": "Half-closed eyes while stroked below the threshold."
+    },
+    {
+      "name": "ears_flat",
+      "morphs": ["earFlatten_L", "earFlatten_R"],
+      "durationS": 0.5,
+      "notes": "With the ears_back layer."
+    },
+    {"name": "whiskers_forward", "morphs": ["whiskerForward"], "durationS": 0.5, "notes": "Curious or hunting."},
+    {"name": "whiskers_back", "morphs": ["whiskerBack"], "durationS": 0.5, "notes": "Fearful or defensive."},
+    {"name": "snarl", "morphs": ["mouthOpen", "noseWrinkle"], "durationS": 0.6, "notes": "With the hiss clip."},
+    {"name": "flehmen", "morphs": ["mouthOpen", "noseWrinkle"], "durationS": 1.2, "notes": "Catnip sniff grimace."}
+  ],
+  "clips": [
+    {
+      "name": "cat.loco.idle",
+      "layer": "locomotion",
+      "loop": true,
+      "durationS": 4.0,
+      "authoredSpeed": 0,
+      "notes": "Standing square, weight shifting subtly between fore and hind; slow breathing in ribs (spine_02–04 expansion), occasional ear swivel and tail-tip flick. Head level, gaze forward. Never perfectly still."
+    },
+    {
+      "name": "cat.loco.walk",
+      "layer": "locomotion",
+      "loop": true,
+      "durationS": 1.0,
+      "authoredSpeed": 0.7,
+      "contacts": {"LH": 0.0, "LF": 0.25, "RH": 0.5, "RF": 0.75},
+      "dutyFactor": 0.62,
+      "notes": "Lateral-sequence four-beat walk (LH, LF, RH, RF). Duty factor about 0.62. Hind paw lands in or just behind the front paw print (direct register). Shoulder blades rise and fall alternately above the spine; head bobs slightly and stays level; hips roll a little; tail carried low-mid with a gentle S-curve. No equal sine waves: stance is longer than swing and the paw lifts sharply, travels low and sets down softly."
+    },
+    {
+      "name": "cat.loco.trot",
+      "layer": "locomotion",
+      "loop": true,
+      "durationS": 0.6,
+      "authoredSpeed": 1.6,
+      "contacts": {"LH": 0.0, "RF": 0.0, "RH": 0.5, "LF": 0.5},
+      "dutyFactor": 0.45,
+      "notes": "Diagonal-pair trot (LH+RF, RH+LF) with brief overlap and no suspension. Spine stays fairly level; head steadier than in walk; tail mid-height, used for balance."
+    },
+    {
+      "name": "cat.loco.gallop",
+      "layer": "locomotion",
+      "loop": true,
+      "durationS": 0.4,
+      "authoredSpeed": 3.5,
+      "contacts": {"LH": 0.0, "RH": 0.1, "LF": 0.45, "RF": 0.55},
+      "dutyFactor": 0.3,
+      "notes": "Rotary gallop with gathered (spine flexed, paws under body) and extended (spine fully extended, both suspensions) phases. Strong spine flexion is the engine of the stride; ears back, tail streams out low."
+    },
+    {
+      "name": "cat.loco.turn_left",
+      "layer": "locomotion",
+      "loop": false,
+      "durationS": 0.8,
+      "authoredSpeed": 0,
+      "rootRotationDeg": 90,
+      "notes": "In-place 90° left turn: head and gaze lead, then shoulders, then pelvis; front paws step around while hind paws pivot. Root rotation is authored (rootRotationDeg) for blending with steering."
+    },
+    {
+      "name": "cat.loco.turn_right",
+      "layer": "locomotion",
+      "loop": false,
+      "durationS": 0.8,
+      "authoredSpeed": 0,
+      "rootRotationDeg": -90,
+      "notes": "Mirror of turn_left."
+    },
+    {
+      "name": "cat.loco.start",
+      "layer": "locomotion",
+      "loop": false,
+      "durationS": 0.5,
+      "authoredSpeed": 0.35,
+      "notes": "Idle to walk: weight shifts forward, first front paw lifts, head lowers slightly, blends into walk phase 0."
+    },
+    {
+      "name": "cat.loco.stop",
+      "layer": "locomotion",
+      "loop": false,
+      "durationS": 0.5,
+      "authoredSpeed": 0.35,
+      "notes": "Walk to idle: last steps shorten, hind paws come under, head lifts, settles into idle pose."
+    },
+    {
+      "name": "cat.rest.sit_down",
+      "layer": "action",
+      "loop": false,
+      "durationS": 1.2,
+      "events": [{"t": 1.0, "name": "settle"}],
+      "notes": "Hind end lowers first while front legs stay straight; tail sweeps around to wrap the front paws at the end."
+    },
+    {
+      "name": "cat.rest.sit_idle",
+      "layer": "action",
+      "loop": true,
+      "durationS": 5.0,
+      "notes": "Upright sit, front legs vertical, tail wrapped around paws; slow breathing, occasional ear rotation, head tracks slowly."
+    },
+    {
+      "name": "cat.rest.loaf",
+      "layer": "action",
+      "loop": true,
+      "durationS": 6.0,
+      "notes": "Bread-loaf: legs tucked under the chest, paws hidden, body compact and rounded, eyes half closed; slow breathing; tail tight to the body."
+    },
+    {
+      "name": "cat.rest.lie_side",
+      "layer": "action",
+      "loop": true,
+      "durationS": 6.0,
+      "notes": "Lying on one side, legs relaxed and slightly extended, belly partly exposed, head resting on the floor; slow deep breathing."
+    },
+    {
+      "name": "cat.rest.sprawl",
+      "layer": "action",
+      "loop": true,
+      "durationS": 6.0,
+      "notes": "Fully stretched on side or back in warmth (sunbeam): front legs reaching forward, hind legs extended, spine long; very slow breathing; occasional paw twitch."
+    },
+    {
+      "name": "cat.rest.sleep_curl",
+      "layer": "action",
+      "loop": true,
+      "durationS": 8.0,
+      "events": [{"t": 0.0, "name": "sfx:cat.sleep"}],
+      "notes": "Curled in a tight ring, nose tucked to the tail, tail covering the nose and paws; very slow breaths (about 20–30 per minute), occasional ear twitch during dreams."
+    },
+    {
+      "name": "cat.rest.wake_stretch",
+      "layer": "action",
+      "loop": false,
+      "durationS": 3.0,
+      "events": [{"t": 0.8, "name": "stretch_front"}, {"t": 2.0, "name": "stretch_hind"}],
+      "notes": "Rises, then the full downward-dog stretch: front legs reach far forward, chest low, hind end high, toes spread; then the hind-leg stretch, one leg extended back. Ends standing."
+    },
+    {
+      "name": "cat.rest.yawn",
+      "layer": "additive",
+      "loop": false,
+      "durationS": 1.6,
+      "morphs": ["mouthOpen", "squint_L", "squint_R"],
+      "events": [{"t": 0.4, "name": "sfx:cat.yawn"}],
+      "notes": "Head lifts slightly, jaw opens very wide with the tongue curling, eyes squeeze shut, ears rotate back a little, then a small lip lick. Layer over sit or loaf."
+    },
+    {
+      "name": "cat.care.groom_face",
+      "layer": "action",
+      "loop": true,
+      "durationS": 3.0,
+      "events": [{"t": 0.3, "name": "sfx:cat.groom"}],
+      "notes": "Sitting: licks the inside of a front paw, then wipes it over the ear and cheek in repeated strokes; alternate sides between loops."
+    },
+    {
+      "name": "cat.care.groom_flank",
+      "layer": "action",
+      "loop": true,
+      "durationS": 3.0,
+      "events": [{"t": 0.2, "name": "sfx:cat.groom"}],
+      "notes": "Sitting or lying, head turns back over the shoulder to lick the flank with long, rhythmic strokes; front paw braces."
+    },
+    {
+      "name": "cat.care.eat_crouch",
+      "layer": "action",
+      "loop": true,
+      "durationS": 2.0,
+      "events": [{"t": 0.1, "name": "sfx:cat.eat"}],
+      "notes": "Crouched at the bowl, elbows out, head tilted to one side while chewing (cats chew with the side teeth); intermittent pauses."
+    },
+    {
+      "name": "cat.care.drink_lap",
+      "layer": "action",
+      "loop": true,
+      "durationS": 1.0,
+      "events": [{"t": 0.0, "name": "sfx:cat.drink"}],
+      "notes": "Crouched with the head low over water; the tongue laps about four times a second while the head stays still; occasional swallow pause."
+    },
+    {
+      "name": "cat.care.paw_water",
+      "layer": "action",
+      "loop": true,
+      "durationS": 2.0,
+      "events": [{"t": 0.6, "name": "sfx:cat.juniper.water"}],
+      "notes": "Sits by the bowl and dips one front paw into the water, flicks it, then licks the paw (Juniper's habit)."
+    },
+    {
+      "name": "cat.care.litter_dig",
+      "layer": "action",
+      "loop": false,
+      "durationS": 2.5,
+      "events": [{"t": 0.2, "name": "sfx:cat.litter.dig"}],
+      "notes": "Standing in the tray, alternating front-paw scoops behind the body; head down, sniffing."
+    },
+    {
+      "name": "cat.care.litter_squat",
+      "layer": "action",
+      "loop": true,
+      "durationS": 4.0,
+      "notes": "Hind legs bent, rump low, tail raised and still, body tense, gaze fixed ahead."
+    },
+    {
+      "name": "cat.care.litter_cover",
+      "layer": "action",
+      "loop": false,
+      "durationS": 2.5,
+      "events": [{"t": 0.3, "name": "sfx:cat.litter.cover"}],
+      "notes": "Turns, sniffs, then sweeps litter forward with slow alternating front-paw strokes."
+    },
+    {
+      "name": "cat.care.knead",
+      "layer": "action",
+      "loop": true,
+      "durationS": 1.6,
+      "events": [{"t": 0.0, "name": "sfx:cat.purr.soft"}],
+      "notes": "Alternating front-paw pushes on a soft surface, toes spreading and claws flexing; eyes half closed, purring posture."
+    },
+    {
+      "name": "cat.care.scratch_post",
+      "layer": "action",
+      "loop": true,
+      "durationS": 2.0,
+      "events": [{"t": 0.2, "name": "sfx:cat.scratch"}],
+      "notes": "Reaches up the post, both front paws pulling down alternately with claws extended; back arched, hind legs braced."
+    },
+    {
+      "name": "cat.move.jump_up_low",
+      "layer": "action",
+      "loop": false,
+      "durationS": 0.9,
+      "rootMotion": true,
+      "heightM": 0.45,
+      "events": [{"t": 0.35, "name": "takeoff"}, {"t": 0.65, "name": "contact"}, {"t": 0.65, "name": "sfx:cat.jump"}],
+      "notes": "Up to about 0.45 m (a chair seat): crouch and look, hind legs drive, front paws reach for the edge, hind paws land beside them."
+    },
+    {
+      "name": "cat.move.jump_up_high",
+      "layer": "action",
+      "loop": false,
+      "durationS": 1.3,
+      "rootMotion": true,
+      "heightM": 1.2,
+      "events": [{"t": 0.6, "name": "takeoff"}, {"t": 0.95, "name": "contact"}, {"t": 0.95, "name": "sfx:cat.jump"}],
+      "notes": "Up to about 1.2 m (top of the cat tree): longer crouch with tail twitching and gaze measuring the target, explosive hind-leg extension, front paws catch then hind paws scrabble up."
+    },
+    {
+      "name": "cat.move.jump_down_low",
+      "layer": "action",
+      "loop": false,
+      "durationS": 0.8,
+      "rootMotion": true,
+      "heightM": -0.45,
+      "events": [{"t": 0.45, "name": "land"}, {"t": 0.45, "name": "sfx:cat.land"}],
+      "notes": "Down from about 0.45 m: front paws reach down, body follows, front paws absorb then hind paws land."
+    },
+    {
+      "name": "cat.move.jump_down_high",
+      "layer": "action",
+      "loop": false,
+      "durationS": 1.1,
+      "rootMotion": true,
+      "heightM": -1.2,
+      "events": [{"t": 0.7, "name": "land"}, {"t": 0.7, "name": "sfx:cat.land"}],
+      "notes": "Down from about 1.2 m: leans over the edge, reaches down with front legs before pushing off, lands front paws first with deep absorption."
+    },
+    {
+      "name": "cat.move.land",
+      "layer": "action",
+      "loop": false,
+      "durationS": 0.5,
+      "events": [{"t": 0.0, "name": "sfx:cat.land"}],
+      "notes": "Absorbs a landing: front legs flex, chest dips, hind paws come down, recovers to stand."
+    },
+    {
+      "name": "cat.play.pounce",
+      "layer": "action",
+      "loop": false,
+      "durationS": 1.2,
+      "rootMotion": true,
+      "events": [{"t": 0.6, "name": "strike"}, {"t": 0.6, "name": "sfx:cat.pounce"}],
+      "notes": "Crouch, short butt wiggle, spring forward and pin with both front paws."
+    },
+    {
+      "name": "cat.play.bat_left",
+      "layer": "action",
+      "loop": false,
+      "durationS": 0.6,
+      "reachBone": "front_L_paw",
+      "notes": "Quick left-forepaw swipe at a small object, claws sheathed, from sit or crouch."
+    },
+    {
+      "name": "cat.play.bat_right",
+      "layer": "action",
+      "loop": false,
+      "durationS": 0.6,
+      "reachBone": "front_R_paw",
+      "notes": "Mirror of bat_left."
+    },
+    {
+      "name": "cat.play.roll_over",
+      "layer": "action",
+      "loop": false,
+      "durationS": 2.0,
+      "notes": "Drops onto the side and rolls onto the back, paws relaxed in the air, wriggles, then rolls back. A trust display, not an invitation to touch the belly."
+    },
+    {
+      "name": "cat.social.head_rub",
+      "layer": "action",
+      "loop": false,
+      "durationS": 1.4,
+      "events": [{"t": 0.4, "name": "sfx:cat.rub"}],
+      "notes": "Leans in and rubs the cheek, then the side of the head and the flank along a hand or object; tail up."
+    },
+    {
+      "name": "cat.social.tail_up_greeting",
+      "layer": "action",
+      "loop": false,
+      "durationS": 1.5,
+      "events": [{"t": 0.3, "name": "sfx:cat.greet"}],
+      "notes": "Approaches with the tail vertical and the tip slightly curled, chin up; may trill."
+    },
+    {
+      "name": "cat.social.slow_blink",
+      "layer": "additive",
+      "loop": false,
+      "durationS": 1.8,
+      "morphs": ["blink_L", "blink_R"],
+      "notes": "Eyes close slowly, stay closed briefly, then open slowly; head lowers slightly. A trust signal; the engine also drives blink morphs."
+    },
+    {
+      "name": "cat.react.hiss",
+      "layer": "action",
+      "loop": false,
+      "durationS": 1.2,
+      "morphs": ["mouthOpen", "noseWrinkle", "earFlatten_L", "earFlatten_R"],
+      "events": [{"t": 0.25, "name": "sfx:cat.warn.hiss"}],
+      "notes": "Ears flattened sideways, mouth open showing the teeth, body drawn back, weight on the hind legs, hair raised along the spine and tail."
+    },
+    {
+      "name": "cat.react.flinch_startle",
+      "layer": "action",
+      "loop": false,
+      "durationS": 0.7,
+      "notes": "Sudden crouch and recoil, eyes wide, ears swivel, then freezes and assesses."
+    },
+    {
+      "name": "cat.react.swat",
+      "layer": "action",
+      "loop": false,
+      "durationS": 0.6,
+      "reachBone": "front_R_paw",
+      "events": [{"t": 0.25, "name": "strike"}, {"t": 0.25, "name": "sfx:cat.swat"}],
+      "notes": "A fast single forepaw strike toward the hand, then a pull back; ears back."
+    },
+    {
+      "name": "cat.react.walk_away",
+      "layer": "locomotion",
+      "loop": true,
+      "durationS": 1.0,
+      "authoredSpeed": 0.85,
+      "contacts": {"LH": 0.0, "LF": 0.25, "RH": 0.5, "RF": 0.75},
+      "dutyFactor": 0.6,
+      "notes": "Walk away offended: a stiffer, faster walk with the tail held low or flicking, ears turned back, without looking back. Locomotion clip used instead of walk while avoiding the hand."
+    },
+    {
+      "name": "cat.layer.tail_up",
+      "layer": "additive",
+      "loop": true,
+      "durationS": 2.0,
+      "bones": "tail_01..tail_12",
+      "notes": "Tail vertical with a soft tip curl: friendly and confident."
+    },
+    {
+      "name": "cat.layer.tail_low",
+      "layer": "additive",
+      "loop": true,
+      "durationS": 2.0,
+      "bones": "tail_01..tail_12",
+      "notes": "Tail held low and close to the body: uncertain."
+    },
+    {
+      "name": "cat.layer.tail_lash",
+      "layer": "additive",
+      "loop": true,
+      "durationS": 0.8,
+      "bones": "tail_01..tail_12",
+      "notes": "Fast side-to-side lashing from the base: overstimulated or irritated (meter 0.6–1.0)."
+    },
+    {
+      "name": "cat.layer.tail_flick",
+      "layer": "additive",
+      "loop": true,
+      "durationS": 1.5,
+      "bones": "tail_07..tail_12",
+      "notes": "Only the last third flicks occasionally: attentive or mildly annoyed."
+    },
+    {
+      "name": "cat.layer.ears_forward",
+      "layer": "additive",
+      "loop": true,
+      "durationS": 2.0,
+      "bones": "ear_*",
+      "notes": "Ears upright and forward: interested."
+    },
+    {
+      "name": "cat.layer.ears_back",
+      "layer": "additive",
+      "loop": true,
+      "durationS": 1.0,
+      "bones": "ear_*",
+      "morphs": ["earFlatten_L", "earFlatten_R"],
+      "notes": "Ears rotated back and flattened sideways (airplane): irritated or frightened."
+    },
+    {
+      "name": "cat.layer.ear_twitch",
+      "layer": "additive",
+      "loop": false,
+      "durationS": 0.4,
+      "bones": "ear_*",
+      "notes": "A single quick ear twitch, alternate sides."
+    },
+    {
+      "name": "cat.layer.purr_breath",
+      "layer": "additive",
+      "loop": true,
+      "durationS": 2.0,
+      "bones": "spine_02..spine_04",
+      "events": [{"t": 0.0, "name": "sfx:cat.purr.soft"}],
+      "notes": "Slightly deeper, steady breathing in the ribs while purring."
+    },
+    {
+      "name": "cat.layer.skin_twitch",
+      "layer": "additive",
+      "loop": false,
+      "durationS": 0.5,
+      "bones": "spine_02..spine_05",
+      "notes": "A ripple along the back when touched near the threshold (spine_02–05 small fast rotations)."
+    },
+    {
+      "name": "cat.layer.lean_in",
+      "layer": "additive",
+      "loop": true,
+      "durationS": 1.5,
+      "bones": "spine_04,neck_01,neck_02,head",
+      "notes": "Leans the head and body into a stroking hand, eyes half closed."
+    },
+    {
+      "name": "cat.perk.catnip_sniff",
+      "layer": "action",
+      "loop": true,
+      "durationS": 2.0,
+      "events": [],
+      "notes": "Sniffs the toy intently, then the flehmen grimace: mouth slightly open, upper lip raised.",
+      "firstUsedIn": "M5/M6"
+    },
+    {
+      "name": "cat.perk.catnip_lick",
+      "layer": "action",
+      "loop": true,
+      "durationS": 2.0,
+      "events": [],
+      "notes": "Licks and chews the toy, eyes half closed.",
+      "firstUsedIn": "M5/M6"
+    },
+    {
+      "name": "cat.perk.catnip_roll",
+      "layer": "action",
+      "loop": false,
+      "durationS": 3.0,
+      "events": [{"t": 0.5, "name": "sfx:cat.catnip.roll"}],
+      "notes": "Rolls over and rubs the head, cheeks and body on the toy, wriggling on the back.",
+      "firstUsedIn": "M5/M6"
+    },
+    {
+      "name": "cat.perk.catnip_zoom",
+      "layer": "action",
+      "loop": true,
+      "durationS": 2.0,
+      "events": [{"t": 0.0, "name": "sfx:cat.zoomies"}],
+      "notes": "A burst of zoomies: gallop-like sprint loop with sharp turns.",
+      "firstUsedIn": "M5/M6"
+    },
+    {
+      "name": "cat.perk.laser_stalk",
+      "layer": "action",
+      "loop": true,
+      "durationS": 2.0,
+      "events": [],
+      "notes": "Low crouch stalk: belly near the floor, slow deliberate steps, head level, eyes locked on the dot.",
+      "firstUsedIn": "M5/M6"
+    },
+    {
+      "name": "cat.perk.laser_butt_wiggle",
+      "layer": "action",
+      "loop": false,
+      "durationS": 1.0,
+      "events": [],
+      "notes": "Pre-pounce hind-end wiggle, hind paws treading.",
+      "firstUsedIn": "M5/M6"
+    },
+    {
+      "name": "cat.perk.laser_pounce",
+      "layer": "action",
+      "loop": false,
+      "durationS": 1.0,
+      "events": [{"t": 0.4, "name": "sfx:cat.pounce"}],
+      "notes": "Pounces on the dot and pins it with both front paws.",
+      "firstUsedIn": "M5/M6"
+    },
+    {
+      "name": "cat.perk.toy_catch",
+      "layer": "action",
+      "loop": false,
+      "durationS": 1.2,
+      "events": [],
+      "notes": "Session end: catches the physical toy and holds it with the front paws and mouth.",
+      "firstUsedIn": "M5/M6"
+    },
+    {
+      "name": "cat.perk.feather_bat",
+      "layer": "action",
+      "loop": true,
+      "durationS": 0.8,
+      "events": [],
+      "notes": "Batting at a dangling feather from a sit, alternating paws.",
+      "firstUsedIn": "M5/M6"
+    },
+    {
+      "name": "cat.perk.feather_leap",
+      "layer": "action",
+      "loop": false,
+      "durationS": 1.2,
+      "events": [],
+      "notes": "Vertical leap with both front paws reaching up.",
+      "firstUsedIn": "M5/M6"
+    },
+    {
+      "name": "cat.perk.feather_catch",
+      "layer": "action",
+      "loop": false,
+      "durationS": 1.0,
+      "events": [],
+      "notes": "Catches the feather between the front paws and bites it.",
+      "firstUsedIn": "M5/M6"
+    },
+    {
+      "name": "cat.perk.harness_freeze",
+      "layer": "action",
+      "loop": false,
+      "durationS": 2.0,
+      "events": [],
+      "notes": "First harness: freezes, body low and flat, refuses to move.",
+      "firstUsedIn": "M5/M6"
+    },
+    {
+      "name": "cat.perk.harness_low_walk",
+      "layer": "action",
+      "loop": true,
+      "durationS": 1.0,
+      "events": [],
+      "notes": "Slinking low walk with the belly near the ground.",
+      "firstUsedIn": "M5/M6"
+    },
+    {
+      "name": "cat.perk.harness_flop",
+      "layer": "action",
+      "loop": false,
+      "durationS": 2.0,
+      "events": [],
+      "notes": "Flops onto the side and stays down in protest.",
+      "firstUsedIn": "M5/M6"
+    },
+    {
+      "name": "cat.perk.harness_sniff",
+      "layer": "action",
+      "loop": true,
+      "durationS": 2.0,
+      "events": [],
+      "notes": "Sniffs the ground outdoors, head low, whiskers forward.",
+      "firstUsedIn": "M5/M6"
+    }
+  ]
+}

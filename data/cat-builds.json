@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "notes": "Body builds for instancing resident cats from the shared master mesh and skeleton. Bone names and order never change. length scales the rest offsets of the joints that are children of the group's bones (segment lengths). girth scales the skin cross-section around the group's bones without passing the scale to their children (the Engine compensates child transforms). scale is uniform for the whole cat at the root; the Engine rescales locomotion authoredSpeed by scale × leg length. morphs are static shape blendshape weights on cat_body.",
+  "groups": {
+    "pelvis": ["pelvis"],
+    "spine": ["spine_01", "spine_02", "spine_03", "spine_04", "spine_05"],
+    "neck": ["neck_01", "neck_02"],
+    "head": ["head", "jaw"],
+    "ears": ["ear_L_01", "ear_L_02", "ear_R_01", "ear_R_02"],
+    "eyes": ["eye_L", "eye_R"],
+    "whiskers": ["whisker_L", "whisker_R"],
+    "frontLegs": [
+      "front_L_scapula",
+      "front_L_upper",
+      "front_L_fore",
+      "front_L_wrist",
+      "front_R_scapula",
+      "front_R_upper",
+      "front_R_fore",
+      "front_R_wrist"
+    ],
+    "hindLegs": [
+      "hind_L_hip",
+      "hind_L_thigh",
+      "hind_L_shin",
+      "hind_L_hock",
+      "hind_L_metatarsal",
+      "hind_R_hip",
+      "hind_R_thigh",
+      "hind_R_shin",
+      "hind_R_hock",
+      "hind_R_metatarsal"
+    ],
+    "paws": [
+      "front_L_paw",
+      "front_L_toe",
+      "front_L_digit_inner",
+      "front_L_digit_outer",
+      "hind_L_paw",
+      "hind_L_toe",
+      "hind_L_digit_inner",
+      "hind_L_digit_outer",
+      "front_R_paw",
+      "front_R_toe",
+      "front_R_digit_inner",
+      "front_R_digit_outer",
+      "hind_R_paw",
+      "hind_R_toe",
+      "hind_R_digit_inner",
+      "hind_R_digit_outer"
+    ],
+    "tail": [
+      "tail_01",
+      "tail_02",
+      "tail_03",
+      "tail_04",
+      "tail_05",
+      "tail_06",
+      "tail_07",
+      "tail_08",
+      "tail_09",
+      "tail_10",
+      "tail_11",
+      "tail_12"
+    ]
+  },
+  "builds": {
+    "adult": {"scale": 1.0, "groups": {}, "morphs": {}, "notes": "Reference build: Mochi."},
+    "chunky": {
+      "scale": 1.06,
+      "groups": {
+        "spine": {"girth": 1.14},
+        "pelvis": {"girth": 1.12},
+        "neck": {"girth": 1.1},
+        "head": {"girth": 1.04},
+        "frontLegs": {"girth": 1.08},
+        "hindLegs": {"girth": 1.1},
+        "tail": {"girth": 1.08, "length": 0.95}
+      },
+      "morphs": {"bodyFat": 0.85},
+      "notes": "Heavier torso and low-slung belly pouch without shortening the skeleton."
+    },
+    "kitten": {
+      "scale": 0.6,
+      "groups": {
+        "head": {"girth": 1.2, "length": 1.08},
+        "eyes": {"girth": 1.15},
+        "ears": {"length": 1.15, "girth": 1.1},
+        "spine": {"length": 0.92},
+        "frontLegs": {"length": 0.9},
+        "hindLegs": {"length": 0.9},
+        "paws": {"girth": 1.1},
+        "tail": {"length": 0.8, "girth": 0.9}
+      },
+      "morphs": {"headKitten": 1.0},
+      "notes": "Larger skull and eyes relative to the body, short muzzle, short limbs and tail."
+    },
+    "lithe": {
+      "scale": 1.02,
+      "groups": {
+        "spine": {"length": 1.04, "girth": 0.94},
+        "head": {"girth": 0.96},
+        "ears": {"length": 1.05},
+        "frontLegs": {"length": 1.06},
+        "hindLegs": {"length": 1.07},
+        "tail": {"length": 1.05}
+      },
+      "morphs": {"bodyLean": 0.6},
+      "notes": "Long-legged athletic build (Bengal); hind end slightly higher than the shoulders."
+    },
+    "compact": {
+      "scale": 0.97,
+      "groups": {"head": {"girth": 1.04}, "spine": {"length": 0.97}, "tail": {"length": 0.95}},
+      "morphs": {"bodyLean": 0.15},
+      "notes": "Muscular, rounded and compact (Bombay)."
+    },
+    "senior": {
+      "scale": 1.0,
+      "groups": {"spine": {"girth": 1.04}, "pelvis": {"girth": 0.97}, "hindLegs": {"girth": 0.96}},
+      "morphs": {"bodyFat": 0.25},
+      "notes": "Adult proportions with slightly less hind-leg muscle; gait and rest tuning live in behavior data."
+    }
+  }
+}

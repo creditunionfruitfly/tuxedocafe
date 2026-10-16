@@ -16,9 +16,22 @@
       "personality": "Cheeky, social, the café mascot",
       "catnipResponder": true,
       "harness": "onceBonded",
-      "traits": { "sociability": 0.9, "playfulness": 0.7, "boldness": 0.8, "touchSensitivity": 0.4, "chattiness": 0.6 },
+      "traits": {"sociability": 0.9, "playfulness": 0.7, "boldness": 0.8, "touchSensitivity": 0.4, "chattiness": 0.6},
       "maxAffinityRange": [0.7, 1.0],
-      "voicePitch": 1.0
+      "voicePitch": 1.0,
+      "model": {
+        "build": "adult",
+        "scale": 1.0,
+        "eyes": {"iris": "#B8B33A", "limbal": "#5E6B2A", "pupil": "slit"},
+        "leather": {"nose": "#2A2023", "pads": "#2B2224"},
+        "coat": {
+          "pattern": "tuxedo",
+          "palette": {"base": "#17161B", "white": "#F4F1EA"},
+          "furLengthMm": {"body": 5, "chest": 12, "cheeks": 11, "tail": 9},
+          "sheen": 0.35,
+          "mask": "R: white bib from chin to chest, white front socks to the wrist, hind socks to just below the hock, small white muzzle patch below the nose; G: none; B: none; A: short body, longer chest and cheek ruff."
+        }
+      }
     },
     {
       "id": "waffles",
@@ -28,10 +41,24 @@
       "personality": "Gentle lap lover, slow mover",
       "catnipResponder": true,
       "harness": "onceBonded",
-      "traits": { "sociability": 0.8, "playfulness": 0.3, "boldness": 0.5, "touchSensitivity": 0.3, "chattiness": 0.3 },
+      "traits": {"sociability": 0.8, "playfulness": 0.3, "boldness": 0.5, "touchSensitivity": 0.3, "chattiness": 0.3},
       "likedZones": ["head", "cheeks", "chin", "back"],
       "maxAffinityRange": [0.7, 1.0],
-      "voicePitch": 0.92
+      "voicePitch": 0.92,
+      "model": {
+        "build": "chunky",
+        "scale": 1.0,
+        "overrides": {"head": {"girth": 1.06}},
+        "eyes": {"iris": "#D8B23A", "limbal": "#8A6420", "pupil": "slit"},
+        "leather": {"nose": "#C9888A", "pads": "#C88A86"},
+        "coat": {
+          "pattern": "tuxedo",
+          "palette": {"base": "#1C1B20", "white": "#F5F2EB"},
+          "furLengthMm": {"body": 6, "chest": 14, "cheeks": 12, "tail": 10},
+          "sheen": 0.3,
+          "mask": "R: broad white chest and belly, white muzzle and blaze to the nose bridge, white paws to mid-forearm and above the hind ankles (pink nose leather on the white muzzle); G: none; B: none; A: short body, fluffy belly fringe."
+        }
+      }
     },
     {
       "id": "pepper",
@@ -41,11 +68,25 @@
       "personality": "Shy, prefers high perches",
       "catnipResponder": true,
       "harness": "never",
-      "traits": { "sociability": 0.3, "playfulness": 0.5, "boldness": 0.2, "touchSensitivity": 0.7, "chattiness": 0.2 },
+      "traits": {"sociability": 0.3, "playfulness": 0.5, "boldness": 0.2, "touchSensitivity": 0.7, "chattiness": 0.2},
       "likedZones": ["cheeks", "chin"],
       "dislikedZones": ["tailBase", "belly", "flank"],
       "maxAffinityRange": [0.2, 0.6],
-      "voicePitch": 1.06
+      "voicePitch": 1.06,
+      "model": {
+        "build": "adult",
+        "scale": 0.95,
+        "overrides": {"ears": {"length": 1.03}},
+        "eyes": {"iris": "#8DA83A", "limbal": "#4A5E23", "pupil": "slit"},
+        "leather": {"nose": "#9E5A4E", "pads": "#2E2521"},
+        "coat": {
+          "pattern": "mackerel_tabby",
+          "palette": {"base": "#8A6E4C", "stripe": "#2B2219", "ticking": "#B39A73", "white": "#EFE6D6"},
+          "furLengthMm": {"body": 5, "chest": 10, "cheeks": 9, "tail": 8},
+          "sheen": 0.25,
+          "mask": "R: pale chin and inner legs only; G: narrow parallel mackerel stripes descending from a dorsal line, unbroken necklaces, tail rings with a dark tip, leg bars, forehead M and cheek swirls (mascara lines from the outer eye corners), all curving with the fur flow; B: none; A: short."
+        }
+      }
     },
     {
       "id": "biscuit",
@@ -55,9 +96,23 @@
       "personality": "Food-driven, follows the kibble bag",
       "catnipResponder": true,
       "harness": "onceBonded",
-      "traits": { "sociability": 0.7, "playfulness": 0.5, "boldness": 0.7, "touchSensitivity": 0.4, "chattiness": 0.8 },
+      "traits": {"sociability": 0.7, "playfulness": 0.5, "boldness": 0.7, "touchSensitivity": 0.4, "chattiness": 0.8},
       "maxAffinityRange": [0.5, 0.9],
-      "voicePitch": 0.97
+      "voicePitch": 0.97,
+      "model": {
+        "build": "adult",
+        "scale": 1.04,
+        "morphs": {"bodyFat": 0.25},
+        "eyes": {"iris": "#D99A2B", "limbal": "#8C5718", "pupil": "slit"},
+        "leather": {"nose": "#D88E7E", "pads": "#D9938A"},
+        "coat": {
+          "pattern": "orange_classic_tabby",
+          "palette": {"base": "#D88A3D", "stripe": "#B0612A", "pale": "#F2C48D"},
+          "furLengthMm": {"body": 6, "chest": 12, "cheeks": 11, "tail": 9},
+          "sheen": 0.3,
+          "mask": "R: cream chin and belly wash; G: soft classic tabby swirls (bullseye on the flank, butterfly over the shoulders) in low contrast, tail rings; B: none (fully orange); A: short."
+        }
+      }
     },
     {
       "id": "clementine",
@@ -67,11 +122,24 @@
       "personality": "Bossy for her size, climbs everything",
       "catnipResponder": false,
       "harness": "never",
-      "traits": { "sociability": 0.6, "playfulness": 1.0, "boldness": 0.9, "touchSensitivity": 0.6, "chattiness": 0.5 },
+      "traits": {"sociability": 0.6, "playfulness": 1.0, "boldness": 0.9, "touchSensitivity": 0.6, "chattiness": 0.5},
       "dislikedZones": ["tailBase", "belly", "paws"],
       "sleepHoursPerDay": 18,
       "maxAffinityRange": [0.3, 0.9],
-      "voicePitch": 1.15
+      "voicePitch": 1.15,
+      "model": {
+        "build": "kitten",
+        "scale": 1.0,
+        "eyes": {"iris": "#9DB0A0", "limbal": "#5F7A86", "pupil": "slit"},
+        "leather": {"nose": "#D8948C", "pads": "#C98A80"},
+        "coat": {
+          "pattern": "calico",
+          "palette": {"black": "#1B1A1E", "orange": "#D9853A", "white": "#F6F2EA"},
+          "furLengthMm": {"body": 6, "chest": 10, "cheeks": 9, "tail": 8},
+          "sheen": 0.2,
+          "mask": "R: white over chest, belly, legs, muzzle and a blaze between the eyes; G: faint tabby in the orange patches only; B: large distinct black and orange patches on the back, head and tail (orange left ear, black right ear, split face), patch edges soft but clear; A: fluffy kitten coat."
+        }
+      }
     },
     {
       "id": "juniper",
@@ -81,9 +149,23 @@
       "personality": "Playful, athletic and chatty; paddles in the water bowl",
       "catnipResponder": false,
       "harness": "onceBonded",
-      "traits": { "sociability": 0.6, "playfulness": 0.95, "boldness": 0.85, "touchSensitivity": 0.5, "chattiness": 0.9 },
+      "traits": {"sociability": 0.6, "playfulness": 0.95, "boldness": 0.85, "touchSensitivity": 0.5, "chattiness": 0.9},
       "maxAffinityRange": [0.4, 0.9],
-      "voicePitch": 1.0
+      "voicePitch": 1.0,
+      "model": {
+        "build": "lithe",
+        "scale": 1.0,
+        "eyes": {"iris": "#A9B43B", "limbal": "#6A7A25", "pupil": "slit"},
+        "leather": {"nose": "#B5604F", "pads": "#2D2420"},
+        "coat": {
+          "pattern": "rosetted_bengal",
+          "palette": {"base": "#C8963E", "rosette": "#3A2618", "rosetteInner": "#8E5A2B", "belly": "#F0DCB2"},
+          "furLengthMm": {"body": 4, "chest": 7, "cheeks": 7, "tail": 6},
+          "sheen": 0.55,
+          "glitter": true,
+          "mask": "R: pale belly, chin and inner legs; G: horizontally aligned broken rosettes (dark outline, warm brown centre) over the flanks and back, spots on the legs, thick dark tail rings and a black tail tip, strong mascara lines; B: none; A: very short pelt. Glitter sparkle in the sheen."
+        }
+      }
     },
     {
       "id": "pixel",
@@ -93,10 +175,23 @@
       "personality": "Affectionate shadow and homebody; follows you around the café",
       "catnipResponder": true,
       "harness": "never",
-      "traits": { "sociability": 0.95, "playfulness": 0.6, "boldness": 0.4, "touchSensitivity": 0.3, "chattiness": 0.4 },
+      "traits": {"sociability": 0.95, "playfulness": 0.6, "boldness": 0.4, "touchSensitivity": 0.3, "chattiness": 0.4},
       "likedZones": ["head", "cheeks", "chin", "back"],
       "maxAffinityRange": [0.7, 1.0],
-      "voicePitch": 1.03
+      "voicePitch": 1.03,
+      "model": {
+        "build": "compact",
+        "scale": 1.0,
+        "eyes": {"iris": "#C9772A", "limbal": "#7A3E12", "pupil": "slit"},
+        "leather": {"nose": "#141215", "pads": "#151316"},
+        "coat": {
+          "pattern": "solid_black",
+          "palette": {"base": "#0E0D11", "sheen": "#3A3542"},
+          "furLengthMm": {"body": 3, "chest": 5, "cheeks": 5, "tail": 4},
+          "sheen": 0.75,
+          "mask": "R: none; G: none; B: none; A: very short, close-lying patent-leather coat. Separate the silhouette with rim light and broad glossy highlights; the copper eyes are the focal point."
+        }
+      }
     },
     {
       "id": "duchess",
@@ -106,11 +201,25 @@
       "personality": "Dignified, naps 20 hours a day",
       "catnipResponder": true,
       "harness": "never",
-      "traits": { "sociability": 0.4, "playfulness": 0.15, "boldness": 0.5, "touchSensitivity": 0.6, "chattiness": 0.3 },
+      "traits": {"sociability": 0.4, "playfulness": 0.15, "boldness": 0.5, "touchSensitivity": 0.6, "chattiness": 0.3},
       "likedZones": ["cheeks", "chin"],
       "sleepHoursPerDay": 20,
       "maxAffinityRange": [0.3, 0.8],
-      "voicePitch": 0.88
+      "voicePitch": 0.88,
+      "model": {
+        "build": "senior",
+        "scale": 1.02,
+        "eyes": {"iris": "#7FB8C9", "limbal": "#3E6E84", "pupil": "slit"},
+        "leather": {"nose": "#D9A39B", "pads": "#D49C94"},
+        "coat": {
+          "pattern": "cream_longhair",
+          "palette": {"base": "#E8D2AE", "pale": "#F7EBD6", "shade": "#C9A97C"},
+          "furLengthMm": {"body": 28, "chest": 35, "cheeks": 30, "tail": 34, "britches": 32},
+          "sheen": 0.25,
+          "mask": "R: paler chest and ruff; G: faint cream ghost tabby on the tail only; B: none; A: long coat with a full ruff, britches, ear furnishings and a plumed tail. Fur cards at the ruff and tail matter most for this cat."
+        }
+      }
     }
-  ]
+  ],
+  "modelNotes": "Each cat instances the shared master mesh (cat_master_lod0-2.glb) with a build from data/cat-builds.json plus optional overrides and morph weights. eyes and coat describe the unique details the Artist paints once texture generation is back; mask follows the RGBA convention (R white spotting, G tabby or rosettes, B orange/black partition, A fur length). Colours are sRGB hex for palette uniforms."
 }
