@@ -61,7 +61,9 @@ export async function makeCafe() {
   box([4.8, 2.0, .16], 'plaster', [-2.6, 1.82, -5]);
   box([.85, 2, .16], 'plaster', [4.6, 1.82, -5]);
   box([10, .12, 8.1], 'cream', [0, 3.38, -1]);
-  box([10, 1.7, .03], 'sky', [0, 1.8, -5.3]);
+  box([12, 4, .03], 'sky', [0, 1.9, -8.8]);
+  box([7, .04, 3], 'plaster', [1.5, -.02, -6.5]);
+  box([7, .65, .16], 'oakPale', [1.5, .325, -8]);
   for (const x of [.05, 2.05, 4.05]) {
     box([.07, 2, .22], 'oakDark', [x, 1.82, -4.98]);
     box([2.04, .08, .22], 'oakDark', [x + 1, .85, -4.98]);
@@ -173,6 +175,12 @@ export async function makeCafe() {
     }
   };
   for (const [x, y, z, s] of [[-4.4, 0, 1.4, 1.5], [4.4, 0, 1.5, 1.7], [3.6, .87, -4.8, .6], [.3, .87, -4.8, .5], [-4.35, 2.14, -4.7, .45], [-2, .8, -.6, .3]]) plant(x!, y!, z!, s!);
+  for (const x of [.8, 3.1]) {
+    plant(x, 0, -6.6, 1.3);
+    cyl(.035, 1.4, 'oakDark', [x, .7, -7.1]);
+    ball([.47, .6, .38], 'leaf', [x, 1.5, -7.1]);
+    ball([.35, .43, .32], 'leafLight', [x + .16, 1.62, -6.96]);
+  }
   // Raised original feline medallion above the counter.
   cyl(.34, .025, 'oakLight', [-2.4, 2.62, -4.84], .34, [Math.PI / 2, 0, 0]);
   ball([.17, .15, .025], 'charcoal', [-2.4, 2.62, -4.8]);
@@ -187,14 +195,15 @@ export async function makeCafe() {
       geos.forEach((g) => g.dispose()); merged.dispose();
     }
     const node = doc.createNode(name).setMesh(mesh);
-    if (name === 'water-bowl' || name === 'food-bowl') {
-      const x = name === 'water-bowl' ? 1.4 : 1.9;
+    if (name === 'water-bowl' || name === 'food-bowl' || name === 'scoop') {
+      const x = name === 'water-bowl' ? 1.4 : name === 'food-bowl' ? 1.9 : 4.65;
+      const y = name === 'scoop' ? .29 : 0, z = name === 'scoop' ? -3.9 : -.7;
       // The merged geometry is global; recenter its POSITION accessor exactly once.
       for (const prim of mesh.listPrimitives()) {
         const a = prim.getAttribute('POSITION')!, values = a.getArray()!;
-        for (let i = 0; i < values.length; i += 3) { values[i]! -= x; values[i + 2]! += .7; }
+        for (let i = 0; i < values.length; i += 3) { values[i]! -= x; values[i + 1]! -= y; values[i + 2]! -= z; }
       }
-      node.setTranslation([x, 0, -.7]);
+      node.setTranslation([x, y, z]);
     }
     scene.addChild(node);
   }
