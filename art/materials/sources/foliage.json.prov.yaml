@@ -1,0 +1,7 @@
+source: art/materials/prompts.json#foliage
+tool: OpenAI built-in imagegen; packed generated albedo and estimated normal/ORM derivatives
+date: '2026-10-16'
+license: original
+author_role: artist
+prompt: "Use case: photorealistic-natural\nAsset type: seamless PBR albedo texture for realistic cafe plant leaves, close-range leaf epidermis with fine vein detail.\nPrimary request: a single flat continuous waxy leaf surface material, rich medium natural green with subtle pale branching veins, secondary veins form a very fine restrained network throughout the material. Tiny realistic leaf cells and epidermal pores, a few soft botanical color variations. Premium physically based game texture, evenly sharp. No leaf silhouette, no whole leaf, no central large midrib or stem, no edges, no plant arrangement. The texture will tile over separately modeled leaf meshes.\nComposition: square front-on orthographic macro swatch edge-to-edge, same microstructure density throughout, no perspective, opposite boundaries tile seamlessly.\nLighting: neutral de-lit albedo, completely even diffuse lighting, no baked highlights, shadows, AO, light gradient or reflections. No text, labels, logos or watermark. Natural fine photoreal green foliage material only. High resolution square."
+notes: original generated albedo; derived data maps are estimated microheight and roughness, not measured scans

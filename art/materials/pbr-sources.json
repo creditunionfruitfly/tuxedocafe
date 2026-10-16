@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "families": {
+    "oak": "sources/oak.json",
+    "upholstery": "sources/upholstery.json",
+    "plaster": "sources/plaster.json",
+    "stone": "sources/stone.json",
+    "sisal": "sources/sisal.json",
+    "brass": "sources/brass.json",
+    "skin": "sources/skin.json",
+    "foliage": "sources/foliage.json"
+  }
+}
