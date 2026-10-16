@@ -12,6 +12,7 @@ import { watchUpdates } from './core/update-check.ts';
 import { SaveStore,browserStorage } from './core/storage.ts';
 import { TierBenchmark,chooseTier,parseTier,probeDevice } from './core/tiers.ts';
 import { createRenderer } from './render/renderer.ts';
+import { waitForGpu } from './render/warmup.ts';
 import { mountLookdev } from './scenes/lookdev.ts';
 import { createCafe } from './scenes/cafe.ts';
 import { Player } from './scenes/player.ts';
@@ -77,6 +78,10 @@ try {
   // The first render skips the hidden hand. Compile every scene material before
   // input starts so the first reach cannot stall hover dwell or a floor tap.
   await display.renderer.compileAsync(scene,camera);
+  // render() submits work; a fence also waits for the first GPU pipeline/draw.
+  // Otherwise a fast click can enter play while that first frame is still cold.
+  camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();
+  display.renderer.render(scene,camera);await waitForGpu(display.renderer.getContext() as WebGL2RenderingContext);body.dataset.gpuReady='true';
   display.renderer.setAnimationLoop(time=>{
     if(!benchmarkDone&&!contextReloadPending){const result=benchmark.update(time);if(result!==null){benchmarkDone=display.configure(chooseTier(probe,result));contextReloadPending=!benchmarkDone;body.dataset.benchmarkMs=result.toFixed(1);}}
     const elapsed=previous?time-previous:16.7;frameSum+=elapsed;if(previous)display.adapt(elapsed);previous=time;loop.frame(time);

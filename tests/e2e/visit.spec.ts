@@ -57,7 +57,7 @@ test('Settings About shows the build and feedback opens a metadata-prefilled dra
  const draft=new URL((await page.locator('#feedback').getAttribute('href'))!);expect(draft.searchParams.get('template')).toBe('playtest.yml');expect(draft.searchParams.get('build')).toContain(stamp!.split(' · ')[0]!);expect(draft.searchParams.get('channel')).toBe(stamp!.split(' · ')[1]);expect(draft.searchParams.get('tier')).toBe('low');expect(draft.searchParams.get('browser')).toMatch(/Mozilla/);expect(draft.searchParams.get('device')).toContain('viewport');
 });
 test('automatic tier boot settles before a patron can begin a draft',async({page})=>{
- await page.goto('./');await expect(page.locator('#start')).toBeEnabled({timeout:30000});await expect(page.locator('#start')).toHaveAttribute('aria-busy','false');await expect(page.locator('body')).toHaveAttribute('data-ready','true');
+ await page.goto('./');await expect(page.locator('#start')).toBeEnabled({timeout:30000});await expect(page.locator('#start')).toHaveAttribute('aria-busy','false');await expect(page.locator('body')).toHaveAttribute('data-ready','true');await expect(page.locator('body')).toHaveAttribute('data-gpu-ready','true');
  await page.locator('#start').click();await page.locator('#patron-name').fill('Avery');const settledURL=page.url();
  // The benchmark resolves after two seconds; a draft must survive beyond that boundary.
  await page.waitForTimeout(2300);expect(page.url()).toBe(settledURL);await expect(page.locator('body')).toHaveAttribute('data-phase','create');await expect(page.locator('#patron-name')).toHaveValue('Avery');
