@@ -1,0 +1,7 @@
+source: art/materials/prompts.json
+tool: OpenAI built-in imagegen; art/materials/prepare.py
+date: '2026-10-16'
+license: original
+author_role: artist
+settings: eight independent generated material families, 1024-square JPEG albedo, 512-square PNG normal, 256-square PNG ORM
+notes: This manifest indexes the eight individually provenanced source-family JSON files. They store original generated texture derivatives as base64 for reproducible CI without Git LFS upload authentication. Normals and roughness are estimated from band-limited image microdetail and material parameters, not measured scans. ORM occlusion is white; spatial occlusion comes only from the scene light bake.

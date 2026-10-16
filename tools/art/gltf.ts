@@ -15,6 +15,7 @@ export function primitive(doc: Document, geometry: BufferGeometry) {
   const prim = doc.createPrimitive();
   for (const [key, semantic, type] of [
     ['position', 'POSITION', Accessor.Type.VEC3], ['normal', 'NORMAL', Accessor.Type.VEC3],
+    ['uv', 'TEXCOORD_0', Accessor.Type.VEC2], ['uv1', 'TEXCOORD_1', Accessor.Type.VEC2],
     ['skinIndex', 'JOINTS_0', Accessor.Type.VEC4], ['skinWeight', 'WEIGHTS_0', Accessor.Type.VEC4],
   ] as const) {
     const attribute = geometry.getAttribute(key);
@@ -28,7 +29,10 @@ export function primitive(doc: Document, geometry: BufferGeometry) {
 
 export async function saveAsset(doc: Document, path: string, budget: number, optimize = true) {
   await MeshoptEncoder.ready;
-  if (optimize) await doc.transform(weld(), dedup(), prune(), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
+  if (optimize) {
+    await doc.transform(weld(), dedup(), prune());
+    if (process.env.ART_UNCOMPRESSED !== '1') await doc.transform(meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
+  }
   const bytes = await io.writeBinary(doc);
   const report = await validateBytes(bytes, { maxIssues: 100 });
   if (report.issues.numErrors) throw new Error(`${path}: ${JSON.stringify(report.issues.messages)}`);

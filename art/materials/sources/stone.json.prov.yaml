@@ -1,0 +1,7 @@
+source: art/materials/prompts.json#stone
+tool: OpenAI built-in imagegen; packed generated albedo and estimated normal/ORM derivatives
+date: '2026-10-16'
+license: original
+author_role: artist
+prompt: "Use case: photorealistic-natural\nAsset type: game-ready PBR material albedo source map, stone\nPrimary request: square seamless physically based albedo texture of pale warm ivory honed limestone countertop, tiny fossil fragments and sparse warm gray flecks, exceptionally restrained organic veining, luxurious modern cafe stone. Continuous flat slab, NO tile lines or joints, no shiny reflection. Macro surface scale roughly one meter.\nComposition/framing: exactly square, edge-to-edge full material, orthographic front-on view, no perspective. Seamless tiling: opposite edges must match continuously with no boundary or dark edge. Photoreal material scan quality at high resolution, 2048 pixels square preferred.\nLighting: perfectly even diffuse ambient illumination, intrinsic de-lit albedo, no shadows, ambient occlusion, lighting gradients, lens blur, specular highlights or reflections baked in.\nConstraints: no text, brand, watermark, objects, scenery, floorboards, labels, collage, normal map colors or map sheet. Only one full-frame albedo material image."
+notes: original generated albedo; derived data maps are estimated microheight and roughness, not measured scans

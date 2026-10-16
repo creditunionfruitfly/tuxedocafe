@@ -1,0 +1,7 @@
+source: art/materials/prompts.json#skin
+tool: OpenAI built-in imagegen; packed generated albedo and estimated normal/ORM derivatives
+date: '2026-10-16'
+license: original
+author_role: artist
+prompt: "Use case: photorealistic-natural\nAsset type: neutral PBR skin microdetail albedo source for a customizable first person hand and forearm.\nPrimary request: a square seamless flat skin-surface swatch showing fine realistic adult human palm/hand skin pores, delicate shallow furrows and fine natural microtexture, neutral very pale warm gray-beige tint so the runtime tint can produce every skin tone. Low contrast uniformly even tone, no coarse marks.\nComposition: orthographic texture scan front-on, edge-to-edge material only, no recognizable hand, arm, face, body part silhouette, hairs, veins, scar or wound. No creases larger than a few fine pixels, no text. Opposite edges tile seamlessly.\nLighting: perfectly even diffuse neutral ambient light; de-lit albedo, no specular highlights, shadows, ambient occlusion or lighting gradients. Scan-like subtle material fidelity, 2048 square preferred.\nAvoid: macro wrinkles, fingerprints, joints, moles, freckles, objects, labels, watermarks, colored normal-map appearance."
+notes: original generated albedo; derived data maps are estimated microheight and roughness, not measured scans

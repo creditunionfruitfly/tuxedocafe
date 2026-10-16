@@ -3,6 +3,7 @@ import { Document, Accessor } from '@gltf-transform/core';
 import { CapsuleGeometry, Quaternion, Vector3, Uint16BufferAttribute, Float32BufferAttribute } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { inverseBindMatrices, primitive, saveAsset } from './gltf.ts';
+import { createDiagnosticMaterial } from './materials.ts';
 
 export async function makePlaceholderCat() {
   const rig = JSON.parse(readFileSync('art/rig/skeleton.json', 'utf8')) as {
@@ -13,7 +14,7 @@ export async function makePlaceholderCat() {
   const scene = doc.createScene('Rig diagnostic');
   const worlds = new Map<string, Vector3>();
   const nodes = rig.bones.map((b) => doc.createNode(b.name).setTranslation(b.restPosition));
-  const material = doc.createMaterial('Diagnostic tuxedo').setBaseColorFactor([.13, .15, .16, 1]).setMetallicFactor(0).setRoughnessFactor(.8);
+  const material = (await createDiagnosticMaterial(doc)).setName('Diagnostic tuxedo');
   const parts = rig.bones.map((bone, index) => {
     const parentIndex = rig.bones.findIndex((b) => b.name === bone.parent);
     if (parentIndex >= 0) nodes[parentIndex]!.addChild(nodes[index]!);
@@ -24,7 +25,6 @@ export async function makePlaceholderCat() {
     const length = start.distanceTo(end);
     const radius = bone.name.includes('spine') ? .075 : bone.name === 'head' ? .085 : bone.name.includes('tail') ? .016 : .022;
     const geo = new CapsuleGeometry(radius, Math.max(0.001, length - radius), 2, 6);
-    geo.deleteAttribute('uv');
     geo.applyQuaternion(new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), end.clone().sub(start).normalize()));
     geo.translate(...start.clone().lerp(end, .5).toArray());
     const count = geo.getAttribute('position').count;

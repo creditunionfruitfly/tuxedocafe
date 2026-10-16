@@ -1,0 +1,7 @@
+source: art/materials/prompts.json#brass
+tool: OpenAI built-in imagegen; packed generated albedo and estimated normal/ORM derivatives
+date: '2026-10-16'
+license: original
+author_role: artist
+prompt: "Use case: photorealistic-natural\nAsset type: game-ready PBR material albedo source map, brass\nPrimary request: square seamless physically based base-color texture of pale satin brushed brass metal, tiny uniform vertical fine directional brush marks with subtle warm champagne gold color variation. Fully neutral metal albedo without reflections or bright streaks, no corrosion, no seams. Continuous flat sheet.\nComposition/framing: exactly square, edge-to-edge full material, orthographic front-on view, no perspective. Seamless tiling: opposite edges must match continuously with no boundary or dark edge. Photoreal material scan quality at high resolution, 2048 pixels square preferred.\nLighting: perfectly even diffuse ambient illumination, intrinsic de-lit albedo, no shadows, ambient occlusion, lighting gradients, lens blur, specular highlights or reflections baked in.\nConstraints: no text, brand, watermark, objects, scenery, floorboards, labels, collage, normal map colors or map sheet. Only one full-frame albedo material image."
+notes: original generated albedo; derived data maps are estimated microheight and roughness, not measured scans
