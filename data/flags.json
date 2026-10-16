@@ -1,4 +1,6 @@
 {
   "version": 1,
-  "flags": []
+  "flags": [
+    { "id": "cats", "milestone": "M2", "description": "Resident cats in the café: instanced master mesh, animation runtime and IK (M2 in progress)" }
+  ]
 }
