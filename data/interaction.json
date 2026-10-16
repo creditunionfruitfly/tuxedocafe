@@ -7,5 +7,6 @@
   "jumpMaxMeters": 5,
   "carryForwardMeters": 0.8,
   "carrySideMeters": 0.2,
-  "carryHeightMeters": 1.32
+  "carryHeightMeters": 1.32,
+  "tapBowlHeightMeters": 1.2
 }

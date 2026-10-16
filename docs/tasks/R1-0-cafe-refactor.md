@@ -54,3 +54,5 @@ The completed bake uses RGBM HDR plus calibrated SH9 room probes. Static
 diffuse is evaluated once from the atlas; moving surfaces keep runtime direct
 light and room bounce. The carry is calibrated to 1.32m high and .80m forward so the bowl rim
 aligns with the attached hand rather than falling below the view.
+The stationary tap-fill height is a separate 1.20m, clearing the 1.114m basin
+and remaining below the 1.278m nozzle. Free carry tuning cannot move it.
