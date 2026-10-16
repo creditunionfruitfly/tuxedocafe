@@ -19,6 +19,6 @@ The Master writes one file per task (AGENTS.md, Master). Each names its role, bu
 
 M0 totals 7% of week A, with 0.5% held back inside the milestone; M1 totals 13%, with 0.5% held back. M0-2 to M0-5 can run in parallel.
 
-Additional owner-requested work: [M1 first visit](M1-7-first-visit.md) and [M2 production specification](M2-0-cat-production-spec.md). M2 modeling/behavior implementation has not started.
+Additional owner-requested work: [M1 first visit](M1-7-first-visit.md) and [M2 production specification](M2-0-cat-production-spec.md). Control optimization: [R2 radial look, 360° room and faster touch navigation](R2-0-radial-controls.md). M2 modeling/behavior implementation has not started.
 
 Implementation preparation for M1 was requested in this session. Milestone acceptance remains open: no frozen snapshot or physical-device performance evidence is inferred from emulator screenshots.
