@@ -17,6 +17,7 @@ import { waitForGpu } from './render/warmup.ts';
 import { mountLookdev } from './scenes/lookdev.ts';
 import { createCafe } from './scenes/cafe.ts';
 import { Player } from './scenes/player.ts';
+import { ROOM } from './scenes/collision.ts';
 import { installOrientation } from './input/orientation.ts';
 import { installKeys } from './input/keys.ts';
 import { installPointer } from './input/pointer.ts';
@@ -49,7 +50,7 @@ try {
   const forwardVector=new Vector3();
   const loop=new FixedLoop(dt=>{
     if(!playing)return;
-    const k=keyboard.keys;player.step(dt,(Number(k.has('d')||k.has('arrowright'))-Number(k.has('a')||k.has('arrowleft'))),(Number(k.has('w')||k.has('arrowup'))-Number(k.has('s')||k.has('arrowdown'))));
+    const k=keyboard.keys;player.step(dt,Number(k.has('d'))-Number(k.has('a')),Number(k.has('w'))-Number(k.has('s')));player.steer(dt,Number(k.has('arrowleft'))-Number(k.has('arrowright')),Number(k.has('arrowup'))-Number(k.has('arrowdown')));
     pointer.step(dt);hand.step(dt);bus.emit('player',{x:player.x,z:player.z});body.dataset.player=`${player.x.toFixed(2)},${player.z.toFixed(2)}`;
     body.dataset.carry=holding.id??'';body.dataset.look=`${player.yaw.toFixed(3)},${player.pitch.toFixed(3)},${player.lean.toFixed(3)}`;
     for(const [id,placed] of holding.placements){
@@ -58,8 +59,9 @@ try {
       if(model){const follow=holding.id===id?1:.35;model.position.x+=(p.x-model.position.x)*follow;model.position.y+=(p.y-.08-model.position.y)*follow;model.position.z+=(p.z-model.position.z)*follow;}
     }
   },alpha=>{
-    camera.position.set(player.previousX+(player.x-player.previousX)*alpha,1.6,player.previousZ+(player.z-player.previousZ)*alpha);camera.rotation.set(player.pitch,player.yaw,0,'YXZ');
-    forwardVector.set(0,0,-player.lean).applyQuaternion(camera.quaternion);camera.position.add(forwardVector);camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();camera.updateMatrixWorld();
+    camera.position.set(player.previousX+(player.x-player.previousX)*alpha,1.6,player.previousZ+(player.z-player.previousZ)*alpha);player.orientation(camera.quaternion);
+    // Leaning never pushes the near plane through a wall when the patron faces it.
+    forwardVector.set(0,0,-player.lean).applyQuaternion(camera.quaternion);camera.position.add(forwardVector);camera.position.x=Math.max(ROOM.minX+.1,Math.min(ROOM.maxX-.1,camera.position.x));camera.position.z=Math.max(ROOM.minZ+.1,Math.min(ROOM.maxZ-.1,camera.position.z));camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();camera.updateMatrixWorld();
     hand.update(playing,!!holding.id,visit.settings.leftHanded);display.renderer.render(scene,camera);
     if(benchmarkDone&&!contextReloadPending&&body.dataset.ready!=='true'){const start=document.querySelector<HTMLButtonElement>('#start')!;start.disabled=false;start.setAttribute('aria-busy','false');body.dataset.ready='true';}body.dataset.drawCalls=String(display.renderer.info.render.calls);body.dataset.triangles=String(display.renderer.info.render.triangles);body.dataset.shaderPrograms=String(display.renderer.info.programs?.length??0);
     if(++drawFrames%60===0){body.dataset.frameMs=(frameSum/60).toFixed(1);frameSum=0;}
