@@ -1,7 +1,7 @@
 # Conservatory cafe source
 
 `generate.ts` is the original, deterministic source. Run `npm run assets`.
-The environment uses 86,312 triangles, meshopt-compressed geometry, shared
+The environment uses 93,920 triangles, meshopt-compressed geometry, shared
 material batches and no downloaded textures. M3 adds baked lightmaps/probes.
 
 Coordinates in meters: room x −5…5, z −5…3; entry (0, 1.6, 2.2).
@@ -11,6 +11,6 @@ Tables centered at (−2, .76, −.6) and (.5, .76, −3.1), radius .66.
 Cat tree (3.7, 0, −2.2), three cushioned platforms.
 Two litter trays at (4.25, 0, −3.6/−4.3), bin and scoop.
 
-Static geometry is merged by material. Moving bowls keep separate named nodes.
-Other nodes use world-space vertices with identity transforms. Neither geometry
+Static geometry is merged by material. Moving bowls and the scoop keep separate named nodes.
+The planted courtyard adds depth beyond the window. Other nodes use world-space vertices with identity transforms. Neither geometry
 nor lighting conveys a completed M2 cat simulation. All motifs are original.
