@@ -1,0 +1,62 @@
+name: Playtest report
+description: Something you noticed while playing a Tuxedo Cafe build.
+title: "[playtest] "
+labels: [playtest]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for playing! "Send feedback" in the game's Settings → About fills in the build details for you.
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: The version shown in Settings → About.
+      placeholder: v0.1.0-12-gabc1234
+    validations:
+      required: true
+  - type: input
+    id: channel
+    attributes:
+      label: Channel
+      description: "main for the latest build, or m<n> for a milestone snapshot."
+      placeholder: main
+  - type: input
+    id: tier
+    attributes:
+      label: Quality tier
+      placeholder: Phone
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      placeholder: Safari 26 on iOS
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      placeholder: iPhone 15, held sideways
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of note is it?
+      options:
+        - Bug
+        - Feels off
+        - Cat behavior
+        - Performance
+        - Idea
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots or video
+      description: Drag files here.

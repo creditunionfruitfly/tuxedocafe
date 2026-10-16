@@ -1,0 +1,73 @@
+# .github/workflows/release.yml: freezes a milestone at /tuxedocafe/m<n>/.
+# The Master tags the exit commit v0.<n>.0 (M0 is v0.0.0); a snapshot fix ships as v0.<n>.1.
+# Actions are pinned to commit SHAs; Dependabot (.github/dependabot.yml) updates them.
+name: release
+
+on:
+  push:
+    tags: ['v0.*']
+
+permissions:
+  contents: write # create the GitHub Release
+  actions: write # start pages.yml
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # tags, for git describe in version.json
+      - name: Work out the milestone from the tag
+        id: milestone
+        run: |
+          n="$(echo "$GITHUB_REF_NAME" | sed -nE 's/^v0\.([0-9]+)\.[0-9]+$/\1/p')"
+          if [ -z "$n" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME is not v0.<milestone>.<patch>"
+            exit 1
+          fi
+          echo "n=$n" >> "$GITHUB_OUTPUT"
+          # Job-wide from here on: vite build, vite preview and the tests all read them.
+          echo "VITE_BASE=/tuxedocafe/m$n/" >> "$GITHUB_ENV"
+          echo "VITE_CHANNEL=m$n" >> "$GITHUB_ENV"
+      - name: List runtime assets in Git LFS
+        run: git lfs ls-files --long --include "public/assets/**" | cut -d ' ' -f1 | sort > .lfs-ids
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .git/lfs
+          key: lfs-${{ hashFiles('.lfs-ids') }}
+          restore-keys: lfs-
+      - run: git lfs pull --include "public/assets/**"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run audio:check
+      - run: npm run build
+      - name: Fail on Git LFS pointers in the build
+        run: if grep -rlI 'git-lfs.github.com/spec' dist; then exit 1; fi
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Attach the snapshot to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          N: ${{ steps.milestone.outputs.n }}
+        run: |
+          zip="site-m$N.zip"
+          (cd dist && zip -qr "../$zip" . -x '.*' -x '*/.*')
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$zip" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$zip" --verify-tag --generate-notes --title "M$N snapshot ($GITHUB_REF_NAME)"
+          fi
+      - name: Redeploy Pages with the new snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # A dispatch is one of the few runs GITHUB_TOKEN can start.
+        run: gh workflow run pages.yml --ref main

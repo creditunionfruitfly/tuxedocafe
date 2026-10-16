@@ -1,0 +1,14 @@
+node_modules/
+dist/
+_site/
+test-results/
+playwright-report/
+coverage/
+.lfs-ids
+*.zip
+*.blend1
+*.blend@
+.env
+.env.*
+.DS_Store
+Thumbs.db

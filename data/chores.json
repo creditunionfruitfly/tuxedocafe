@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "stations": {
+    "water": { "glowBelowLevel": 0.25, "gesture": "holdUnderTap", "holdSeconds": 3 },
+    "food": { "glowBelowLevel": 0.25, "gesture": "tiltAndPour", "fillLine": 0.9 },
+    "litter": { "glowAboveDirt": 0.6, "gesture": "scoopTipRake" }
+  }
+}

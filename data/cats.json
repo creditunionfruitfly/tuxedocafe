@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "zones": ["head", "cheeks", "chin", "back", "flank", "belly", "tailBase", "tail", "paws"],
+  "defaults": {
+    "likedZones": ["head", "cheeks", "chin"],
+    "dislikedZones": ["tailBase", "belly"],
+    "sleepHoursPerDay": 15,
+    "voicePitch": 1.0
+  },
+  "cats": [
+    {
+      "id": "mochi",
+      "name": "Mochi",
+      "coat": "Tuxedo",
+      "age": "adult",
+      "personality": "Cheeky, social, the café mascot",
+      "catnipResponder": true,
+      "harness": "onceBonded",
+      "traits": { "sociability": 0.9, "playfulness": 0.7, "boldness": 0.8, "touchSensitivity": 0.4, "chattiness": 0.6 },
+      "maxAffinityRange": [0.7, 1.0],
+      "voicePitch": 1.0
+    },
+    {
+      "id": "waffles",
+      "name": "Waffles",
+      "coat": "Tuxedo, chunky",
+      "age": "adult",
+      "personality": "Gentle lap lover, slow mover",
+      "catnipResponder": true,
+      "harness": "onceBonded",
+      "traits": { "sociability": 0.8, "playfulness": 0.3, "boldness": 0.5, "touchSensitivity": 0.3, "chattiness": 0.3 },
+      "likedZones": ["head", "cheeks", "chin", "back"],
+      "maxAffinityRange": [0.7, 1.0],
+      "voicePitch": 0.92
+    },
+    {
+      "id": "pepper",
+      "name": "Pepper",
+      "coat": "Brown mackerel tabby",
+      "age": "adult",
+      "personality": "Shy, prefers high perches",
+      "catnipResponder": true,
+      "harness": "never",
+      "traits": { "sociability": 0.3, "playfulness": 0.5, "boldness": 0.2, "touchSensitivity": 0.7, "chattiness": 0.2 },
+      "likedZones": ["cheeks", "chin"],
+      "dislikedZones": ["tailBase", "belly", "flank"],
+      "maxAffinityRange": [0.2, 0.6],
+      "voicePitch": 1.06
+    },
+    {
+      "id": "biscuit",
+      "name": "Biscuit",
+      "coat": "Orange",
+      "age": "adult",
+      "personality": "Food-driven, follows the kibble bag",
+      "catnipResponder": true,
+      "harness": "onceBonded",
+      "traits": { "sociability": 0.7, "playfulness": 0.5, "boldness": 0.7, "touchSensitivity": 0.4, "chattiness": 0.8 },
+      "maxAffinityRange": [0.5, 0.9],
+      "voicePitch": 0.97
+    },
+    {
+      "id": "clementine",
+      "name": "Clementine",
+      "coat": "Calico",
+      "age": "kitten",
+      "personality": "Bossy for her size, climbs everything",
+      "catnipResponder": false,
+      "harness": "never",
+      "traits": { "sociability": 0.6, "playfulness": 1.0, "boldness": 0.9, "touchSensitivity": 0.6, "chattiness": 0.5 },
+      "dislikedZones": ["tailBase", "belly", "paws"],
+      "sleepHoursPerDay": 18,
+      "maxAffinityRange": [0.3, 0.9],
+      "voicePitch": 1.15
+    },
+    {
+      "id": "juniper",
+      "name": "Juniper",
+      "coat": "Brown rosetted Bengal",
+      "age": "adult",
+      "personality": "Playful, athletic and chatty; paddles in the water bowl",
+      "catnipResponder": false,
+      "harness": "onceBonded",
+      "traits": { "sociability": 0.6, "playfulness": 0.95, "boldness": 0.85, "touchSensitivity": 0.5, "chattiness": 0.9 },
+      "maxAffinityRange": [0.4, 0.9],
+      "voicePitch": 1.0
+    },
+    {
+      "id": "pixel",
+      "name": "Pixel",
+      "coat": "Glossy black Bombay",
+      "age": "adult",
+      "personality": "Affectionate shadow and homebody; follows you around the café",
+      "catnipResponder": true,
+      "harness": "never",
+      "traits": { "sociability": 0.95, "playfulness": 0.6, "boldness": 0.4, "touchSensitivity": 0.3, "chattiness": 0.4 },
+      "likedZones": ["head", "cheeks", "chin", "back"],
+      "maxAffinityRange": [0.7, 1.0],
+      "voicePitch": 1.03
+    },
+    {
+      "id": "duchess",
+      "name": "Duchess",
+      "coat": "Cream long-hair",
+      "age": "senior",
+      "personality": "Dignified, naps 20 hours a day",
+      "catnipResponder": true,
+      "harness": "never",
+      "traits": { "sociability": 0.4, "playfulness": 0.15, "boldness": 0.5, "touchSensitivity": 0.6, "chattiness": 0.3 },
+      "likedZones": ["cheeks", "chin"],
+      "sleepHoursPerDay": 20,
+      "maxAffinityRange": [0.3, 0.8],
+      "voicePitch": 0.88
+    }
+  ]
+}

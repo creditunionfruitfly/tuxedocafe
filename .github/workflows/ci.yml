@@ -1,0 +1,57 @@
+# .github/workflows/ci.yml: the required check for every pull request.
+# Actions are pinned to commit SHAs; Dependabot (.github/dependabot.yml) updates them.
+name: ci
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # A decoy base: a hard-coded "/" or "/tuxedocafe/" fails here, before it can break a snapshot.
+      VITE_BASE: /tuxedocafe/base-check/
+      VITE_CHANNEL: pr
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # tags, for git describe in version.json
+      - name: List runtime assets in Git LFS
+        run: git lfs ls-files --long --include "public/assets/**" | cut -d ' ' -f1 | sort > .lfs-ids
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .git/lfs
+          key: lfs-${{ hashFiles('.lfs-ids') }}
+          restore-keys: lfs-
+      - run: git lfs pull --include "public/assets/**"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run audio:check
+      - run: npm run build
+      - name: Fail on Git LFS pointers in the build
+        run: if grep -rlI 'git-lfs.github.com/spec' dist; then exit 1; fi
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Keep screenshots and traces
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: smoke-${{ github.run_id }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- Playtest builds are public but unlisted until launch (README, Playtest builds and CI/CD). -->
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#6EC6FF" />
+    <title>Tuxedo Cafe</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%231E1E24' d='M10 58V22L18 8l8 12h12l8-12 8 14v36z'/%3E%3Cpath fill='%23FFF8EC' d='M24 58l8-18 8 18z'/%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        --sky: #6ec6ff;
+        --aqua: #3ddbd9;
+        --leaf: #8bd450;
+        --cream: #fff8ec;
+        --cocoa: #5b3a29;
+        --tuxedo: #1e1e24;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--cream);
+        color: var(--tuxedo);
+        font: 15px/1.4 "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+        overflow: hidden;
+      }
+      #view {
+        display: block;
+        width: 100vw;
+        height: 100dvh;
+        touch-action: none;
+      }
+      .glass {
+        position: fixed;
+        left: max(12px, env(safe-area-inset-left));
+        bottom: max(12px, env(safe-area-inset-bottom));
+        max-width: min(420px, calc(100vw - 24px));
+        padding: 10px 14px;
+        border-radius: 14px;
+        border: 1px solid rgb(255 255 255 / 70%);
+        background: linear-gradient(180deg, rgb(255 255 255 / 75%), rgb(255 255 255 / 45%));
+        box-shadow: 0 6px 24px rgb(30 30 36 / 18%);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .glass strong {
+        display: block;
+        color: var(--cocoa);
+      }
+      #build-stamp {
+        display: block;
+        margin-top: 4px;
+        font: 12px/1.3 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        opacity: 0.75;
+      }
+      #unsupported {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        text-align: center;
+        background: var(--cream);
+      }
+      #unsupported[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="view" aria-label="The café"></canvas>
+    <div class="glass" id="hud">
+      <strong>Tuxedo Cafe</strong>
+      <span>Baseline build: the café is still under construction.</span>
+      <span id="build-stamp"></span>
+    </div>
+    <div id="unsupported" hidden>
+      <p>Tuxedo Cafe needs WebGL 2, which this browser doesn't offer. Try a current Chrome, Edge, Firefox or Safari.</p>
+    </div>
+    <noscript>Tuxedo Cafe needs JavaScript.</noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

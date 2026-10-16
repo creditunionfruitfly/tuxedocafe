@@ -1,0 +1,11 @@
+# Licenses an asset's .prov.yaml may name. Every one must allow public web
+# distribution, because the playtest site is public (README, Playtest builds and CI/CD).
+# Adding a license needs the Master's sign-off.
+licenses:
+  original: Made for Tuxedo Cafe by the owner or one of the four roles
+  CC0-1.0: Public-domain dedication, such as Poly Haven HDRIs and textures
+  CC-BY-4.0: Allowed with a credit line in CREDITS.md
+  MIT: Such as the MuseScore General SoundFont, for development only
+  Apache-2.0: Apache-licensed assets
+  OFL-1.1: Open fonts, such as Noto Sans
+  elevenlabs-paid: ElevenLabs output generated on the owner's paid plan, which carries a commercial license

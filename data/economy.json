@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "currency": "C$",
+  "player": { "walkSeconds": 10 },
+  "chores": {
+    "water": { "pays": 1, "meanIntervalSeconds": 180, "taskSeconds": 5, "staffAfterSeconds": 120 },
+    "food": { "pays": 2, "meanIntervalSeconds": 240, "taskSeconds": 8, "staffAfterSeconds": 120 },
+    "litter": { "pays": 3, "meanIntervalSeconds": 300, "taskSeconds": 15, "staffAfterSeconds": 120 }
+  },
+  "perks": {
+    "coffee": { "cost": 5, "durationSeconds": 180 },
+    "catnip": { "cost": 8, "durationSeconds": 600, "refractory": "restOfVisit" },
+    "laser": { "cost": 10, "durationSeconds": 120 },
+    "feather": { "cost": 15, "durationSeconds": 180 },
+    "harness": { "cost": 20, "durationSeconds": null }
+  },
+  "targets": {
+    "incomePerHour": 86,
+    "choreShareOfTime": 0.25,
+    "medianMinutesToAfford": { "coffee": 3.8, "catnip": 5.9, "laser": 7.4, "feather": 10.7, "harness": 14.4 }
+  }
+}
