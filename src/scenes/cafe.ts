@@ -5,11 +5,9 @@ import {
   HemisphereLight,
   Mesh,
   MeshStandardMaterial,
-  NeutralToneMapping,
   PerspectiveCamera,
   PlaneGeometry,
   Scene,
-  WebGLRenderer,
 } from 'three';
 
 /**
@@ -30,14 +28,9 @@ const COLORS = {
   walnut: 0x8a5a3c,
 } as const;
 
-export interface PlaceholderCafe {
-  dispose(): void;
-}
+export interface Cafe { scene: Scene; camera: PerspectiveCamera; dispose(): void }
 
-export function mountPlaceholderCafe(canvas: HTMLCanvasElement, onFirstFrame: () => void): PlaceholderCafe {
-  const renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.toneMapping = NeutralToneMapping;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+export function createCafe(): Cafe {
 
   const scene = new Scene();
   scene.background = new Color(COLORS.cream);
@@ -87,31 +80,9 @@ export function mountPlaceholderCafe(canvas: HTMLCanvasElement, onFirstFrame: ()
   sun.position.set(2, 4, 1);
   scene.add(sun);
 
-  const resize = (): void => {
-    const width = canvas.clientWidth || window.innerWidth;
-    const height = canvas.clientHeight || window.innerHeight;
-    renderer.setSize(width, height, false);
-    camera.aspect = width / Math.max(height, 1);
-    camera.updateProjectionMatrix();
-  };
-  window.addEventListener('resize', resize);
-  resize();
-
-  let firstFrame = true;
-  renderer.setAnimationLoop(() => {
-    renderer.render(scene, camera);
-    if (firstFrame) {
-      firstFrame = false;
-      requestAnimationFrame(() => onFirstFrame());
-    }
-  });
-
-  return {
+  return { scene, camera,
     dispose() {
-      renderer.setAnimationLoop(null);
-      window.removeEventListener('resize', resize);
       for (const item of disposables) item.dispose();
-      renderer.dispose();
     },
   };
 }
