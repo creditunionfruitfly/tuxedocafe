@@ -4,6 +4,9 @@ import { defineConfig, devices, type PlaywrightTestConfig } from '@playwright/te
 export const DEFAULT_LIVE_URL = 'https://creditunionfruitfly.github.io/tuxedocafe/';
 
 const PREVIEW_PORT = 4173;
+// Software WebGL may finish two cold GPU contexts during automatic tier selection.
+// This is startup allowance; interaction assertions retain Playwright's 5s default.
+export const STARTUP_TIMEOUT = 60_000;
 
 /**
  * Shared Playwright setup for the local smoke test (`npm run test:e2e`, against
@@ -21,7 +24,7 @@ export function makeConfig(options: { live: boolean }): PlaywrightTestConfig {
     testMatch: '*.spec.ts',
     workers: 1,
     outputDir: 'test-results',
-    timeout: 60_000,
+    timeout: 90_000,
     retries: process.env.CI ? 1 : 0,
     reporter: process.env.CI ? [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]] : 'list',
     use: {

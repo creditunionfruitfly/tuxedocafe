@@ -1,7 +1,8 @@
 import { expect,test,type Page,type TestInfo } from '@playwright/test';
 import { PerspectiveCamera,Vector3 } from 'three';
+import { STARTUP_TIMEOUT } from './config.ts';
 async function enter(page:Page,info?:TestInfo):Promise<void>{
- await page.goto('./?tier=low');await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:30000});await page.locator('#start').click();await page.locator('#patron-name').fill('River');if(info)await page.screenshot({path:info.outputPath('patron-creation.png')});await page.getByRole('button',{name:'Make yourself at home'}).click();await expect(page.locator('body')).toHaveAttribute('data-phase','play');
+ await page.goto('./?tier=low');await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:STARTUP_TIMEOUT});await page.locator('#start').click();await page.locator('#patron-name').fill('River');if(info)await page.screenshot({path:info.outputPath('patron-creation.png')});await page.getByRole('button',{name:'Make yourself at home'}).click();await expect(page.locator('body')).toHaveAttribute('data-phase','play');
 }
 function screenPoint(page:Page,x:number,y:number,z:number):{x:number;y:number}{
  const size=page.viewportSize()!;const camera=new PerspectiveCamera(61,size.width/size.height,.04,60);camera.position.set(0,1.6,2.2);camera.rotation.set(-.08,0,0,'YXZ');camera.updateMatrixWorld();const point=new Vector3(x,y,z).project(camera);return{x:(point.x+1)*size.width/2,y:(1-point.y)*size.height/2};
@@ -49,15 +50,15 @@ test('a dropped bowl can be picked up again and invalid drops return it',async({
  await page.mouse.move(placed.x,placed.y);await expect(page.locator('#hover-menu')).toBeVisible();await page.keyboard.press('1');await expect(page.locator('body')).toHaveAttribute('data-carry','water-bowl');
  await page.mouse.click(900,50);await expect(page.locator('body')).toHaveAttribute('data-carry','');await page.mouse.move(placed.x,placed.y);await expect(page.locator('#hover-menu')).toBeVisible();
 });
-test('lookdev loads the actual 65-bone capsule rig',async({page,isMobile},info)=>{await page.goto(`./?lookdev=cat&tier=${isMobile?'low':'desktop'}`);await expect(page.locator('body')).toHaveAttribute('data-ready','true');await expect(page.locator('body')).toHaveAttribute('data-bones','65');await expect(page.locator('#lookdev-status')).toContainText('capsule rig diagnostic');await page.screenshot({path:info.outputPath('capsule-lookdev.png')});});
+test('lookdev loads the actual 65-bone capsule rig',async({page,isMobile},info)=>{await page.goto(`./?lookdev=cat&tier=${isMobile?'low':'desktop'}`);await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:STARTUP_TIMEOUT});await expect(page.locator('body')).toHaveAttribute('data-bones','65');await expect(page.locator('#lookdev-status')).toContainText('capsule rig diagnostic');await page.screenshot({path:info.outputPath('capsule-lookdev.png')});});
 test('Settings About shows the build and feedback opens a metadata-prefilled draft',async({page})=>{
- await page.goto('./?tier=low');await expect(page.locator('body')).toHaveAttribute('data-ready','true');await page.locator('.top-settings').click();
+ await page.goto('./?tier=low');await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:STARTUP_TIMEOUT});await page.locator('.top-settings').click();
  const stamp=await page.locator('#build-stamp').textContent();await expect(page.locator('#about-build')).toContainText(stamp!);await expect(page.locator('#about-flags')).toContainText('Enabled flags:');
  await page.locator('#feedback').evaluate(link=>link.addEventListener('click',event=>event.preventDefault(),{once:true}));await page.locator('#feedback').click();
  const draft=new URL((await page.locator('#feedback').getAttribute('href'))!);expect(draft.searchParams.get('template')).toBe('playtest.yml');expect(draft.searchParams.get('build')).toContain(stamp!.split(' · ')[0]!);expect(draft.searchParams.get('channel')).toBe(stamp!.split(' · ')[1]);expect(draft.searchParams.get('tier')).toBe('low');expect(draft.searchParams.get('browser')).toMatch(/Mozilla/);expect(draft.searchParams.get('device')).toContain('viewport');
 });
 test('automatic tier boot settles before a patron can begin a draft',async({page})=>{
- await page.goto('./');await expect(page.locator('#start')).toBeEnabled({timeout:30000});await expect(page.locator('#start')).toHaveAttribute('aria-busy','false');await expect(page.locator('body')).toHaveAttribute('data-ready','true');await expect(page.locator('body')).toHaveAttribute('data-gpu-ready','true');
+ await page.goto('./');await expect(page.locator('#start')).toBeEnabled({timeout:STARTUP_TIMEOUT});await expect(page.locator('#start')).toHaveAttribute('aria-busy','false');await expect(page.locator('body')).toHaveAttribute('data-ready','true');await expect(page.locator('body')).toHaveAttribute('data-gpu-ready','true');
  await page.locator('#start').click();await page.locator('#patron-name').fill('Avery');const settledURL=page.url();
  // The benchmark resolves after two seconds; a draft must survive beyond that boundary.
  await page.waitForTimeout(2300);expect(page.url()).toBe(settledURL);await expect(page.locator('body')).toHaveAttribute('data-phase','create');await expect(page.locator('#patron-name')).toHaveValue('Avery');
