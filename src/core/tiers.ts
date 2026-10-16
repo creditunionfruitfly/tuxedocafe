@@ -6,6 +6,7 @@ export const TIER_CONFIG = {
   phone: { min: .7, max: .9, target: 60, shadows: false },
   low: { min: .6, max: .75, target: 30, shadows: false },
 } as const;
+export function needsTierReload(antialias: boolean, tier: Tier): boolean { return antialias !== (tier === 'high' || tier === 'desktop'); }
 export function parseTier(value: string | null): Tier | null { return value === 'high' || value === 'desktop' || value === 'phone' || value === 'low' ? value : null; }
 export function chooseTier(probe: Probe, milliseconds: number): Tier {
   if (milliseconds > 25 || probe.memory < 3 || probe.cores < 4) return 'low';

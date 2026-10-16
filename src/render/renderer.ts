@@ -1,5 +1,5 @@
 import { NeutralToneMapping, PCFSoftShadowMap, WebGLRenderer } from 'three';
-import { TIER_CONFIG, parseTier, type Tier } from '../core/tiers.ts';
+import { TIER_CONFIG, parseTier, needsTierReload, type Tier } from '../core/tiers.ts';
 export function createRenderer(canvas: HTMLCanvasElement): { renderer: WebGLRenderer; configure(tier: Tier): void; resize(): void; adapt(milliseconds: number): void; dispose(): void } {
   const initial = parseTier(new URLSearchParams(location.search).get('tier'));
   const mobile = initial === 'phone' || initial === 'low' || (!initial && matchMedia('(pointer: coarse)').matches);
@@ -10,7 +10,7 @@ export function createRenderer(canvas: HTMLCanvasElement): { renderer: WebGLRend
     renderer.setPixelRatio(Math.min(devicePixelRatio, mobile ? 1.5 : 2) * scale);
     renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
   };
-  const configure = (value: Tier): void => { tier = value; scale = TIER_CONFIG[tier].max; renderer.shadowMap.enabled = TIER_CONFIG[tier].shadows; document.body.dataset.tier = tier; resize(); };
+  const configure = (value: Tier): void => { if(needsTierReload(!mobile,value)){const url=new URL(location.href);url.searchParams.set('tier',value);location.replace(url.href);return;} tier = value; scale = TIER_CONFIG[tier].max; renderer.shadowMap.enabled = TIER_CONFIG[tier].shadows; document.body.dataset.tier = tier; resize(); };
   window.addEventListener('resize', resize); configure(tier);
   return { renderer, configure, resize, adapt(milliseconds) {
     average += (milliseconds - average) * .03;
