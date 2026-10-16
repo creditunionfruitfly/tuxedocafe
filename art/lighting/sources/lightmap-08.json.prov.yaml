@@ -1,0 +1,5 @@
+source: tools/art/bake-cafe.py
+tool: Blender Cycles CPU original offline lighting
+date: '2026-10-16'
+license: original
+author_role: artist

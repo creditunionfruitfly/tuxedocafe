@@ -1,0 +1,4 @@
+# Offline authoring preview; CI reconstructs the runtime PNG from source JSON.
+*.png
+*.png.prov.yaml
+*.hdr.npz
