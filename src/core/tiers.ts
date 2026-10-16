@@ -9,7 +9,8 @@ export const TIER_CONFIG = {
 export function parseTier(value: string | null): Tier | null { return value === 'high' || value === 'desktop' || value === 'phone' || value === 'low' ? value : null; }
 export function chooseTier(probe: Probe, milliseconds: number): Tier {
   if (milliseconds > 25 || probe.memory < 3 || probe.cores < 4) return 'low';
-  if (probe.mobile) return milliseconds <= 19 ? 'phone' : 'low';
+  if (milliseconds > 19) return 'low';
+  if (probe.mobile) return 'phone';
   return probe.memory >= 8 && probe.cores >= 8 && probe.samples >= 4 && milliseconds <= 17 ? 'high' : 'desktop';
 }
 export function probeDevice(context: WebGL2RenderingContext): Probe {

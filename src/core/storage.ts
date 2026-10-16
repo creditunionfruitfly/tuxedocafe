@@ -46,7 +46,9 @@ export class SaveStore<T extends SavedState> {
     if (raw === null) return this.fresh();
     try { return migrateSave(JSON.parse(raw), this.fresh().schemaVersion, this.migrations) as T; }
     catch {
-      try { this.fallback?.setItem(`${key}:backup`, raw); } catch { this.#memory.set(`${key}:backup`, raw); }
+      this.#memory.set(`${key}:backup`, raw);
+      try { this.fallback?.setItem(`${key}:backup`, raw); } catch { /* The memory backup is retained. */ }
+      try { if (this.#db) this.#db.transaction('saves', 'readwrite').objectStore('saves').put(raw, `${name}:backup`); } catch { /* Backups also remain in memory. */ }
       this.notice('Your previous save was kept as a backup. A fresh visit is ready.');
       const fresh = this.fresh(); await this.save(name, fresh); return fresh;
     }

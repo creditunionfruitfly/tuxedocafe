@@ -1,7 +1,8 @@
 import { NeutralToneMapping, PCFSoftShadowMap, WebGLRenderer } from 'three';
-import { TIER_CONFIG, type Tier } from '../core/tiers.ts';
+import { TIER_CONFIG, parseTier, type Tier } from '../core/tiers.ts';
 export function createRenderer(canvas: HTMLCanvasElement): { renderer: WebGLRenderer; configure(tier: Tier): void; resize(): void; adapt(milliseconds: number): void; dispose(): void } {
-  const mobile = matchMedia('(pointer: coarse)').matches;
+  const initial = parseTier(new URLSearchParams(location.search).get('tier'));
+  const mobile = initial === 'phone' || initial === 'low' || (!initial && matchMedia('(pointer: coarse)').matches);
   const renderer = new WebGLRenderer({ canvas, antialias: !mobile, powerPreference: 'high-performance' });
   renderer.toneMapping = NeutralToneMapping; renderer.shadowMap.type = PCFSoftShadowMap;
   let tier: Tier = mobile ? 'phone' : 'desktop'; let scale = TIER_CONFIG[tier].max as number; let average = 16.7; let frames = 0;
