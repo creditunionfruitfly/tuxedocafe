@@ -8,5 +8,15 @@
   "carryForwardMeters": 0.8,
   "carrySideMeters": 0.2,
   "carryHeightMeters": 1.32,
-  "tapBowlHeightMeters": 1.2
+  "tapBowlHeightMeters": 1.2,
+  "floorTapMaxMeters": 14,
+  "lookMouseRadPerPx": 0.003,
+  "lookTouchRadPerPx": 0.006,
+  "radialFullPxMouse": 160,
+  "radialFullPxTouch": 90,
+  "radialMaxRadPerSecondMouse": 2.4,
+  "radialMaxRadPerSecondTouch": 3.2,
+  "radialCurve": 1.6,
+  "keyLookRadPerSecond": 1.8,
+  "reducedMotionLookScale": 0.57
 }
