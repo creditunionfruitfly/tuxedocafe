@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%231d4244' d='M10 58V22L18 8l8 12h12l8-12 8 14v36z'/%3E%3Cpath fill='%23fff8ec' d='M24 58l8-18 8 18z'/%3E%3C/svg%3E" />
 </head>
 <body data-phase="title">
-<canvas id="view" tabindex="0" aria-label="A sunlit three dimensional cat café. WASD or floor drag to walk. Double-tap clear floor to jump there. Right drag or two fingers to look. Approach objects and tap for actions."></canvas>
+<canvas id="view" tabindex="0" aria-label="A sunlit three dimensional cat café. Drag to look around; the farther you drag, the faster you turn. Tap the floor to walk there, or double-tap clear floor to jump. WASD to walk and arrow keys to look. Approach objects and tap for actions."></canvas>
 <header id="brand"><span class="catmark" aria-hidden="true">◕</span><span>TUXEDO <b>CAFE</b><small>A LITTLE ROOM TO UNWIND</small></span></header>
 <button class="icon-button top-settings" data-settings aria-label="Open settings">⚙ <span>Settings</span></button>
 <main id="title-screen">
@@ -53,7 +53,7 @@
 <div id="play-hud" hidden>
  <div id="chore-card" class="glass hud-card"><div class="eyebrow">A LITTLE HELP</div><strong>Water the regulars</strong><p id="task-copy">Approach the blue bowl and choose Pick up. Carry it to the tap, choose Fill, then return it to its mat.</p><progress id="water-progress" max="1" value="0" hidden></progress></div>
  <div class="play-buttons"><button id="help" class="icon-button" aria-label="Show controls">? <span>Controls</span></button><button id="leave" class="icon-button">↶ <span>Take a break</span></button></div>
- <div id="controls" class="glass" hidden><strong>Take your time.</strong><p><kbd>WASD</kbd> or floor drag to walk · right drag to look<br>Double-click / double-tap clear floor to jump (5 m)<br>Approach, then tap or hover for actions<br>Pick up to carry · choose Place to put it down<br>Touch: two fingers to look, pinch to lean</p></div>
+ <div id="controls" class="glass" hidden><strong>Take your time.</strong><p>Drag to look around · the farther you drag, the faster you turn<br>Tap the floor to walk there · double-click / double-tap to jump (5 m)<br><kbd>WASD</kbd> walk · <kbd>←</kbd><kbd>→</kbd> turn · <kbd>↑</kbd><kbd>↓</kbd> look up and down<br>Approach, then tap or hover for actions<br>Pick up to carry · choose Place to put it down<br>Fine aim: right drag or two fingers · pinch to lean</p></div>
  <span id="reticle" aria-hidden="true"></span>
 </div>
 <div id="hover-menu" class="glass" hidden></div>

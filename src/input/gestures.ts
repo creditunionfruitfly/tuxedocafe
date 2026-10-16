@@ -1,5 +1,5 @@
 import controls from '../../data/interaction.json' with { type: 'json' };
-export type Gesture = 'hover' | 'menu' | 'stroke' | 'hold' | 'move' | 'walk' | 'look';
+export type Gesture = 'hover' | 'menu' | 'stroke' | 'hold' | 'radial' | 'walk' | 'look';
 export type TargetKind = 'floor' | 'object' | 'cat' | 'none';
 export class Gestures {
   state: Gesture = 'hover'; down = false; elapsed = 0; moved = 0; target: TargetKind = 'none'; toggle = false; holdMs = 250;
@@ -11,7 +11,7 @@ export class Gestures {
   move(distance: number, fingers = 1): Gesture {
     this.moved = Math.max(this.moved,distance);
     if (fingers > 1) return this.state = 'look';
-    if (this.down && this.moved > controls.dragThresholdPx && this.state !== 'look') this.state = this.target === 'object' ? 'hold' : this.target === 'cat' ? 'stroke' : this.target === 'floor' ? 'move' : 'hover';
+    if (this.down && this.moved > controls.dragThresholdPx && this.state !== 'look') this.state = this.target === 'object' ? 'hold' : this.target === 'cat' ? 'stroke' : 'radial';
     return this.state;
   }
   tick(dt: number): Gesture {

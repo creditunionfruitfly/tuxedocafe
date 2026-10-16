@@ -23,7 +23,8 @@ export function raycastProxies(ray: Ray, targets: readonly ProxyTarget[], exclud
     const d=point.distanceToSquared(ray.origin); if(d<distance) { distance=d;target=candidate;hitPoint.copy(point); }
   }
   if(ray.intersectPlane(floor,point) && point.x>=-5 && point.x<=5 && point.z>=-5 && point.z<=3 && point.distanceToSquared(ray.origin)<distance) { target=floorTarget;hitPoint.copy(point); }
-  if(!target || hitPoint.distanceToSquared(ray.origin)>49)return null;
+  // Objects answer within 7 m; the floor answers across the room so a tap can walk anywhere in view.
+  if(!target || hitPoint.distanceToSquared(ray.origin)>(target===floorTarget?controls.floorTapMaxMeters**2:49))return null;
   const normal=result.normal;normal.set(0,1,0);
   if(target.kind==='object') {
     const b=target.box; const p=hitPoint; const e=.002;
