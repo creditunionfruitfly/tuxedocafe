@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%231d4244' d='M10 58V22L18 8l8 12h12l8-12 8 14v36z'/%3E%3Cpath fill='%23fff8ec' d='M24 58l8-18 8 18z'/%3E%3C/svg%3E" />
 </head>
 <body data-phase="title">
-<canvas id="view" tabindex="0" aria-label="A sunlit three dimensional cat café. Use WASD to walk, right drag to look, and hover over objects to interact."></canvas>
+<canvas id="view" tabindex="0" aria-label="A sunlit three dimensional cat café. WASD or floor drag to walk. Double-tap clear floor to jump there. Right drag or two fingers to look. Approach objects and tap for actions."></canvas>
 <header id="brand"><span class="catmark" aria-hidden="true">◕</span><span>TUXEDO <b>CAFE</b><small>A LITTLE ROOM TO UNWIND</small></span></header>
 <button class="icon-button top-settings" data-settings aria-label="Open settings">⚙ <span>Settings</span></button>
 <main id="title-screen">
@@ -51,9 +51,9 @@
  </div>
 </section>
 <div id="play-hud" hidden>
- <div id="chore-card" class="glass hud-card"><div class="eyebrow">A LITTLE HELP</div><strong>Water the regulars</strong><p id="task-copy">Carry the blue water bowl to the tap. Hold for 3 seconds, then return it.</p><progress id="water-progress" max="1" value="0" hidden></progress></div>
+ <div id="chore-card" class="glass hud-card"><div class="eyebrow">A LITTLE HELP</div><strong>Water the regulars</strong><p id="task-copy">Approach the blue bowl and choose Pick up. Carry it to the tap, choose Fill, then return it to its mat.</p><progress id="water-progress" max="1" value="0" hidden></progress></div>
  <div class="play-buttons"><button id="help" class="icon-button" aria-label="Show controls">? <span>Controls</span></button><button id="leave" class="icon-button">↶ <span>Take a break</span></button></div>
- <div id="controls" class="glass" hidden><strong>Take your time.</strong><p><kbd>WASD</kbd> walk · right drag to look<br>Tap the floor to walk · scroll to lean<br>Hover for actions · drag a bowl to carry<br>Touch: two fingers to look, pinch to lean</p></div>
+ <div id="controls" class="glass" hidden><strong>Take your time.</strong><p><kbd>WASD</kbd> or floor drag to walk · right drag to look<br>Double-click / double-tap clear floor to jump (5 m)<br>Approach, then tap or hover for actions<br>Pick up to carry · choose Place to put it down<br>Touch: two fingers to look, pinch to lean</p></div>
  <span id="reticle" aria-hidden="true"></span>
 </div>
 <div id="hover-menu" class="glass" hidden></div>
@@ -64,7 +64,7 @@
   <label>Visual quality<select name="tier"><option value="auto">Automatic</option><option value="high">Desktop high</option><option value="desktop">Desktop default</option><option value="phone">Phone</option><option value="low">Low phone</option></select></label>
   <label>Hold time<input name="holdMs" type="range" min="150" max="1000" step="50" /></label>
   <label>Music<input name="music" type="range" min="0" max="1" step=".05" /></label><label>Effects<input name="effects" type="range" min="0" max="1" step=".05" /></label>
- </div><label class="check"><input type="checkbox" name="holdToggle" /> Tap to pick up / tap to place</label><label class="check"><input type="checkbox" name="leftHanded" /> Left handed layout</label><label class="check"><input type="checkbox" name="reducedMotion" /> Reduced motion</label><label class="check"><input type="checkbox" name="captions" /> Sound captions</label></form>
+ </div><label class="check"><input type="checkbox" name="holdToggle" /> Tap to carry (no holding required)</label><label class="check"><input type="checkbox" name="leftHanded" /> Left handed layout</label><label class="check"><input type="checkbox" name="reducedMotion" /> Reduced motion</label><label class="check"><input type="checkbox" name="captions" /> Sound captions</label></form>
  <p class="fine">Your visit saves automatically on this device.</p><div id="about"><strong>About this build</strong><p id="about-build" class="fine"></p><p id="about-flags" class="fine"></p></div><a id="feedback" href="https://github.com/creditunionfruitfly/tuxedocafe/issues/new?template=playtest.yml" target="_blank" rel="noreferrer">Share playtest feedback ↗</a>
 </dialog>
 <footer><span>COFFEE. CATS. NO HURRY.</span><span id="build-stamp"></span></footer>

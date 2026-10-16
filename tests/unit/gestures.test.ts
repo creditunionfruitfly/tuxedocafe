@@ -4,3 +4,4 @@ it.each([['object','hold'],['cat','stroke'],['floor','move']] as const)('recogni
 it('recognizes floor taps, right drag, two fingers, dwell and toggle', () => {
  const g=new Gestures();g.press('floor');expect(g.release()).toBe('walk');expect(g.press('floor',true)).toBe('look');g.release();g.press('floor');expect(g.move(2,2)).toBe('look');g.reset();g.target='object';expect(g.tick(.25)).toBe('menu');g.reset();g.toggle=true;expect(g.press('object')).toBe('hold');expect(g.release()).toBe('hold');expect(g.press('object')).toBe('hover');
 });
+it('uses displacement deadzone and never turns a distant-object drag into floor movement',()=>{const g=new Gestures();g.press('floor');for(let i=0;i<30;i++)expect(g.move(2)).toBe('hover');expect(g.move(9)).toBe('move');g.reset();g.press('none');expect(g.move(20)).toBe('hover');});
