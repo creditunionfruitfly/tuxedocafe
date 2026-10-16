@@ -1,0 +1,8 @@
+# Project-scoped Codex settings. Subagent roles live in .codex/agents/; AGENTS.md is the source of truth for ownership.
+# Agents omit `model` so they inherit the session model; add one per AGENTS.md routing once the ID is confirmed with /model.
+[features]
+multi_agent = true # default-on in newer Codex; harmless where it is
+
+[agents]
+max_threads = 3 # Engine, Artist, Composer at most
+max_depth = 1   # subagents never spawn their own
