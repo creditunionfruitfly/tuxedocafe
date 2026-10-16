@@ -5,7 +5,8 @@ import { gunzipSync } from 'node:zlib';
 import { Accessor, type Document, type Primitive } from '@gltf-transform/core';
 
 const SOURCE = 'art/lighting/cafe-daylight.json';
-const MOVABLE = new Set(['water-bowl', 'food-bowl', 'scoop']);
+// Movable props and the probe-lit entry wall stay out of the static atlas.
+const UNBAKED = new Set(['water-bowl', 'food-bowl', 'scoop', 'entry']);
 interface Record { key: string; matrix: number[]; positions: number[]; normals: number[]; indices: number[]; color: number[]; emission: number[] }
 interface Bake {
   signature: string; resolution: number; exposure: number; excluded: string[];
@@ -20,7 +21,7 @@ export async function applyCafeLightBake(doc: Document): Promise<void> {
   const records: Record[] = [], prims: Primitive[] = [];
   const hash = createHash('sha256');
   for (const node of doc.getRoot().listNodes()) {
-    if (MOVABLE.has(node.getName()) || !node.getMesh()) continue;
+    if (UNBAKED.has(node.getName()) || !node.getMesh()) continue;
     for (const [i, prim] of node.getMesh()!.listPrimitives().entries()) {
       const material = prim.getMaterial();
       const key = `${node.getName()}/${i}:${material?.getName() ?? ''}`;
@@ -82,5 +83,5 @@ export async function applyCafeLightBake(doc: Document): Promise<void> {
   writeFileSync(`${output}/cafe-daylight.png`, png);
   writeFileSync(`${output}/cafe-daylight.json`, JSON.stringify({ signature, resolution: bake.resolution, exposure: bake.exposure, probes: bake.probes, metadata: bake.metadata }));
   for (const name of ['cafe-daylight.png', 'cafe-daylight.json']) writeFileSync(`${output}/${name}.prov.yaml`, `source: ${SOURCE}\ntool: Blender Cycles offline irradiance bake\ndate: '2026-10-16'\nlicense: original\nauthor_role: artist\n`);
-  console.log(`Cafe light bake: ${bake.resolution}px, ${records.length} static primitives; movable props excluded`);
+  console.log(`Cafe light bake: ${bake.resolution}px, ${records.length} static primitives; movable props and entry wall excluded`);
 }
