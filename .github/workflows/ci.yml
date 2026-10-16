@@ -38,6 +38,9 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - run: npm run assets
+      - name: Build original audio bank
+        run: if [ -f tools/audio/build-audio.ts ]; then node tools/audio/build-audio.ts; fi
       - run: npm run check
       - run: npm run audio:check
       - run: npm run build

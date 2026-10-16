@@ -12,3 +12,8 @@ coverage/
 .env.*
 .DS_Store
 Thumbs.db
+
+# Reproducible originals: built and validated before every CI check/build.
+public/assets/art/env_cafe.glb*
+public/assets/art/hand.glb*
+public/assets/art/cats/cat_placeholder_lod0.glb*

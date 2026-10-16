@@ -5,7 +5,7 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
-      include: ['tests/unit/**/*.test.ts', 'tests/sim/**/*.test.ts'],
+      include: ['tests/unit/**/*.test.ts', 'tests/sim/**/*.test.ts', 'tools/audio/**/*.test.ts'],
       environment: 'node',
     },
   }),
