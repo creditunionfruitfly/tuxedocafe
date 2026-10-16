@@ -20,7 +20,7 @@ export async function makeCafe() {
   doc.createBuffer();
   const scene = doc.createScene('Tuxedo Cafe · conservatory');
   const materials = Object.fromEntries(Object.entries(palette).map(([name, color]) => {
-    const linear = new ThreeColor(...color).convertSRGBToLinear().toArray();
+    const linear = new ThreeColor(...color).convertSRGBToLinear().toArray() as P;
     const material = doc.createMaterial(name).setBaseColorFactor([...linear, 1]).setMetallicFactor(0).setRoughnessFactor(name === 'brass' ? .32 : .78);
     if (name === 'brass') material.setMetallicFactor(.65);
     if (name === 'light') material.setEmissiveFactor([1, .72, .36]);
