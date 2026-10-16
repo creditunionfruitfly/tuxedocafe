@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { STARTUP_TIMEOUT } from './config.ts';
 
 const expectCommit = process.env.EXPECT_COMMIT;
 
@@ -28,7 +29,7 @@ test('boots the café with no console errors', async ({ page }, testInfo) => {
   page.on('pageerror', (error) => problems.push(String(error)));
 
   await page.goto('./');
-  await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: 30_000 });
+  await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: STARTUP_TIMEOUT });
   await expect(page.locator('body')).toHaveAttribute('data-live-version', /^(ok|newer)$/);
   await expect(page.locator('#build-stamp')).toHaveText(/\S+ · \S+/);
 
