@@ -1,4 +1,4 @@
-import { BufferGeometry, Vector3 } from 'three';
+import { BufferGeometry, DoubleSide, Mesh, MeshBasicMaterial, Raycaster, Vector3, type Intersection } from 'three';
 
 /** Check authored members after their final world transforms, before batching. */
 export function assertContact(name: string, a: BufferGeometry, b: BufferGeometry, tolerance = .002) {
@@ -25,3 +25,27 @@ export function assertPostUnderDeck(name: string, center: [number, number, numbe
   }
 }
 
+
+export interface Opening { z: number; minX: number; maxX: number; minY: number; maxY: number }
+
+/** 360° look needs café on every side: each eye ray from a standing spot must meet authored
+ * geometry, or leave through a glazed opening onto the sky. */
+export function assertEnclosed(pieces: readonly BufferGeometry[], eyes: readonly [number, number, number][],
+  openings: readonly Opening[], far = 14) {
+  const material = new MeshBasicMaterial({ side: DoubleSide }), raycaster = new Raycaster(), hits: Intersection[] = [];
+  const meshes = pieces.map(geometry => { geometry.computeBoundingBox(); geometry.computeBoundingSphere(); return new Mesh(geometry, material); });
+  raycaster.far = far;
+  for (const eye of eyes) for (let yaw = 0; yaw < 360; yaw += 5) for (const pitch of [-75, -45, -20, 0, 20, 45, 75]) {
+    const y = yaw * Math.PI / 180, p = pitch * Math.PI / 180;
+    raycaster.set(new Vector3(...eye), new Vector3(-Math.sin(y) * Math.cos(p), Math.sin(p), -Math.cos(y) * Math.cos(p)));
+    hits.length = 0;
+    for (const mesh of meshes) { if (raycaster.ray.intersectsBox(mesh.geometry.boundingBox!)) mesh.raycast(raycaster, hits); if (hits.length) break; }
+    const { origin, direction } = raycaster.ray;
+    const outside = openings.some(o => {
+      const t = (o.z - origin.z) / direction.z, x = origin.x + direction.x * t, y = origin.y + direction.y * t;
+      return t > 0 && x >= o.minX && x <= o.maxX && y >= o.minY && y <= o.maxY;
+    });
+    if (!hits.length && !outside) throw new Error(`Cafe enclosure: from (${eye.join(', ')}) yaw ${yaw}° pitch ${pitch}° sees open space within ${far} m`);
+  }
+  material.dispose();
+}

@@ -1,14 +1,20 @@
 # Conservatory cafe source
 
 `generate.ts` is the original, deterministic source. Run `npm run assets`.
-The environment uses 126,836 triangles, meshopt-compressed geometry and 57 shared
-material batches, below the 150k-triangle and 80-draw Phone limits before the hand.
+The environment uses 129,252 triangles, meshopt-compressed geometry and 57 shared
+material batches plus six probe-lit entry batches, below the 150k-triangle and 80-draw Phone limits before the hand.
 Every emitted surface has a material and finite meter-scaled UV0; static surfaces
 receive a separate UV1 atlas for the offline daylight bake. Original oak, fabric,
 stone, sisal and metal surface maps replace flat-color shading. Run the source
 build to print the exact triangle and byte budgets; the cafe hard limit is 150k.
 
 Coordinates in meters: room x −5…5, z −5…3; entry (0, 1.6, 2.2).
+The entry wall at z 3 closes the room behind the patron for 360° look: a glazed
+oak door, chalk menu board and coat rail, in six materials. It is probe-lit and
+excluded from the static bake (like the bowls) until the next Cycles rebake.
+`assertEnclosed` casts eye rays every 5° of yaw at seven pitches from six
+standing spots and fails the build if any ray finds open space instead of café
+geometry or the glazed courtyard window.
 Counter x −4.6…−1, z −4.65…−3.75; sink (−2, 1.1, −3.68).
 Water bowl (1.4, 0, −0.7), food bowl (1.9, 0, −0.7), contact-point pivots.
 Tables centered at (−2, .76, −.6) and (.5, .76, −3.1), radius .66.

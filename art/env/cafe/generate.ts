@@ -6,7 +6,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { primitive, saveAsset } from '../../../tools/art/gltf.ts';
 import { createCafeMaterials, applySurfaceUV } from '../../../tools/art/materials.ts';
 import { applyCafeLightBake } from '../../../tools/art/bake-cafe.ts';
-import { assertContact, assertPostUnderDeck, assertSurfaceUV } from './geometry-qa.ts';
+import { assertContact, assertEnclosed, assertPostUnderDeck, assertSurfaceUV } from './geometry-qa.ts';
 
 type P = [number, number, number];
 const palette = {
@@ -83,6 +83,34 @@ export async function makeCafe() {
   }
   for (let z = -4.8; z < 3; z += .48) box([.065, 1.0, .035], 'oakLight', [-4.93, .5, z]);
   for (let x = -4.8; x < 5; x += .65) box([.075, .10, 8], 'oakLight', [x, 3.25, -1]);
+  // Entry wall behind the patron closes the room for 360° look. It stays out of the
+  // static bake (probe-lit like the bowls) until the next Cycles rebake.
+  group = 'entry';
+  for (const side of [-1, 1]) {
+    box([4.51, 3.35, .16], 'plaster', [side * 2.855, 1.65, 3.03]);
+    box([4.215, .18, .09], 'oakDark', [side * 2.7975, .09, 2.905]);
+    box([4.215, .035, .1], 'brass', [side * 2.7975, .95, 2.9]);
+    box([.09, 2.3, .22], 'oakDark', [side * .645, 1.15, 3.03]);
+  }
+  box([1.2, 1.1, .16], 'plaster', [0, 2.775, 3.03]);
+  box([1.38, .09, .22], 'oakDark', [0, 2.27, 3.03]);
+  const door = box([1.2, 2.22, .05], 'oak', [0, 1.11, 3.0]);
+  box([.78, 1.18, .02], 'oakDark', [0, 1.5, 2.966]);
+  box([.7, 1.1, .02], 'glass', [0, 1.5, 2.956]);
+  const handle = cyl(.02, .05, 'brass', [.42, 1.05, 2.955], .02, [Math.PI / 2, 0, 0]);
+  assertContact('entry door/handle', door, handle);
+  cyl(.016, .2, 'brass', [.42, 1.05, 2.93], .016, [0, 0, Math.PI / 2]);
+  // Chalk menu board and coat rail keep the far side of the room readable.
+  box([1.1, .8, .05], 'oakDark', [-2.6, 1.6, 2.925]);
+  box([1.0, .7, .02], 'charcoal', [-2.6, 1.6, 2.89]);
+  for (let i = 0; i < 4; i++) box([.6 - i * .08, .02, .005], 'plaster', [-2.6, 1.82 - i * .13, 2.878]);
+  const rail = box([1.2, .12, .03], 'oak', [2.6, 1.75, 2.935]);
+  for (const x of [2.15, 2.45, 2.75, 3.05]) {
+    const hook = beam([x, 1.75, 2.925], [x, 1.8, 2.85], .012, 'brass');
+    assertContact('entry coat hook/rail', rail, hook);
+    ball([.022, .022, .022], 'brass', [x, 1.8, 2.85]);
+  }
+  group = 'architecture';
   // Window banquette, upholstered channel seams and brass feet.
   const banquetteSeat = box([3.4, .46, .65], 'lagoon', [2.0, .34, -4.45], .065);
   const banquetteBack = box([3.4, .58, .16], 'teal', [2.0, .855, -4.72], .045);
@@ -269,6 +297,10 @@ export async function makeCafe() {
   for (const x of [-2.51, -2.29]) ball([.055, .10, .02], 'charcoal', [x, 2.76, -4.8], [0, 0, x < -2.4 ? .3 : -.3]);
   ball([.08, .08, .015], 'cream', [-2.4, 2.56, -4.765]);
 
+  // Standing eye points: spawn, both entry corners and the far side of the room.
+  assertEnclosed([...groups.values()].flatMap(map => [...map.values()].flat()),
+    [[0, 1.6, 2.2], [-4.7, 1.6, 2.75], [4.7, 1.6, 2.75], [-4.5, 1.6, -2.6], [4.6, 1.6, -1], [.5, 1.6, -1.8]],
+    [{ z: -5, minX: -.2, maxX: 4.18, minY: .83, maxY: 2.81 }]);
   for (const [name, map] of groups) {
     const mesh = doc.createMesh(name);
     for (const [color, geos] of map) {
