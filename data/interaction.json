@@ -1,0 +1,11 @@
+{
+  "reachMeters": 1.65,
+  "dragThresholdPx": 8,
+  "doubleTapSeconds": 0.32,
+  "doubleTapRadiusPx": 28,
+  "walkMetersPerSecond": 1.4,
+  "jumpMaxMeters": 5,
+  "carryForwardMeters": 0.65,
+  "carrySideMeters": 0.2,
+  "carryHeightMeters": 1.12
+}
