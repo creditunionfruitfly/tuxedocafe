@@ -49,3 +49,9 @@ test('a dropped bowl can be picked up again and invalid drops return it',async({
  await page.mouse.click(900,50);await expect(page.locator('body')).toHaveAttribute('data-carry','');await page.mouse.move(placed.x,placed.y);await expect(page.locator('#hover-menu')).toBeVisible();
 });
 test('lookdev loads the actual 65-bone capsule rig',async({page,isMobile},info)=>{await page.goto(`./?lookdev=cat&tier=${isMobile?'low':'desktop'}`);await expect(page.locator('body')).toHaveAttribute('data-ready','true');await expect(page.locator('body')).toHaveAttribute('data-bones','65');await expect(page.locator('#lookdev-status')).toContainText('capsule rig diagnostic');await page.screenshot({path:info.outputPath('capsule-lookdev.png')});});
+test('Settings About shows the build and feedback opens a metadata-prefilled draft',async({page})=>{
+ await page.goto('./?tier=low');await expect(page.locator('body')).toHaveAttribute('data-ready','true');await page.locator('.top-settings').click();
+ const stamp=await page.locator('#build-stamp').textContent();await expect(page.locator('#about-build')).toContainText(stamp!);await expect(page.locator('#about-flags')).toContainText('Enabled flags:');
+ await page.locator('#feedback').evaluate(link=>link.addEventListener('click',event=>event.preventDefault(),{once:true}));await page.locator('#feedback').click();
+ const draft=new URL((await page.locator('#feedback').getAttribute('href'))!);expect(draft.searchParams.get('template')).toBe('playtest.yml');expect(draft.searchParams.get('build')).toContain(stamp!.split(' · ')[0]!);expect(draft.searchParams.get('channel')).toBe(stamp!.split(' · ')[1]);expect(draft.searchParams.get('tier')).toBe('low');expect(draft.searchParams.get('browser')).toMatch(/Mozilla/);expect(draft.searchParams.get('device')).toContain('viewport');
+});

@@ -22,6 +22,7 @@ import { makeProxy } from './interaction/proxies.ts';
 import { HoldDrag } from './interaction/hold-drag.ts';
 import { TapFill } from './interaction/tap-fill.ts';
 import { createHand } from './interaction/hand.ts';
+import { mountAbout } from './ui/about.ts';
 import { mountShell } from './ui/shell.ts';
 import { mountHoverMenu } from './ui/hover-menu.ts';
 import { freshVisit,cleanVisit } from './save/visit.ts';
@@ -70,7 +71,7 @@ try {
     else if(action==='Clean')bus.emit('notice',{text:'This station is tidy. Staff keep every cat comfortable.'});else bus.emit('notice',{text:'A lovely spot for a quiet cup.'});
   });
   installOrientation(value=>{paused=value;loop.paused=value;loop.reset();pointer.active(playing&&!paused);});
-  mountShell(bus,visit,save);
+  mountShell(bus,visit,save);mountAbout(buildInfo);
   await cafe.load();const handLoader=new GLTFLoader();handLoader.setMeshoptDecoder(MeshoptDecoder);const gltf=await handLoader.loadAsync(assetUrl('art/hand.glb'));hand.setModel(gltf.scene,gltf.animations);if(visit.profile)hand.customize(visit.profile.skin,visit.profile.sleeve);
   body.dataset.ready='true';
   display.renderer.setAnimationLoop(time=>{
