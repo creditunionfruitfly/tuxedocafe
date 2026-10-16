@@ -402,23 +402,48 @@ tuxedocafe/
 
 ## Getting started
 
-These commands are created in milestone M0. Install Git LFS first: `art/` and `public/assets/` live in it, and every LFS download counts against the owner's monthly LFS bandwidth, so clone without LFS content and fetch only the paths you work on.
+Use Node 24, Python 3 and ffmpeg with Vorbis encoding support. Install Git LFS
+for authored model/texture/recording sources. The current original cafe, hand,
+capsule and small SoundFont are generated from source recipes; build them before
+running the game or checks. The current procedural art build does not need Blender.
+Later authored asset imports will use Blender and KTX-Software.
+
+Clone without LFS content, then fetch only required runtime paths to conserve
+bandwidth. Artists add the source paths they edit to `lfs.fetchinclude`.
 
 ```bash
-GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/creditunionfruitfly/tuxedocafe.git && cd tuxedocafe
-git config lfs.fetchinclude "public/assets/**"   # artists add the art/ paths they edit
+GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/creditunionfruitfly/tuxedocafe.git
+cd tuxedocafe
+git config lfs.fetchinclude "public/assets/**"
 git lfs pull
 npm ci
-npm run dev          # Vite dev server at http://localhost:5173/tuxedocafe/
-npm run build        # production bundle
-npm run preview      # serve the build at http://localhost:4173/tuxedocafe/, as Pages does
-npm run check        # typecheck, lint, unit and simulation tests, asset and provenance checks
-npm run test:e2e     # Playwright smoke test with screenshots
-npm run test:live    # the same smoke test against the live Pages build
-npm run assets       # art/ -> public/assets/ (needs Blender, KTX-Software)
-npm run audio:check  # validate MIDI cues and the SoundFont, render Opus fallbacks
-npm run sim:economy  # replay economy pacing against data/economy.json
+npm run assets                    # generate and validate original GLBs
+node tools/audio/build-audio.ts    # generate the original MIDI/SF3 (Python + ffmpeg)
+npm run check                     # types, lint, tests, provenance
+npm run audio:check                # source MIDI/SF3/manifest validation
+npm run dev                       # http://localhost:5173/tuxedocafe/
 ```
+
+For production and browser tests:
+
+```bash
+npm run build
+npm run preview                   # http://localhost:4173/tuxedocafe/
+npx playwright install chromium   # once, before browser tests
+npm run test:e2e
+npm run test:live
+npm run sim:economy
+```
+
+Re-run both asset-generation commands after changing their sources. CI builds
+the originals before validation on PRs, Pages and milestone releases. Live MIDI
+playback and encoded audio fallbacks are M3 work.
+
+The prepared M1 implementation is on `engine/M1-first-visit` (stacked on the
+Artist cafe candidate); check out that branch to review the splash and patron
+flow. Implementation status and open milestone acceptance gates are recorded in
+[docs/implementation-status.md](docs/implementation-status.md). Frozen milestone
+snapshots and physical-device performance are not implied by emulator results.
 
 ## Playtest builds and CI/CD
 
