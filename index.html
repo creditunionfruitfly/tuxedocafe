@@ -67,6 +67,7 @@
         text-align: center;
         background: var(--cream);
       }
+      [hidden] { display: none !important; }
       #unsupported[hidden] {
         display: none;
       }
@@ -76,9 +77,11 @@
     <canvas id="view" aria-label="The café"></canvas>
     <div class="glass" id="hud">
       <strong>Tuxedo Cafe</strong>
-      <span>Baseline build: the café is still under construction.</span>
+      <span>Empty café · a little room to unwind.</span>
       <span id="build-stamp"></span>
     </div>
+    <button id="update" class="glass" hidden>A fresh café build is ready · Reload</button>
+    <div id="rotate" hidden style="position:fixed;inset:0;background:#fff8ec;z-index:99;display:grid;place-content:center;text-align:center"><strong>Turn your device sideways</strong><p>The café is best enjoyed in landscape.</p></div>
     <div id="unsupported" hidden>
       <p>Tuxedo Cafe needs WebGL 2, which this browser doesn't offer. Try a current Chrome, Edge, Firefox or Safari.</p>
     </div>
