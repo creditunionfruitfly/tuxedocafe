@@ -1,74 +1,31 @@
 import buildInfo from 'virtual:build-info';
-import './ui/styles.css';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { Vector3 } from 'three';
 import { formatStamp } from './core/build-info.ts';
-import { assetUrl } from './core/assets.ts';
 import { FixedLoop } from './core/loop.ts';
-import { EventBus } from './core/events.ts';
 import { parseFlags } from './core/flags.ts';
 import { watchUpdates } from './core/update-check.ts';
-import { SaveStore,browserStorage } from './core/storage.ts';
-import { TierBenchmark,chooseTier,parseTier,probeDevice } from './core/tiers.ts';
+import { TierBenchmark, chooseTier, parseTier, probeDevice } from './core/tiers.ts';
 import { createRenderer } from './render/renderer.ts';
 import { createCafe } from './scenes/cafe.ts';
-import { Player } from './scenes/player.ts';
 import { installOrientation } from './input/orientation.ts';
-import { installKeys } from './input/keys.ts';
-import { installPointer } from './input/pointer.ts';
-import { makeProxy } from './interaction/proxies.ts';
-import { HoldDrag } from './interaction/hold-drag.ts';
-import { TapFill } from './interaction/tap-fill.ts';
-import { createHand } from './interaction/hand.ts';
-import { mountShell } from './ui/shell.ts';
-import { mountHoverMenu } from './ui/hover-menu.ts';
-import { freshVisit,cleanVisit } from './save/visit.ts';
-const body=document.body,bus=new EventBus();
-const stamp=document.querySelector<HTMLElement>('#build-stamp');if(stamp)stamp.textContent=formatStamp(buildInfo);
-body.dataset.flags=[...parseFlags(buildInfo.flags,location.search)].join(',');
-const store=new SaveStore(buildInfo.channel,browserStorage(),freshVisit,{},text=>bus.emit('notice',{text}));
-await store.open();const visit=cleanVisit(await store.load('visit'));const save=():Promise<void>=>store.save('visit',visit);
+const body = document.body;
+const stamp = document.querySelector<HTMLElement>('#build-stamp'); if (stamp) stamp.textContent = formatStamp(buildInfo);
+body.dataset.flags = [...parseFlags(buildInfo.flags, location.search)].join(',');
 try {
-  const canvas=document.querySelector<HTMLCanvasElement>('#view')!,display=createRenderer(canvas),cafe=createCafe(),{scene,camera}=cafe;
-  const player=new Player(),holding=new HoldDrag(),water=new TapFill();water.completed=visit.waterDone;
-  const targets=[makeProxy('water-bowl',[1.4,.13,-.7],[.5,.26,.5],['Pick up','Fill']),makeProxy('food-bowl',[1.9,.13,-.7],[.45,.26,.45],['Pick up','Fill']),makeProxy('tap',[-2,1.2,-3.55],[.9,.65,.75],['Fill']),makeProxy('litter-1',[4.25,.2,-3.6],[.8,.4,.55],['Clean']),makeProxy('litter-2',[4.25,.2,-4.3],[.8,.4,.55],['Clean']),makeProxy('scoop',[4.4,.4,-3],[.3,.2,.5],['Pick up']),makeProxy('table-1',[-2,.75,-.6],[1.3,.12,1.3],['Place']),makeProxy('table-2',[.5,.75,-3.1],[1.3,.12,1.3],['Place'])];
-  const menu=mountHoverMenu(bus),keyboard=installKeys(index=>menu.select(index));
-  const pointer=installPointer(canvas,camera,player,targets,bus,holding,water,visit.settings),hand=createHand(camera);
-  let playing=false,paused=false,benchmarkDone=false,previous=0,drawFrames=0,frameSum=0;
-  const probe=probeDevice(display.renderer.getContext() as WebGL2RenderingContext),benchmark=new TierBenchmark();
-  const override=parseTier(new URLSearchParams(location.search).get('tier'));if(override){display.configure(override);benchmarkDone=true;}
-  const forwardVector=new Vector3();
-  const loop=new FixedLoop(dt=>{
-    if(!playing)return;
-    const k=keyboard.keys;player.step(dt,(Number(k.has('d')||k.has('arrowright'))-Number(k.has('a')||k.has('arrowleft'))),(Number(k.has('w')||k.has('arrowup'))-Number(k.has('s')||k.has('arrowdown'))));
-    pointer.step(dt);bus.emit('player',{x:player.x,z:player.z});body.dataset.player=`${player.x.toFixed(2)},${player.z.toFixed(2)}`;
-    const model=cafe.object(holding.id??holding.lastId);if(model && holding.lastId){model.position.set(holding.position.x,holding.position.y-.08,holding.position.z);}
-  },alpha=>{
-    camera.position.set(player.previousX+(player.x-player.previousX)*alpha,1.6,player.previousZ+(player.z-player.previousZ)*alpha);camera.rotation.set(player.pitch,player.yaw,0,'YXZ');
-    forwardVector.set(0,0,-player.lean).applyQuaternion(camera.quaternion);camera.position.add(forwardVector);camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();camera.updateMatrixWorld();
-    hand.update(playing?pointer.hit():null,!!holding.id);display.renderer.render(scene,camera);body.dataset.drawCalls=String(display.renderer.info.render.calls);body.dataset.triangles=String(display.renderer.info.render.triangles);
-    if(++drawFrames%60===0){body.dataset.frameMs=(frameSum/60).toFixed(1);frameSum=0;}
+  const canvas = document.querySelector<HTMLCanvasElement>('#view')!;
+  const display = createRenderer(canvas); const { scene, camera } = createCafe();
+  const probe = probeDevice(display.renderer.getContext() as WebGL2RenderingContext);
+  const override = parseTier(new URLSearchParams(location.search).get('tier')); if (override) display.configure(override);
+  const benchmark = new TierBenchmark(); let benchmarkDone = !!override; let previous = 0;
+  const loop = new FixedLoop(() => {}, () => {
+    camera.aspect = canvas.clientWidth / Math.max(canvas.clientHeight, 1); camera.updateProjectionMatrix();
+    display.renderer.render(scene, camera); body.dataset.ready = 'true';
   });
-  bus.on('session',value=>{playing=value.playing;pointer.active(playing&&!paused);keyboard.keys.clear();});
-  bus.on('settings',value=>{player.reducedMotion=value.reducedMotion;const tier=parseTier(value.tier)??override;if(tier){display.configure(tier);benchmarkDone=true;}else benchmarkDone=false;});
-  bus.on('profile',profile=>hand.customize(profile.skin,profile.sleeve));
-  bus.on('action',({target,action})=>{
-    body.dataset.lastAction=`${target}:${action}`;
-    if(action==='Pick up' && holding.start(target)){bus.emit('hover',null);bus.emit('notice',{text:'Bowl in hand. Move it to the tap, then place it back on the floor.'});}
-    else if(action==='Fill')bus.emit('notice',{text:target==='water-bowl'?'Pick up the blue bowl and carry it to the tap.':'The water tap is ready. Bring the blue bowl here.'});
-    else if(action==='Clean')bus.emit('notice',{text:'This station is tidy. Staff keep every cat comfortable.'});else bus.emit('notice',{text:'A lovely spot for a quiet cup.'});
+  installOrientation(paused => { loop.paused = paused; loop.reset(); });
+  display.renderer.setAnimationLoop(time => {
+    if (!benchmarkDone) { const result = benchmark.update(time); if (result !== null) { display.configure(chooseTier(probe, result)); benchmarkDone = true; body.dataset.benchmarkMs = result.toFixed(1); } }
+    if (previous) display.adapt(time - previous); previous = time; loop.frame(time);
   });
-  installOrientation(value=>{paused=value;loop.paused=value;loop.reset();pointer.active(playing&&!paused);});
-  mountShell(bus,visit,save);
-  await cafe.load();const handLoader=new GLTFLoader();handLoader.setMeshoptDecoder(MeshoptDecoder);const gltf=await handLoader.loadAsync(assetUrl('art/hand.glb'));hand.setModel(gltf.scene);if(visit.profile)hand.customize(visit.profile.skin,visit.profile.sleeve);
-  body.dataset.ready='true';
-  display.renderer.setAnimationLoop(time=>{
-    if(!benchmarkDone){const result=benchmark.update(time);if(result!==null){display.configure(chooseTier(probe,result));benchmarkDone=true;body.dataset.benchmarkMs=result.toFixed(1);}}
-    const elapsed=previous?time-previous:16.7;frameSum+=elapsed;if(previous)display.adapt(elapsed);previous=time;loop.frame(time);
-  });
-  window.addEventListener('pagehide',()=>{void save();});
-} catch(error) {
-  document.querySelector<HTMLElement>('#unsupported')?.removeAttribute('hidden');body.dataset.ready='unsupported';console.warn('Café loading failed',error);
+} catch {
+  document.querySelector<HTMLElement>('#unsupported')?.removeAttribute('hidden'); body.dataset.ready = 'unsupported';
 }
-watchUpdates(buildInfo,save,reload=>{const button=document.querySelector<HTMLButtonElement>('#update');if(button){button.hidden=false;button.onclick=reload;}});
+watchUpdates(buildInfo, () => Promise.resolve(), reload => { const button = document.querySelector<HTMLButtonElement>('#update'); if (button) { button.hidden = false; button.onclick = reload; } });
