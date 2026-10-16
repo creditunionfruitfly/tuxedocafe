@@ -1,88 +1,24 @@
-import {
-  BoxGeometry,
-  Color,
-  DirectionalLight,
-  HemisphereLight,
-  Mesh,
-  MeshStandardMaterial,
-  PerspectiveCamera,
-  PlaneGeometry,
-  Scene,
-} from 'three';
-
-/**
- * Baseline placeholder (task M0-1): a blocked-out café room so every deploy has
- * something to look at. Task M0-2 replaces it with the real renderer, tier
- * probe, fixed-step loop and café scene.
- */
-
-/** README's UI palette seed plus two wood tones. */
-const COLORS = {
-  cream: 0xfff8ec,
-  cocoa: 0x5b3a29,
-  tuxedo: 0x1e1e24,
-  sky: 0x6ec6ff,
-  aqua: 0x3ddbd9,
-  leaf: 0x8bd450,
-  wood: 0xb07a4f,
-  walnut: 0x8a5a3c,
-} as const;
-
-export interface Cafe { scene: Scene; camera: PerspectiveCamera; dispose(): void }
-
-export function createCafe(): Cafe {
-
-  const scene = new Scene();
-  scene.background = new Color(COLORS.cream);
-
-  // Standing eye height, looking into the room.
-  const camera = new PerspectiveCamera(60, 1, 0.05, 50);
-  camera.position.set(0, 1.6, 3.2);
-  camera.lookAt(0, 1.0, -2);
-
-  const disposables: { dispose(): void }[] = [];
-  const box = (size: [number, number, number], color: number, at: [number, number, number], emissive = 0): Mesh => {
-    const geometry = new BoxGeometry(...size);
-    const material = new MeshStandardMaterial({ color, roughness: 0.8, emissive, emissiveIntensity: emissive ? 0.6 : 0 });
-    disposables.push(geometry, material);
-    const mesh = new Mesh(geometry, material);
-    mesh.position.set(...at);
-    scene.add(mesh);
-    return mesh;
-  };
-
-  // Room: 8 m wide, 6 m deep, 3 m high, open toward the camera.
-  const floorGeometry = new PlaneGeometry(8, 6);
-  const floorMaterial = new MeshStandardMaterial({ color: COLORS.wood, roughness: 0.7 });
-  disposables.push(floorGeometry, floorMaterial);
-  const floor = new Mesh(floorGeometry, floorMaterial);
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.z = -1;
-  scene.add(floor);
-  box([8, 3, 0.1], COLORS.cream, [0, 1.5, -4]);
-  box([0.1, 3, 6], COLORS.cream, [-4, 1.5, -1]);
-  box([0.1, 3, 6], COLORS.cream, [4, 1.5, -1]);
-
-  // Counter, window, cat tree and two tables.
-  box([2.4, 1.0, 0.7], COLORS.cocoa, [-2.2, 0.5, -3.3]);
-  box([1.6, 1.0, 0.05], COLORS.sky, [1.8, 1.7, -3.94], COLORS.sky);
-  box([0.25, 1.8, 0.25], COLORS.cocoa, [2.8, 0.9, -2.6]);
-  box([0.8, 0.06, 0.8], COLORS.aqua, [2.8, 0.7, -2.6]);
-  box([0.7, 0.06, 0.7], COLORS.leaf, [2.8, 1.35, -2.6]);
-  box([0.6, 0.06, 0.6], COLORS.aqua, [2.8, 1.8, -2.6]);
-  for (const [x, z] of [[-0.8, -1.4], [0.9, -0.7]] as const) {
-    box([0.9, 0.05, 0.9], COLORS.walnut, [x, 0.75, z]);
-    box([0.12, 0.72, 0.12], COLORS.tuxedo, [x, 0.36, z]);
-  }
-
-  scene.add(new HemisphereLight(0xffffff, COLORS.wood, 2.2));
-  const sun = new DirectionalLight(0xfff1d6, 1.6);
-  sun.position.set(2, 4, 1);
-  scene.add(sun);
-
-  return { scene, camera,
-    dispose() {
-      for (const item of disposables) item.dispose();
-    },
-  };
+import { BoxGeometry,Color,DirectionalLight,HemisphereLight,Mesh,MeshStandardMaterial,PerspectiveCamera,PlaneGeometry,Scene,Group,Vector3,PMREMGenerator,type Object3D,type WebGLRenderer } from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { assetUrl } from '../core/assets.ts';
+export interface Cafe { scene: Scene; camera: PerspectiveCamera; load(): Promise<void>; object(id:string):Object3D|undefined; dispose():void }
+export function createCafe(renderer: WebGLRenderer): Cafe {
+  const scene=new Scene();const environment=new RoomEnvironment();const pmrem=new PMREMGenerator(renderer);const environmentMap=pmrem.fromScene(environment,.04);scene.environment=environmentMap.texture;scene.environmentIntensity=.7;environment.dispose();pmrem.dispose();scene.background=new Color('#d6e9e2');
+  const camera=new PerspectiveCamera(61,1,.04,60);camera.position.set(0,1.6,2.2);camera.lookAt(0,1.25,-3);scene.add(camera);
+  const fallback=new Group();scene.add(fallback);
+  const floor=new Mesh(new PlaneGeometry(10,8),new MeshStandardMaterial({color:'#c69c74',roughness:.67}));floor.rotation.x=-Math.PI/2;floor.position.z=-1;fallback.add(floor);
+  const wall=new Mesh(new BoxGeometry(10,3.5,.12),new MeshStandardMaterial({color:'#eceadf'}));wall.position.set(0,1.75,-5);fallback.add(wall);
+  scene.add(new HemisphereLight(0xf4fcff,0xc8a88b,2.4));
+  const sun=new DirectionalLight(0xfff3d9,2.6);sun.position.set(-1,6,1);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-6;sun.shadow.camera.right=6;sun.shadow.camera.top=6;sun.shadow.camera.bottom=-6;sun.shadow.normalBias=.03;scene.add(sun);
+  const fill=new DirectionalLight(0xc4ebed,.6);fill.position.set(4,3,-2);scene.add(fill);
+  const objects=new Map<string,Object3D>();const loader=new GLTFLoader();loader.setMeshoptDecoder(MeshoptDecoder);
+  const disposeObject=(root:Object3D):void=>root.traverse(node=>{if(node instanceof Mesh){node.geometry.dispose();const materials=Array.isArray(node.material)?node.material:[node.material];for(const material of materials)material.dispose();}});
+  return {scene,camera,object:id=>objects.get(id),async load(){
+    const gltf=await loader.loadAsync(assetUrl('art/env_cafe.glb'));scene.remove(fallback);disposeObject(fallback);scene.add(gltf.scene);
+    gltf.scene.traverse(node=>{objects.set(node.name,node);if(node instanceof Mesh){node.receiveShadow=true;node.castShadow=true;}});
+    // Broad daylight, with the window's glass carrying a restrained sunlit sheen.
+    const target=new Vector3(0,1,-2);sun.target.position.copy(target);scene.add(sun.target);
+  },dispose(){disposeObject(scene);environmentMap.dispose();}};
 }

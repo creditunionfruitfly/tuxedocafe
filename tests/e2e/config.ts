@@ -19,6 +19,7 @@ export function makeConfig(options: { live: boolean }): PlaywrightTestConfig {
   return defineConfig({
     testDir: 'tests/e2e',
     testMatch: '*.spec.ts',
+    workers: 1,
     outputDir: 'test-results',
     timeout: 60_000,
     retries: process.env.CI ? 1 : 0,

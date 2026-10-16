@@ -1,91 +1,75 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <!-- Playtest builds are public but unlisted until launch (README, Playtest builds and CI/CD). -->
-    <meta name="robots" content="noindex, nofollow" />
-    <meta name="theme-color" content="#6EC6FF" />
-    <title>Tuxedo Cafe</title>
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%231E1E24' d='M10 58V22L18 8l8 12h12l8-12 8 14v36z'/%3E%3Cpath fill='%23FFF8EC' d='M24 58l8-18 8 18z'/%3E%3C/svg%3E"
-    />
-    <style>
-      :root {
-        --sky: #6ec6ff;
-        --aqua: #3ddbd9;
-        --leaf: #8bd450;
-        --cream: #fff8ec;
-        --cocoa: #5b3a29;
-        --tuxedo: #1e1e24;
-      }
-      html,
-      body {
-        margin: 0;
-        height: 100%;
-        background: var(--cream);
-        color: var(--tuxedo);
-        font: 15px/1.4 "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-        overflow: hidden;
-      }
-      #view {
-        display: block;
-        width: 100vw;
-        height: 100dvh;
-        touch-action: none;
-      }
-      .glass {
-        position: fixed;
-        left: max(12px, env(safe-area-inset-left));
-        bottom: max(12px, env(safe-area-inset-bottom));
-        max-width: min(420px, calc(100vw - 24px));
-        padding: 10px 14px;
-        border-radius: 14px;
-        border: 1px solid rgb(255 255 255 / 70%);
-        background: linear-gradient(180deg, rgb(255 255 255 / 75%), rgb(255 255 255 / 45%));
-        box-shadow: 0 6px 24px rgb(30 30 36 / 18%);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-      }
-      .glass strong {
-        display: block;
-        color: var(--cocoa);
-      }
-      #build-stamp {
-        display: block;
-        margin-top: 4px;
-        font: 12px/1.3 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-        opacity: 0.75;
-      }
-      #unsupported {
-        position: fixed;
-        inset: 0;
-        display: grid;
-        place-items: center;
-        padding: 24px;
-        text-align: center;
-        background: var(--cream);
-      }
-      [hidden] { display: none !important; }
-      #unsupported[hidden] {
-        display: none;
-      }
-    </style>
-  </head>
-  <body>
-    <canvas id="view" aria-label="The café"></canvas>
-    <div class="glass" id="hud">
-      <strong>Tuxedo Cafe</strong>
-      <span>Empty café · a little room to unwind.</span>
-      <span id="build-stamp"></span>
-    </div>
-    <button id="update" class="glass" hidden>A fresh café build is ready · Reload</button>
-    <div id="rotate" hidden style="position:fixed;inset:0;background:#fff8ec;z-index:99;display:grid;place-content:center;text-align:center"><strong>Turn your device sideways</strong><p>The café is best enjoyed in landscape.</p></div>
-    <div id="unsupported" hidden>
-      <p>Tuxedo Cafe needs WebGL 2, which this browser doesn't offer. Try a current Chrome, Edge, Firefox or Safari.</p>
-    </div>
-    <noscript>Tuxedo Cafe needs JavaScript.</noscript>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
-</html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="theme-color" content="#bce7e4" />
+<title>Tuxedo Cafe · A little room to unwind</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%231d4244' d='M10 58V22L18 8l8 12h12l8-12 8 14v36z'/%3E%3Cpath fill='%23fff8ec' d='M24 58l8-18 8 18z'/%3E%3C/svg%3E" />
+</head>
+<body data-phase="title">
+<canvas id="view" tabindex="0" aria-label="A sunlit three dimensional cat café. Use WASD to walk, right drag to look, and hover over objects to interact."></canvas>
+<header id="brand"><span class="catmark" aria-hidden="true">◕</span><span>TUXEDO <b>CAFE</b><small>A LITTLE ROOM TO UNWIND</small></span></header>
+<button class="icon-button top-settings" data-settings aria-label="Open settings">⚙ <span>Settings</span></button>
+<main id="title-screen">
+  <section class="welcome glass">
+    <div class="eyebrow"><i></i> THE DOOR IS OPEN</div>
+    <h1>Good coffee.<br><em>Better company.</em></h1>
+    <p>A sunlit corner. A warm cup.<br>A few cats doing their own thing.</p>
+    <button id="start" class="primary">Step inside <span aria-hidden="true">↗</span></button>
+    <p id="returning" class="fine">No rush. Make yourself at home.</p>
+    <div class="welcome-foot"><span class="mini-paw">✦</span> Made for unhurried moments</div>
+  </section>
+  <aside class="scene-note glass"><span class="leaf-dot"></span><span><b>Today at the café</b><small>Soft light & a fresh start</small></span><span class="note-icon" aria-hidden="true">☀</span></aside>
+</main>
+<section id="creator" class="modal-wrap" hidden>
+ <div class="creator-panel glass">
+  <button id="creator-back" class="text-button">← Back</button><div class="eyebrow">YOUR FIRST VISIT</div>
+  <h2>Come as you are.</h2><p class="intro">A name for the barista. A hand for new friends.</p>
+  <form id="patron-form">
+   <div class="creator-grid"><div>
+    <label class="field-label" for="patron-name">What should we call you?</label><input id="patron-name" name="name" placeholder="Your name" maxlength="24" required autocomplete="given-name" />
+    <label class="field-label" for="pronouns">Your pronouns <span>(just for café text)</span></label><select id="pronouns" name="pronouns"><option>they / them</option><option>she / her</option><option>he / him</option><option>any pronouns</option><option>name only</option></select>
+    <fieldset><legend>Skin tone</legend><div class="swatches">
+     <label style="--swatch:#f0d2b6"><input type="radio" name="skin" value="#f0d2b6" aria-label="Light skin" /><span></span></label>
+     <label style="--swatch:#d8aa85"><input type="radio" name="skin" value="#d8aa85" aria-label="Light medium skin" /><span></span></label>
+     <label style="--swatch:#b8815b"><input type="radio" name="skin" value="#b8815b" aria-label="Medium skin" checked /><span></span></label>
+     <label style="--swatch:#915d3f"><input type="radio" name="skin" value="#915d3f" aria-label="Medium dark skin" /><span></span></label>
+     <label style="--swatch:#593a2d"><input type="radio" name="skin" value="#593a2d" aria-label="Dark skin" /><span></span></label>
+    </div></fieldset>
+    <fieldset><legend>Sleeve color</legend><div class="swatches sleeves">
+     <label style="--swatch:#619b91"><input type="radio" name="sleeve" value="#619b91" aria-label="Sage sleeve" checked /><span></span></label>
+     <label style="--swatch:#68a8d2"><input type="radio" name="sleeve" value="#68a8d2" aria-label="Sky sleeve" /><span></span></label>
+     <label style="--swatch:#e5c598"><input type="radio" name="sleeve" value="#e5c598" aria-label="Oat sleeve" /><span></span></label>
+     <label style="--swatch:#c47e77"><input type="radio" name="sleeve" value="#c47e77" aria-label="Rose sleeve" /><span></span></label>
+     <label style="--swatch:#354b57"><input type="radio" name="sleeve" value="#354b57" aria-label="Ink sleeve" /><span></span></label>
+    </div></fieldset>
+   </div><div class="hand-preview"><svg viewBox="0 0 180 220" aria-label="Preview of your chosen hand and sleeve"><defs><linearGradient id="shine"><stop stop-color="white" stop-opacity=".45"/><stop offset="1" stop-color="white" stop-opacity="0"/></linearGradient></defs><circle cx="90" cy="95" r="74" fill="white" opacity=".5"/><path d="M65 161c-8-21-31-43-32-53-1-8 8-11 15-4l14 15-3-65c0-12 14-13 16-2l6 43-1-62c0-13 16-13 17 0l2 60 6-51c1-12 16-10 15 2l-2 58 8-34c3-11 16-7 14 4l-9 70-12 25z" fill="var(--hand-skin)"/><path d="m58 156 64 2 9 62H48z" fill="var(--hand-sleeve)"/><path d="M65 161c-8-21-31-43-32-53-1-8 8-11 15-4l14 15-3-65c0-12 14-13 16-2l6 43-1-62c0-13 16-13 17 0l2 60 6-51c1-12 16-10 15 2l-2 58 8-34c3-11 16-7 14 4l-9 70-12 25z" fill="url(#shine)"/></svg><small>A gentle hand goes a long way.</small></div></div>
+   <button class="primary" type="submit">Make yourself at home <span>↗</span></button>
+  </form>
+ </div>
+</section>
+<div id="play-hud" hidden>
+ <div id="chore-card" class="glass hud-card"><div class="eyebrow">A LITTLE HELP</div><strong>Water the regulars</strong><p id="task-copy">Carry the blue water bowl to the tap. Hold for 3 seconds, then return it.</p><progress id="water-progress" max="1" value="0" hidden></progress></div>
+ <div class="play-buttons"><button id="help" class="icon-button" aria-label="Show controls">? <span>Controls</span></button><button id="leave" class="icon-button">↶ <span>Take a break</span></button></div>
+ <div id="controls" class="glass" hidden><strong>Take your time.</strong><p><kbd>WASD</kbd> walk · right drag to look<br>Tap the floor to walk · scroll to lean<br>Hover for actions · drag a bowl to carry<br>Touch: two fingers to look, pinch to lean</p></div>
+ <span id="reticle" aria-hidden="true"></span>
+</div>
+<div id="hover-menu" class="glass" hidden></div>
+<div id="notice" class="glass" role="status" aria-live="polite" hidden></div>
+<dialog id="settings-dialog" class="glass">
+ <button id="close-settings" class="icon-button close" aria-label="Close settings">✕</button><div class="eyebrow">YOUR COMFORT</div><h2>Settle in.</h2>
+ <form id="settings-form"><div class="settings-grid">
+  <label>Visual quality<select name="tier"><option value="auto">Automatic</option><option value="high">Desktop high</option><option value="desktop">Desktop default</option><option value="phone">Phone</option><option value="low">Low phone</option></select></label>
+  <label>Hold time<input name="holdMs" type="range" min="150" max="1000" step="50" /></label>
+  <label>Music<input name="music" type="range" min="0" max="1" step=".05" /></label><label>Effects<input name="effects" type="range" min="0" max="1" step=".05" /></label>
+ </div><label class="check"><input type="checkbox" name="holdToggle" /> Tap to pick up / tap to place</label><label class="check"><input type="checkbox" name="leftHanded" /> Left handed layout</label><label class="check"><input type="checkbox" name="reducedMotion" /> Reduced motion</label><label class="check"><input type="checkbox" name="captions" /> Sound captions</label></form>
+ <p class="fine">Your visit saves automatically on this device.</p><a id="feedback" href="https://github.com/creditunionfruitfly/tuxedocafe/issues/new?template=playtest.yml" target="_blank" rel="noreferrer">Share playtest feedback ↗</a>
+</dialog>
+<footer><span>COFFEE. CATS. NO HURRY.</span><span id="build-stamp"></span></footer>
+<button id="update" class="glass" hidden>A fresh café build is ready · Reload</button>
+<div id="rotate" hidden><span aria-hidden="true">↻</span><h2>Turn your device sideways.</h2><p>A little more room for you and the cats.</p></div>
+<div id="unsupported" hidden><h2>A little browser update?</h2><p>Tuxedo Cafe needs WebGL 2. Try a current Chrome, Edge, Firefox or Safari.</p></div>
+<noscript>Tuxedo Cafe needs JavaScript.</noscript><script type="module" src="/src/main.ts"></script>
+</body></html>
