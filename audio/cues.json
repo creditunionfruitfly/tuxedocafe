@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "soundfont": "audio/soundfont/cafe_placeholder.sf3",
+  "cues": [
+    {
+      "id": "cafe_day_a",
+      "midi": "audio/cues/cafe_day_a.mid",
+      "tempoBpm": 96,
+      "ppq": 480,
+      "bars": 8,
+      "beatsPerBar": 4,
+      "loopStart": 0,
+      "loopEnd": 15360,
+      "gainDb": -12,
+      "voices": { "desktop": 64, "phone": 32, "low": 24 },
+      "liveChanges": [
+        { "event": "coffee_break", "type": "gain", "channel": 1, "value": 0.65 },
+        { "event": "cafe_day", "type": "gain", "channel": 1, "value": 1 }
+      ]
+    }
+  ]
+}

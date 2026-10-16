@@ -1,0 +1,13 @@
+source: Original additive-synthesis waveforms authored for Tuxedo Cafe
+tool: tools/audio/author-placeholder.py; ffmpeg 6.1.1 libvorbis
+date: '2026-10-16'
+license: original
+author_role: composer
+settings:
+  format: SF3 3.0, mono Ogg Vorbis quality 3
+  sample_rate: 32000
+  samples:
+    - { name: Glass Felt, program: 4, root_key: 60, seconds: 3, license: original }
+    - { name: Air Bar, program: 11, root_key: 72, seconds: 3, license: original }
+    - { name: Wood Pluck, program: 32, root_key: 36, seconds: 2, license: original }
+notes: All three samples are mathematical sine-partial recipes, without recordings or third-party samples. Programs are zero-based; bank 0. No cat sounds.

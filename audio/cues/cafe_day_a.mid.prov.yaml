@@ -1,0 +1,12 @@
+source: Original eight-bar composition Sunlit Counter, authored for Tuxedo Cafe
+tool: tools/audio/author-placeholder.py (original score, Python standard library)
+date: '2026-10-16'
+license: original
+author_role: composer
+settings:
+  format: SMF type 1
+  ppq: 480
+  tempo_bpm: 96
+  bars: 8
+  channels: 3
+notes: Independently authored melody and voicings; no external score or MIDI.
