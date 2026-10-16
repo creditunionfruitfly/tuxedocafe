@@ -10,8 +10,11 @@ environment lighting before the originally scheduled M3 work.
 Retain authored geometry and deterministic exports, with full material UVs and
 a separate non-overlapping bake atlas. Generate original texture families with
 recorded prompts; reuse maps across compatible tinted materials to hold memory
-and draw budgets. Bake indirect daylight offline and preserve its UV layout and
-source signature as build inputs. Normal CI rebuilds and validates runtime
+and draw budgets. Bake full static direct and indirect diffuse daylight offline, including contact
+shadows, and preserve its UV layout and source signature as build inputs.
+Use RGBM HDR to retain shadow precision around bright pendants. The runtime
+replaces static diffuse with the atlas, preserves real-time GGX highlights, and
+lights movable props with calibrated room probes plus the matching direct sun. Normal CI rebuilds and validates runtime
 assets without requiring Blender. Movable props and the arm use dynamic lighting.
 
 The phone limits remain unchanged. Offline source density and texture generation

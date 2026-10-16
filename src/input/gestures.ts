@@ -1,3 +1,4 @@
+import controls from '../../data/interaction.json' with { type: 'json' };
 export type Gesture = 'hover' | 'menu' | 'stroke' | 'hold' | 'move' | 'walk' | 'look';
 export type TargetKind = 'floor' | 'object' | 'cat' | 'none';
 export class Gestures {
@@ -8,9 +9,9 @@ export class Gestures {
     return this.state = right || fingers > 1 ? 'look' : this.toggle && target === 'object' ? 'hold' : 'hover';
   }
   move(distance: number, fingers = 1): Gesture {
-    this.moved += distance;
+    this.moved = Math.max(this.moved,distance);
     if (fingers > 1) return this.state = 'look';
-    if (this.down && this.moved > 6 && this.state !== 'look') this.state = this.target === 'object' ? 'hold' : this.target === 'cat' ? 'stroke' : 'move';
+    if (this.down && this.moved > controls.dragThresholdPx && this.state !== 'look') this.state = this.target === 'object' ? 'hold' : this.target === 'cat' ? 'stroke' : this.target === 'floor' ? 'move' : 'hover';
     return this.state;
   }
   tick(dt: number): Gesture {
@@ -20,7 +21,7 @@ export class Gestures {
   }
   release(): Gesture {
     if (this.toggle && this.state === 'hold') return 'hold';
-    const result = this.down && this.moved <= 6 && this.target === 'floor' ? 'walk' : 'hover';
+    const result = this.down && this.moved <= controls.dragThresholdPx && this.target === 'floor' ? 'walk' : 'hover';
     this.down = false; this.state = 'hover'; this.elapsed = 0; return result;
   }
   reset(): void { this.state = 'hover'; this.down = false; this.elapsed = this.moved = 0; this.target = 'none'; }

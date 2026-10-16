@@ -1,0 +1,4 @@
+import { expect,it } from 'vitest';
+import { PerspectiveCamera,Vector3 } from 'three';
+import { createHand } from '../../src/interaction/hand.ts';
+it('keeps the hand camera-attached and pointing away while mirroring the arm side',()=>{const camera=new PerspectiveCamera(),hand=createHand(camera);hand.update(true,false);const pose=hand.group.position.clone();expect(hand.group.parent).toBe(camera);expect(new Vector3(0,0,1).applyEuler(hand.group.rotation).z).toBeLessThan(-.99);camera.position.set(9,2,8);camera.rotation.y=1;hand.update(true,true);expect(hand.group.position.equals(pose)).toBe(true);hand.update(true,false,true);expect(hand.group.position.x).toBe(-pose.x);expect(hand.group.scale.x).toBeGreaterThan(0);hand.update(false,false);expect(hand.group.visible).toBe(false);hand.dispose();});

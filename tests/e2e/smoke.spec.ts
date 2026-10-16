@@ -30,6 +30,8 @@ test('boots the café with no console errors', async ({ page }, testInfo) => {
 
   await page.goto('./');
   await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: STARTUP_TIMEOUT });
+  await expect(page.locator('body')).toHaveAttribute('data-bake', /^[a-f0-9]{12}$/);
+  await expect(page.locator('body')).toHaveAttribute('data-bake-resolution', '2048');
   await expect(page.locator('body')).toHaveAttribute('data-live-version', /^(ok|newer)$/);
   await expect(page.locator('#build-stamp')).toHaveText(/\S+ · \S+/);
 

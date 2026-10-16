@@ -6,6 +6,15 @@ export const FURNITURE: readonly Box2[] = [
   { minX: -.15, maxX: 1.15, minZ: -3.75, maxZ: -2.45 },
   { minX: 3.2, maxX: 4.2, minZ: -2.7, maxZ: -1.7 },
   { minX: 3.7, maxX: 4.8, minZ: -4.7, maxZ: -3.2 },
+  // Chair shells, banquette, bin and floor planters share the authored footprint.
+  { minX: -3.29, maxX: -2.61, minZ: -.94, maxZ: -.26 },
+  { minX: -1.39, maxX: -.71, minZ: -.94, maxZ: -.26 },
+  { minX: -.79, maxX: -.11, minZ: -3.44, maxZ: -2.76 },
+  { minX: 1.11, maxX: 1.79, minZ: -3.44, maxZ: -2.76 },
+  { minX: .3, maxX: 3.7, minZ: -4.8, maxZ: -4.1 },
+  { minX: -4.81, maxX: -4.49, minZ: -3.41, maxZ: -3.09 },
+  { minX: -4.74, maxX: -4.06, minZ: 1.06, maxZ: 1.74 },
+  { minX: 4.06, maxX: 4.74, minZ: 1.16, maxZ: 1.84 },
 ];
 export function blocked(x: number, z: number, box: Box2, radius: number): boolean {
   const nx = Math.max(box.minX, Math.min(box.maxX, x)); const nz = Math.max(box.minZ, Math.min(box.maxZ, z));

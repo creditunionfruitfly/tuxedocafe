@@ -5,6 +5,7 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { Vector3 } from 'three';
 import { formatStamp } from './core/build-info.ts';
 import { assetUrl } from './core/assets.ts';
+import { useRoomProbe } from './render/baked-lighting.ts';
 import { FixedLoop } from './core/loop.ts';
 import { EventBus } from './core/events.ts';
 import { parseFlags } from './core/flags.ts';
@@ -54,27 +55,29 @@ try {
     for(const [id,placed] of holding.placements){
       const p=holding.id===id?holding.position:placed,model=cafe.object(id),proxy=targetMap.get(id);
       if(proxy){proxy.box.min.set(p.x-.25,p.y-.08,p.z-.25);proxy.box.max.set(p.x+.25,p.y+.18,p.z+.25);}
-      if(model){model.position.x+=(p.x-model.position.x)*.35;model.position.y+=(p.y-.08-model.position.y)*.35;model.position.z+=(p.z-model.position.z)*.35;}
+      if(model){const follow=holding.id===id?1:.35;model.position.x+=(p.x-model.position.x)*follow;model.position.y+=(p.y-.08-model.position.y)*follow;model.position.z+=(p.z-model.position.z)*follow;}
     }
   },alpha=>{
     camera.position.set(player.previousX+(player.x-player.previousX)*alpha,1.6,player.previousZ+(player.z-player.previousZ)*alpha);camera.rotation.set(player.pitch,player.yaw,0,'YXZ');
     forwardVector.set(0,0,-player.lean).applyQuaternion(camera.quaternion);camera.position.add(forwardVector);camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();camera.updateMatrixWorld();
-    hand.update(playing?pointer.hit():null,!!holding.id);display.renderer.render(scene,camera);
+    hand.update(playing,!!holding.id,visit.settings.leftHanded);display.renderer.render(scene,camera);
     if(benchmarkDone&&!contextReloadPending&&body.dataset.ready!=='true'){const start=document.querySelector<HTMLButtonElement>('#start')!;start.disabled=false;start.setAttribute('aria-busy','false');body.dataset.ready='true';}body.dataset.drawCalls=String(display.renderer.info.render.calls);body.dataset.triangles=String(display.renderer.info.render.triangles);body.dataset.shaderPrograms=String(display.renderer.info.programs?.length??0);
     if(++drawFrames%60===0){body.dataset.frameMs=(frameSum/60).toFixed(1);frameSum=0;}
   });
   bus.on('session',value=>{playing=value.playing;pointer.active(playing&&!paused);keyboard.keys.clear();});
   bus.on('settings',value=>{if(value.tier!==tierPreference){tierPreference=value.tier;const url=new URL(location.href);if(value.tier==='auto')url.searchParams.delete('tier');else url.searchParams.set('tier',value.tier);void save().then(()=>location.assign(url.href));}player.reducedMotion=value.reducedMotion;const tier=parseTier(value.tier)??override;if(tier){benchmarkDone=display.configure(tier);contextReloadPending=!benchmarkDone;}else benchmarkDone=false;});
   bus.on('profile',profile=>hand.customize(profile.skin,profile.sleeve));
+  bus.on('player',({x,z})=>cafe.updateLighting(x,1.3,z));
   bus.on('action',({target,action})=>{
+    if(!pointer.interact(target,action))return;
     body.dataset.lastAction=`${target}:${action}`;
-    if(action==='Pick up' && holding.start(target)){bus.emit('hover',null);bus.emit('notice',{text:'Bowl in hand. Move it to the tap, then place it back on the floor.'});}
-    else if(action==='Fill')bus.emit('notice',{text:target==='water-bowl'?'Pick up the blue bowl and carry it to the tap.':'The water tap is ready. Bring the blue bowl here.'});
+    if(action==='Pick up'){bus.emit('notice',{text:'Carrying. Walk to the tap, choose Fill, then return to the mat and choose Place.'});}
+    else if(action==='Fill')bus.emit('notice',{text:target==='tap'&&holding.id==='water-bowl'?'Filling. Stay close to the tap until the bowl is full.':target==='water-bowl'?'Pick up the blue bowl and carry it to the tap.':'The water tap is ready. Bring the blue bowl here.'});
     else if(action==='Clean')bus.emit('notice',{text:'This station is tidy. Staff keep every cat comfortable.'});else bus.emit('notice',{text:'A lovely spot for a quiet cup.'});
   });
   installOrientation(value=>{paused=value;loop.paused=value;loop.reset();pointer.active(playing&&!paused);});
   mountShell(bus,visit,save);mountAbout(buildInfo);
-  await cafe.load();const handLoader=new GLTFLoader();handLoader.setMeshoptDecoder(MeshoptDecoder);const gltf=await handLoader.loadAsync(assetUrl('art/hand.glb'));hand.setModel(gltf.scene,gltf.animations);if(visit.profile)hand.customize(visit.profile.skin,visit.profile.sleeve);
+  await cafe.load();const handLoader=new GLTFLoader();handLoader.setMeshoptDecoder(MeshoptDecoder);const gltf=await handLoader.loadAsync(assetUrl('art/hand.glb'));useRoomProbe(gltf.scene);hand.setModel(gltf.scene,gltf.animations);if(visit.profile)hand.customize(visit.profile.skin,visit.profile.sleeve);
   // The first render skips the hidden hand. Compile every scene material before
   // input starts so the first reach cannot stall hover dwell or a floor tap.
   await display.renderer.compileAsync(scene,camera);
