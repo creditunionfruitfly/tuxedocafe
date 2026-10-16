@@ -42,6 +42,7 @@ test('walk, proxy hover action and room collision stay playable',async({page,isM
  expect(Number(await page.locator('body').getAttribute('data-draw-calls'))).toBeLessThanOrEqual(80);
 });
 test('water chore requires approaching, carrying to the tap, filling and returning',async({page,isMobile},info)=>{
+ test.slow(); // Live phone-landscape runs take ~1.6 min, past the 90 s default (pages run 38954271674).
  await enter(page);await tapPoint(page,isMobile,1.4,.13,-.7);await expect(page.locator('#hover-menu')).toBeHidden();await expect(page.locator('#notice')).toContainText('Move closer');await expect(page.locator('body')).toHaveAttribute('data-carry','');
  await jump(page,isMobile,1.4,.5);await tapPoint(page,isMobile,1.4,.13,-.7);await page.getByRole('button',{name:'1 Pick up',exact:true}).click();await expect(page.locator('body')).toHaveAttribute('data-carry','water-bowl');
  await jump(page,isMobile,2.4,-.5);await tapPoint(page,isMobile,-2,1.2,-3.55);await expect(page.locator('#hover-menu')).toBeHidden();await expect(page.locator('#water-progress')).toBeHidden();
