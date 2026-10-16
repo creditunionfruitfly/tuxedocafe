@@ -1,7 +1,7 @@
 # R1 Café refactor
 
 Role: master
-Status: In progress, owner-requested revision after M1 playtest
+Status: Implementation complete; final deployment tracked in the Engine integration PR
 
 ## Result
 
@@ -56,3 +56,18 @@ light and room bounce. The carry is calibrated to 1.32m high and .80m forward so
 aligns with the attached hand rather than falling below the view.
 The stationary tap-fill height is a separate 1.20m, clearing the 1.114m basin
 and remaining below the 1.278m nozzle. Free carry tuning cannot move it.
+
+## Verified implementation
+
+The combined production build contains 17,658,075 bytes of runtime files,
+including the diagnostic cat, within the 20MB limit. Cafe and arm meshes use
+126,836 and 6,654 triangles. Actual Desktop and Low phone renders report 117
+and 60 draw calls, below the 150/80 limits. Both show clean OIDN-denoised
+2048px Cycles lighting, fitted geometry, PBR surfaces and the forward arm.
+
+Typecheck, lint, provenance, asset/audio validation and 80 unit tests pass.
+The full browser suite passed 20 cases with two intentional skips; six focused
+Desktop/touch physics cases also passed after final carry/collision calibration.
+An independent navigation audit found zero invalid grid edges and all 177
+simulated routes arrived. Physical-device frame time remains unmeasured.
+The final Engine integration PR records CI, Pages and live smoke verification.
