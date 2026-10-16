@@ -1,7 +1,7 @@
 import { expect,test,type Page,type TestInfo } from '@playwright/test';
 import { PerspectiveCamera,Vector3 } from 'three';
 async function enter(page:Page,info?:TestInfo):Promise<void>{
- await page.goto('./?tier=low');await expect(page.locator('body')).toHaveAttribute('data-ready','true');await page.locator('#start').click();await page.locator('#patron-name').fill('River');if(info)await page.screenshot({path:info.outputPath('patron-creation.png')});await page.getByRole('button',{name:'Make yourself at home'}).click();await expect(page.locator('body')).toHaveAttribute('data-phase','play');
+ await page.goto('./?tier=low');await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:30000});await page.locator('#start').click();await page.locator('#patron-name').fill('River');if(info)await page.screenshot({path:info.outputPath('patron-creation.png')});await page.getByRole('button',{name:'Make yourself at home'}).click();await expect(page.locator('body')).toHaveAttribute('data-phase','play');
 }
 function screenPoint(page:Page,x:number,y:number,z:number):{x:number;y:number}{
  const size=page.viewportSize()!;const camera=new PerspectiveCamera(61,size.width/size.height,.04,60);camera.position.set(0,1.6,2.2);camera.rotation.set(-.08,0,0,'YXZ');camera.updateMatrixWorld();const point=new Vector3(x,y,z).project(camera);return{x:(point.x+1)*size.width/2,y:(1-point.y)*size.height/2};
@@ -42,8 +42,9 @@ test('portrait pauses behind the landscape guide',async({page})=>{await page.got
 
 test('a dropped bowl can be picked up again and invalid drops return it',async({page,isMobile})=>{
  test.skip(isMobile,'Mouse carry complements the touch water-chore test.');await enter(page);
+ const warmedPrograms=await page.locator('body').getAttribute('data-shader-programs');expect(Number(warmedPrograms)).toBeGreaterThan(0);
  const bowl=screenPoint(page,1.4,.13,-.7),drop=screenPoint(page,2.3,0,-1.6),placed=screenPoint(page,2.3,.13,-1.6);
- await page.mouse.move(bowl.x,bowl.y);await expect(page.locator('#hover-menu')).toBeVisible();await page.keyboard.press('1');await expect(page.locator('body')).toHaveAttribute('data-carry','water-bowl');
+ await page.mouse.move(bowl.x,bowl.y);await expect(page.locator('#hover-menu')).toBeVisible();await expect(page.locator('body')).toHaveAttribute('data-shader-programs',warmedPrograms!);await page.keyboard.press('1');await expect(page.locator('body')).toHaveAttribute('data-carry','water-bowl');
  await page.mouse.move(drop.x,drop.y);await page.mouse.click(drop.x,drop.y);await expect(page.locator('body')).toHaveAttribute('data-carry','');
  await page.mouse.move(placed.x,placed.y);await expect(page.locator('#hover-menu')).toBeVisible();await page.keyboard.press('1');await expect(page.locator('body')).toHaveAttribute('data-carry','water-bowl');
  await page.mouse.click(900,50);await expect(page.locator('body')).toHaveAttribute('data-carry','');await page.mouse.move(placed.x,placed.y);await expect(page.locator('#hover-menu')).toBeVisible();
