@@ -41,9 +41,9 @@ try {
   const targetMap=new Map(targets.map(target=>[target.id,target]));
   const menu=mountHoverMenu(bus),keyboard=installKeys(index=>menu.select(index));
   const pointer=installPointer(canvas,camera,player,targets,bus,holding,water,visit.settings),hand=createHand(camera);
-  let playing=false,paused=false,benchmarkDone=false,previous=0,drawFrames=0,frameSum=0,tierPreference=visit.settings.tier;
+  let playing=false,paused=false,benchmarkDone=false,contextReloadPending=false,previous=0,drawFrames=0,frameSum=0,tierPreference=visit.settings.tier;
   const probe=probeDevice(display.renderer.getContext() as WebGL2RenderingContext),benchmark=new TierBenchmark();
-  const override=parseTier(new URLSearchParams(location.search).get('tier'));if(override){display.configure(override);benchmarkDone=true;}
+  const override=parseTier(new URLSearchParams(location.search).get('tier'));if(override){benchmarkDone=display.configure(override);contextReloadPending=!benchmarkDone;}
   const forwardVector=new Vector3();
   const loop=new FixedLoop(dt=>{
     if(!playing)return;
@@ -58,11 +58,12 @@ try {
   },alpha=>{
     camera.position.set(player.previousX+(player.x-player.previousX)*alpha,1.6,player.previousZ+(player.z-player.previousZ)*alpha);camera.rotation.set(player.pitch,player.yaw,0,'YXZ');
     forwardVector.set(0,0,-player.lean).applyQuaternion(camera.quaternion);camera.position.add(forwardVector);camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();camera.updateMatrixWorld();
-    hand.update(playing?pointer.hit():null,!!holding.id);display.renderer.render(scene,camera);body.dataset.drawCalls=String(display.renderer.info.render.calls);body.dataset.triangles=String(display.renderer.info.render.triangles);
+    hand.update(playing?pointer.hit():null,!!holding.id);display.renderer.render(scene,camera);
+    if(benchmarkDone&&!contextReloadPending&&body.dataset.ready!=='true'){const start=document.querySelector<HTMLButtonElement>('#start')!;start.disabled=false;start.setAttribute('aria-busy','false');body.dataset.ready='true';}body.dataset.drawCalls=String(display.renderer.info.render.calls);body.dataset.triangles=String(display.renderer.info.render.triangles);
     if(++drawFrames%60===0){body.dataset.frameMs=(frameSum/60).toFixed(1);frameSum=0;}
   });
   bus.on('session',value=>{playing=value.playing;pointer.active(playing&&!paused);keyboard.keys.clear();});
-  bus.on('settings',value=>{if(value.tier!==tierPreference){tierPreference=value.tier;const url=new URL(location.href);if(value.tier==='auto')url.searchParams.delete('tier');else url.searchParams.set('tier',value.tier);void save().then(()=>location.assign(url.href));}player.reducedMotion=value.reducedMotion;const tier=parseTier(value.tier)??override;if(tier){display.configure(tier);benchmarkDone=true;}else benchmarkDone=false;});
+  bus.on('settings',value=>{if(value.tier!==tierPreference){tierPreference=value.tier;const url=new URL(location.href);if(value.tier==='auto')url.searchParams.delete('tier');else url.searchParams.set('tier',value.tier);void save().then(()=>location.assign(url.href));}player.reducedMotion=value.reducedMotion;const tier=parseTier(value.tier)??override;if(tier){benchmarkDone=display.configure(tier);contextReloadPending=!benchmarkDone;}else benchmarkDone=false;});
   bus.on('profile',profile=>hand.customize(profile.skin,profile.sleeve));
   bus.on('action',({target,action})=>{
     body.dataset.lastAction=`${target}:${action}`;
@@ -73,9 +74,8 @@ try {
   installOrientation(value=>{paused=value;loop.paused=value;loop.reset();pointer.active(playing&&!paused);});
   mountShell(bus,visit,save);mountAbout(buildInfo);
   await cafe.load();const handLoader=new GLTFLoader();handLoader.setMeshoptDecoder(MeshoptDecoder);const gltf=await handLoader.loadAsync(assetUrl('art/hand.glb'));hand.setModel(gltf.scene,gltf.animations);if(visit.profile)hand.customize(visit.profile.skin,visit.profile.sleeve);
-  body.dataset.ready='true';
   display.renderer.setAnimationLoop(time=>{
-    if(!benchmarkDone){const result=benchmark.update(time);if(result!==null){display.configure(chooseTier(probe,result));benchmarkDone=true;body.dataset.benchmarkMs=result.toFixed(1);}}
+    if(!benchmarkDone&&!contextReloadPending){const result=benchmark.update(time);if(result!==null){benchmarkDone=display.configure(chooseTier(probe,result));contextReloadPending=!benchmarkDone;body.dataset.benchmarkMs=result.toFixed(1);}}
     const elapsed=previous?time-previous:16.7;frameSum+=elapsed;if(previous)display.adapt(elapsed);previous=time;loop.frame(time);
   });
   window.addEventListener('pagehide',()=>{void save();});
