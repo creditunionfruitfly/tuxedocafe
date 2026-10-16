@@ -18,6 +18,7 @@ also works with Python 3.12 NumPy; OpenImageDenoise is not required.
 ART_BAKE_EXPORT=cafe-input.json ART_UNCOMPRESSED=1 node --input-type=module -e "import('./art/env/cafe/generate.ts').then(m => m.makeCafe())"
 blender --background --python tools/art/bake-probe-calibration.py
 blender --background --python tools/art/bake-cafe.py -- cafe-input.json art/lighting/cafe-daylight.json 2048 96
+python tools/art/bake-denoise.py art/lighting/cafe-daylight.json --oidn /path/to/oidnDenoise
 npm run assets
 ```
 
@@ -27,6 +28,16 @@ albedos remain in the scene for colored secondary bounces. Soft daylight enters
 through the existing window, with an original procedural world, a warm sun and
 three pendant emitters. Contact occlusion follows real ray visibility; there
 is no painted shadow mask, downloaded HDRI, or extra AO multiplier.
+
+After the Cycles bake, use the official Intel Open Image Denoise 2.3.3 CPU
+`RTLightmap` filter at high quality. It is trained specifically for HDR lightmap
+atlases. This removes Monte Carlo noise before RGBM encoding; direct shadows
+and secondary illumination remain derived from the actual ray-traced scene.
+The filter accepts color-only lightmaps; normal/albedo guides are not part of
+its documented input. Metadata records its version, filter and source.
+If the float checkpoint is unavailable, the tool can recover HDR irradiance
+from the verified original RGBM source. Original room irradiance quantization
+error is under .004; metadata explicitly records this recovery when used.
 
 ## Runtime contract
 

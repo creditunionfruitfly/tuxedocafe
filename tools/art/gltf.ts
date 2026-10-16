@@ -28,12 +28,44 @@ export function primitive(doc: Document, geometry: BufferGeometry) {
 }
 
 export async function saveAsset(doc: Document, path: string, budget: number, optimize = true) {
+  const expectedBaked = doc.getRoot().listMeshes().flatMap(mesh => mesh.listPrimitives()).filter(prim => prim.getExtras().bakedDaylight === true).length;
+  for (const mesh of doc.getRoot().listMeshes()) for (const prim of mesh.listPrimitives()) {
+    const uv = prim.getAttribute('TEXCOORD_0'), count = prim.getAttribute('POSITION')!.getCount();
+    if (!uv || uv.getCount() !== count || !Array.from(uv.getArray()!).every(Number.isFinite)) {
+      throw new Error(`${path}: ${mesh.getName()} needs finite per-vertex UV0`);
+    }
+    const material = prim.getMaterial();
+    if (!material?.getBaseColorTexture() || !material.getNormalTexture() || !material.getMetallicRoughnessTexture()) {
+      throw new Error(`${path}: ${mesh.getName()} needs albedo, normal and roughness/metallic textures`);
+    }
+  }
   await MeshoptEncoder.ready;
   if (optimize) {
-    await doc.transform(weld(), dedup(), prune());
+    // UV1 is consumed by the runtime lightMap shader rather than a glTF texture
+    // slot, so the default prune considers it unused. Preserve authored data.
+    // meshopt's nested reorder/quantize cleanup already uses keepAttributes.
+    await doc.transform(weld(), dedup(), prune({ keepAttributes: true }));
     if (process.env.ART_UNCOMPRESSED !== '1') await doc.transform(meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
   }
   const bytes = await io.writeBinary(doc);
+  await MeshoptDecoder.ready;
+  const decoded = await io.readBinary(bytes);
+  let bakedCount = 0;
+  for (const mesh of decoded.getRoot().listMeshes()) for (const prim of mesh.listPrimitives()) {
+    if (prim.getExtras().bakedDaylight !== true) continue;
+    bakedCount++;
+    const uv0 = prim.getAttribute('TEXCOORD_0'), uv1 = prim.getAttribute('TEXCOORD_1');
+    if (!uv0 || !uv1 || uv1.getCount() !== prim.getAttribute('POSITION')!.getCount()) throw new Error(`${path}: ${mesh.getName()} lost baked UV1 during export`);
+    const first: number[] = [], second: number[] = [];
+    let distinct = false;
+    for (let i = 0; i < uv1.getCount(); i++) {
+      uv0.getElement(i, first); uv1.getElement(i, second);
+      if (second.some(value => !Number.isFinite(value) || value < 0 || value > 1)) throw new Error(`${path}: ${mesh.getName()} exported invalid baked UV1`);
+      if (second.some((value, axis) => Math.abs(value - first[axis]!) > 1e-5)) distinct = true;
+    }
+    if (!distinct) throw new Error(`${path}: ${mesh.getName()} exported UV1 identical to UV0`);
+  }
+  if (bakedCount !== expectedBaked) throw new Error(`${path}: baked primitive count changed during export (${expectedBaked} to ${bakedCount})`);
   const report = await validateBytes(bytes, { maxIssues: 100 });
   if (report.issues.numErrors) throw new Error(`${path}: ${JSON.stringify(report.issues.messages)}`);
   const triangles = doc.getRoot().listMeshes().reduce((sum, mesh) => sum + mesh.listPrimitives()

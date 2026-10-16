@@ -1,8 +1,12 @@
 import { Document } from '@gltf-transform/core';
-import { BoxGeometry, CylinderGeometry, SphereGeometry, TorusGeometry, BufferGeometry, Color as ThreeColor } from 'three';
+import { BoxGeometry, CylinderGeometry, SphereGeometry, TorusGeometry, BufferGeometry, Vector3, Quaternion,
+  Shape, ExtrudeGeometry, CatmullRomCurve3, TubeGeometry, CurvePath, LineCurve3, CubicBezierCurve3 } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { primitive, saveAsset } from '../../../tools/art/gltf.ts';
+import { createCafeMaterials, applySurfaceUV } from '../../../tools/art/materials.ts';
+import { applyCafeLightBake } from '../../../tools/art/bake-cafe.ts';
+import { assertContact, assertPostUnderDeck, assertSurfaceUV } from './geometry-qa.ts';
 
 type P = [number, number, number];
 const palette = {
@@ -12,6 +16,8 @@ const palette = {
   charcoal: [.075, .095, .09], terracotta: [.63, .26, .15], leaf: [.15, .34, .14],
   leafLight: [.34, .48, .19], sky: [.62, .79, .82], glass: [.35, .62, .61],
   coffee: [.16, .065, .03], pastry: [.7, .43, .17], light: [1, .86, .57], rug: [.68, .70, .54],
+  sisal: [.77, .67, .49], stone: [.86, .84, .76],
+  paintLagoon: [.055, .28, .26], paintTeal: [.10, .43, .39],
 } satisfies Record<string, P>;
 type Color = keyof typeof palette;
 
@@ -19,34 +25,35 @@ export async function makeCafe() {
   const doc = new Document();
   doc.createBuffer();
   const scene = doc.createScene('Tuxedo Cafe · conservatory');
-  const materials = Object.fromEntries(Object.entries(palette).map(([name, color]) => {
-    const linear = new ThreeColor(...color).convertSRGBToLinear().toArray() as P;
-    const material = doc.createMaterial(name).setBaseColorFactor([...linear, 1]).setMetallicFactor(0).setRoughnessFactor(name === 'brass' ? .32 : .78);
-    if (name === 'brass') material.setMetallicFactor(.65);
-    if (name === 'light') material.setEmissiveFactor([1, .72, .36]);
-    if (name === 'sky') material.setEmissiveFactor([.3, .4, .4]);
-    return [name, material];
-  }));
+  const materials = await createCafeMaterials(doc);
   const groups = new Map<string, Map<Color, BufferGeometry[]>>();
   let group = 'architecture';
   const add = (geo: BufferGeometry, color: Color, pos: P, rot: P = [0, 0, 0]) => {
     if (geo.index) { const expanded = geo.toNonIndexed(); geo.dispose(); geo = expanded; }
-    geo.deleteAttribute('uv');
+    applySurfaceUV(geo, color);
+    assertSurfaceUV(`${group}/${color}`, geo);
     geo.rotateX(rot[0]); geo.rotateY(rot[1]); geo.rotateZ(rot[2]); geo.translate(...pos);
     if (!groups.has(group)) groups.set(group, new Map());
     const map = groups.get(group)!;
     if (!map.has(color)) map.set(color, []);
     map.get(color)!.push(geo);
+    return geo;
   };
   const box = (size: P, color: Color, pos: P, round = 0, rot: P = [0, 0, 0]) =>
     add(round ? new RoundedBoxGeometry(...size, 2, round) : new BoxGeometry(...size), color, pos, rot);
   const cyl = (r: number, h: number, color: Color, pos: P, rt = r, rot: P = [0, 0, 0]) =>
-    add(new CylinderGeometry(rt, r, h, 24), color, pos, rot);
+    add(new CylinderGeometry(rt, r, h, r >= .25 ? 64 : r >= .07 ? 32 : 20), color, pos, rot);
   const ball = (size: P, color: Color, pos: P, rot: P = [0, 0, 0]) => {
-    const geo = new SphereGeometry(1, 12, 8); geo.scale(...size); add(geo, color, pos, rot);
+    const geo = new SphereGeometry(1, 20, 12); geo.scale(...size); return add(geo, color, pos, rot);
   };
   const ring = (r: number, tube: number, color: Color, pos: P, rot: P = [Math.PI / 2, 0, 0], arc = Math.PI * 2) =>
-    add(new TorusGeometry(r, tube, 8, 28, arc), color, pos, rot);
+    add(new TorusGeometry(r, tube, 8, r > .1 ? 48 : 24, arc), color, pos, rot);
+  const beam = (a: P, b: P, radius: number, color: Color) => {
+    const start = new Vector3(...a), end = new Vector3(...b), direction = end.clone().sub(start);
+    const geo = new CylinderGeometry(radius, radius, direction.length(), 16);
+    geo.applyQuaternion(new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), direction.normalize()));
+    return add(geo, color, start.add(end).multiplyScalar(.5).toArray() as P);
+  };
 
   // Real gaps, beveled profiles and staggered plank lengths catch grazing light.
   box([10, .10, 8], 'oakDark', [0, -.08, -1]);
@@ -77,17 +84,22 @@ export async function makeCafe() {
   for (let z = -4.8; z < 3; z += .48) box([.065, 1.0, .035], 'oakLight', [-4.93, .5, z]);
   for (let x = -4.8; x < 5; x += .65) box([.075, .10, 8], 'oakLight', [x, 3.25, -1]);
   // Window banquette, upholstered channel seams and brass feet.
-  box([3.4, .42, .65], 'lagoon', [2.0, .33, -4.45], .09);
-  box([3.4, .55, .16], 'teal', [2.0, .85, -4.72], .06);
+  const banquetteSeat = box([3.4, .46, .65], 'lagoon', [2.0, .34, -4.45], .065);
+  const banquetteBack = box([3.4, .58, .16], 'teal', [2.0, .855, -4.72], .045);
+  assertContact('banquette back/seat', banquetteSeat, banquetteBack);
   for (let x = .5; x < 3.7; x += .22) box([.012, .43, .03], 'lagoon', [x, .85, -4.62]);
   for (const x of [.55, 3.5]) cyl(.025, .2, 'brass', [x, .1, -4.18]);
   // Fluted coffee counter, stone lip, joinery and espresso equipment.
-  box([3.6, .94, .88], 'lagoon', [-2.8, .47, -4.2], .045);
+  box([3.6, .94, .88], 'paintLagoon', [-2.8, .47, -4.2], .045);
   for (let x = -4.52; x < -1.05; x += .10) cyl(.037, .82, 'oakLight', [x, .48, -3.735]);
-  box([3.76, .10, 1.0], 'cream', [-2.8, .99, -4.16], .04);
+  box([3.76, .10, 1.0], 'stone', [-2.8, .99, -4.16], .04);
   box([3.65, .03, .025], 'brass', [-2.8, .19, -3.69]);
   box([.9, .45, .46], 'charcoal', [-3.65, 1.28, -4.24], .035);
   box([.84, .1, .54], 'brass', [-3.65, 1.06, -4.19], .018);
+  box([.82, .27, .015], 'brass', [-3.65, 1.3, -4.002], .012);
+  box([.23, .11, .018], 'charcoal', [-3.65, 1.37, -3.99], .008);
+  for (let i = 0; i < 5; i++) cyl(.009, .011, i === 0 ? 'light' : 'cream', [-3.77 + i * .06, 1.29, -3.982], .009, [Math.PI / 2, 0, 0]);
+  for (let i = 0; i < 13; i++) box([.012, .008, .26], 'charcoal', [-4.02 + i * .06, 1.115, -3.95]);
   for (const x of [-3.85, -3.47]) {
     cyl(.055, .18, 'brass', [x, 1.27, -3.94]);
     cyl(.09, .035, 'charcoal', [x + .09, 1.21, -3.94], .07, [0, 0, Math.PI / 2]);
@@ -95,20 +107,35 @@ export async function makeCafe() {
   }
   for (let i = 0; i < 5; i++) {
     cyl(.075, .035, 'cream', [-4.1, 1.52 + i * .035, -4.23]);
-    cyl(.048, .09, 'cream', [-3.55 + (i % 3) * .15, 1.57, -4.24]);
+    cyl(.048, .09, 'cream', [-3.55 + (i % 3) * .15, 1.5475, -4.24]);
   }
   // Sink and articulated goose-neck tap at the engine proxy coordinates.
   group = 'sink';
   box([.72, .065, .65], 'brass', [-2, 1.07, -3.68], .035);
-  box([.61, .025, .51], 'charcoal', [-2, 1.105, -3.68], .04);
+  box([.58, .018, .47], 'charcoal', [-2, 1.105, -3.68], .035);
+  for (const dx of [-.30, .30]) box([.025, .035, .5], 'brass', [-2 + dx, 1.113, -3.68], .009);
+  for (const z of [-3.93, -3.43]) box([.61, .035, .025], 'brass', [-2, 1.113, z], .009);
+  cyl(.035, .004, 'brass', [-2, 1.117, -3.68]);
   group = 'tap';
-  cyl(.025, .28, 'brass', [-2, 1.24, -3.92]);
-  ring(.12, .025, 'brass', [-2, 1.38, -3.80], [0, Math.PI / 2, 0], Math.PI);
-  cyl(.026, .10, 'brass', [-2, 1.34, -3.68]);
+  const tapPath = new CurvePath<Vector3>();
+  tapPath.add(new LineCurve3(new Vector3(-2, 1.1, -3.92), new Vector3(-2, 1.38, -3.92)));
+  tapPath.add(new CubicBezierCurve3(new Vector3(-2, 1.38, -3.92), new Vector3(-2, 1.57, -3.92),
+    new Vector3(-2, 1.57, -3.68), new Vector3(-2, 1.38, -3.68)));
+  tapPath.add(new LineCurve3(new Vector3(-2, 1.38, -3.68), new Vector3(-2, 1.29, -3.68)));
+  const tap = add(new TubeGeometry(tapPath, 40, .023, 10, false), 'brass', [0, 0, 0]);
+  const tapFoot = cyl(.048, .038, 'brass', [-2, 1.12, -3.92]);
+  const nozzle = cyl(.028, .045, 'brass', [-2, 1.30, -3.68]);
+  assertContact('tap continuous foot', tap, tapFoot); assertContact('tap outlet', tap, nozzle);
+  beam([-1.96, 1.13, -3.92], [-1.88, 1.23, -3.92], .012, 'brass');
+  ring(.022, .005, 'charcoal', [-2, 1.278, -3.68]);
   group = 'architecture';
   // Shelves and a pastry display. Clear acrylic is represented by teal edging.
   for (const y of [1.55, 2.1]) {
     box([2.55, .065, .32], 'oakLight', [-3.35, y, -4.76], .02);
+    for (const x of [-4.35, -2.35]) {
+      box([.035, .2, .025], 'brass', [x, y - .09, -4.91]);
+      beam([x, y - .18, -4.91], [x, y - .025, -4.62], .012, 'brass');
+    }
     for (let i = 0; i < 8; i++) cyl(.045, .11, 'cream', [-4.35 + i * .19, y + .085, -4.73], .06);
   }
   box([.63, .05, .48], 'oakLight', [-1.38, 1.08, -4.14], .02);
@@ -117,14 +144,52 @@ export async function makeCafe() {
   for (let i = 0; i < 4; i++) ball([.08, .055, .045], 'pastry', [-1.57 + (i % 2) * .25, 1.14, -4.26 + Math.floor(i / 2) * .24]);
 
   const chair = (x: number, z: number, angle: number) => {
-    cyl(.27, .09, 'teal', [x, .44, z]);
-    ring(.29, .055, 'lagoon', [x, .76, z], [0, angle, 0], Math.PI);
-    for (const dx of [-.18, .18]) for (const dz of [-.17, .17]) cyl(.018, .43, 'oakDark', [x + dx, .215, z + dz]);
+    const local = (p: P): P => [x + p[0] * Math.cos(angle) + p[2] * Math.sin(angle), p[1],
+      z - p[0] * Math.sin(angle) + p[2] * Math.cos(angle)];
+    const shell = cyl(.29, .06, 'oakDark', [x, .415, z]);
+    const cushion = cyl(.275, .065, 'teal', [x, .472, z], .265);
+    assertContact('chair cushion/seat shell', shell, cushion);
+    ring(.265, .006, 'lagoon', [x, .499, z]);
+    // A closed bent-plywood shell, upholstered on its inner face. The rear legs
+    // continue through the seat to the back; there are no suspended torus arcs.
+    const backPanel = (inner: number, outer: number, y: number, height: number, color: Color, inset = 0) => {
+      const shape = new Shape();
+      shape.moveTo(outer * Math.cos(inset), outer * Math.sin(inset));
+      shape.absarc(0, 0, outer, inset, Math.PI - inset, false);
+      shape.lineTo(inner * Math.cos(Math.PI - inset), inner * Math.sin(Math.PI - inset));
+      shape.absarc(0, 0, inner, Math.PI - inset, inset, true); shape.closePath();
+      const geo = new ExtrudeGeometry(shape, { depth: height, bevelEnabled: true, bevelSize: .004,
+        bevelThickness: .004, bevelSegments: 2, curveSegments: 20, steps: 1 });
+      geo.rotateX(-Math.PI / 2);
+      return add(geo, color, [x, y, z], [0, angle, 0]);
+    };
+    const back = backPanel(.307, .335, .645, .25, 'oakDark');
+    backPanel(.278, .309, .665, .205, 'teal', .15);
+    for (const y of [.67, .867]) {
+      const path = Array.from({ length: 25 }, (_, i) => {
+        const a = .15 + i / 24 * (Math.PI - .3);
+        return new Vector3(...local([.279 * Math.cos(a), y, -.279 * Math.sin(a)]));
+      });
+      add(new TubeGeometry(new CatmullRomCurve3(path), 24, .004, 4, false), 'lagoon', [0, 0, 0]);
+    }
+    for (const side of [-1, 1]) {
+      const rear = beam(local([side * .19, .015, -.16]), local([side * .24, .735, -.22]), .022, 'oakDark');
+      const front = beam(local([side * .23, .015, .20]), local([side * .18, .438, .16]), .021, 'oakDark');
+      assertContact('chair rear leg/seat', rear, shell); assertContact('chair rear leg/back', rear, back);
+      assertContact('chair front leg/seat', front, shell);
+      beam(local([side * .195, .27, -.17]), local([side * .20, .27, .175]), .012, 'brass');
+      cyl(.023, .025, 'charcoal', local([side * .19, .009, -.16]));
+      cyl(.023, .025, 'charcoal', local([side * .23, .009, .20]));
+    }
   };
   for (const [i, x, z] of [[1, -2, -.6], [2, .5, -3.1]]) {
     group = `table-${i}`;
-    cyl(.66, .065, 'oakPale', [x!, .76, z!]); ring(.64, .012, 'brass', [x!, .802, z!]);
-    cyl(.07, .72, 'lagoon', [x!, .36, z!], .09); cyl(.32, .035, 'brass', [x!, .025, z!]);
+    const top = cyl(.66, .065, 'oakPale', [x!, .76, z!]); ring(.64, .012, 'brass', [x!, .795, z!]);
+    const pedestal = cyl(.07, .72, 'paintLagoon', [x!, .385, z!], .09);
+    const base = cyl(.32, .04, 'brass', [x!, .018, z!], .29);
+    const socket = cyl(.14, .035, 'charcoal', [x!, .724, z!], .16);
+    assertContact('table pedestal/base', pedestal, base); assertContact('table mounting socket', pedestal, socket);
+    assertContact('table top/socket', top, socket);
     cyl(.105, .018, 'cream', [x! + .23, .805, z!]); cyl(.065, .10, 'cream', [x! + .23, .86, z!], .08);
     ring(.045, .012, 'cream', [x! + .315, .86, z!], [0, 0, 0]);
     cyl(.06, .007, 'coffee', [x! + .23, .915, z!]);
@@ -134,24 +199,39 @@ export async function makeCafe() {
   // Pendant shades with visible luminous diffusers; no extra dynamic lights.
   for (const [x, z] of [[-2, -.6], [.5, -3.1], [-3.5, -3.6]]) {
     cyl(.008, .6, 'charcoal', [x!, 2.99, z!]);
-    cyl(.30, .20, 'lagoon', [x!, 2.61, z!], .12);
+    cyl(.30, .20, 'paintLagoon', [x!, 2.61, z!], .12);
     cyl(.28, .012, 'light', [x!, 2.50, z!]); ring(.29, .014, 'brass', [x!, 2.50, z!]);
   }
   // Soft leaf-shaped rug in the play area with nested stitched rings.
   cyl(.95, .012, 'rug', [3.4, .012, -.3]);
   for (const r of [.82, .87, .91]) ring(r, .006, 'cream', [3.4, .021, -.3]);
   group = 'cat-tree';
-  cyl(.52, .09, 'oakLight', [3.7, .055, -2.2]);
-  for (const [x, z, h] of [[3.48, -2.25, 1.65], [3.92, -2.15, 1.15]]) {
-    cyl(.073, h!, 'cream', [x!, h! / 2, z!]);
-    for (let y = .1; y < h!; y += .035) ring(.074, .007, 'oakPale', [x!, y, z!]);
+  const treeBase = cyl(.52, .10, 'oakLight', [3.7, .048, -2.2]);
+  const posts: { geo: BufferGeometry; start: P; end: P }[] = [];
+  for (const [x, z, top] of [[3.48, -2.25, 1.745], [3.92, -2.15, .605]]) {
+    const start: P = [x!, .08, z!], end: P = [x!, top!, z!];
+    const post = cyl(.073, top! - .08, 'sisal', [x!, (top! + .08) / 2, z!]);
+    posts.push({ geo: post, start, end }); assertContact('cat-tree base/post', treeBase, post);
+    // Tactile fiber comes from the sisal normal map. Real end collars and sockets
+    // retain silhouette detail without spending tens of thousands of rope tris.
+    for (const y of [.115, top! - .025]) {
+      cyl(.091, .035, 'oakDark', [x!, y, z!]); ring(.080, .008, 'oakPale', [x!, y, z!]);
+    }
   }
-  for (const [x, y, z] of [[3.92, .62, -2.15], [3.6, 1.2, -2.2], [3.45, 1.77, -2.25]]) {
-    cyl(.34, .08, 'oakLight', [x!, y!, z!]);
-    cyl(.30, .045, 'teal', [x!, y! + .06, z!]); ring(.30, .045, 'teal', [x!, y! + .11, z!]);
+  for (const [i, x, y, z] of [[0, 3.92, .62, -2.15], [1, 3.6, 1.2, -2.2], [2, 3.45, 1.77, -2.25]]) {
+    const center: P = [x!, y!, z!], post = posts[i === 0 ? 1 : 0]!;
+    const deck = cyl(.34, .08, 'oakLight', center);
+    const cushion = cyl(.306, .07, 'teal', [x!, y! + .07, z!], .293);
+    assertContact('perch cushion/deck', deck, cushion); assertContact('perch deck/support', deck, post.geo);
+    assertPostUnderDeck(`perch-${i}`, center, .34, post.start, post.end, .08);
+    ring(.301, .007, 'lagoon', [x!, y! + .083, z!]);
+    ring(.281, .028, 'teal', [x!, y! + .117, z!]);
+    ring(.285, .004, 'lagoon', [x!, y! + .140, z!]);
+    cyl(.11, .025, 'oakDark', [post.start[0], y! - .045, post.start[2]]);
+    for (const dx of [-.11, .11]) for (const dz of [-.11, .11]) cyl(.009, .006, 'lagoon', [x! + dx, y! + .106, z! + dz]);
   }
   // Bowls are separate nodes, with pivots at their contact points for carrying.
-  for (const [id, x, color] of [['water-bowl', 1.4, 'teal'], ['food-bowl', 1.9, 'terracotta']] as const) {
+  for (const [id, x, color] of [['water-bowl', 1.4, 'paintTeal'], ['food-bowl', 1.9, 'terracotta']] as const) {
     group = id;
     cyl(.17, .08, color, [x, .04, -.7], .19); ring(.185, .018, 'cream', [x, .083, -.7]);
     cyl(.16, .005, id === 'water-bowl' ? 'glass' : 'coffee', [x, .078, -.7]);
@@ -161,7 +241,7 @@ export async function makeCafe() {
     box([.65, .15, .52], 'cream', [4.25, .075, z!], .045);
     box([.53, .02, .4], 'oakPale', [4.25, .15, z!], .025);
   }
-  group = 'bin'; cyl(.16, .48, 'lagoon', [-4.65, .24, -3.25]); cyl(.17, .04, 'brass', [-4.65, .5, -3.25]);
+  group = 'bin'; cyl(.16, .48, 'paintLagoon', [-4.65, .24, -3.25]); cyl(.17, .04, 'brass', [-4.65, .5, -3.25]);
   group = 'scoop'; box([.10, .02, .13], 'brass', [4.65, .3, -3.9], .015); box([.025, .02, .28], 'oakDark', [4.65, .3, -4.08]);
   group = 'architecture';
   const plant = (x: number, y: number, z: number, size: number) => {
@@ -170,6 +250,8 @@ export async function makeCafe() {
     for (let i = 0; i < 12; i++) {
       const a = i * 2.4, h = (.36 + (i % 4) * .12) * size, d = .19 * size;
       cyl(.008 * size, h, 'leaf', [x + Math.cos(a) * .05, y + h / 2 + .25 * size, z + Math.sin(a) * .05]);
+      beam([x + Math.cos(a) * .05, y + h + .21 * size, z + Math.sin(a) * .05],
+        [x + Math.cos(a) * .18 * size, y + h + .18 * size, z + Math.sin(a) * .18 * size], .006 * size, 'leaf');
       ball([.075 * size, .24 * size, .015 * size], i % 2 ? 'leaf' : 'leafLight',
         [x + Math.cos(a) * d, y + h + .18 * size, z + Math.sin(a) * d], [Math.sin(a) * .7, a, Math.cos(a) * .7]);
     }
@@ -207,5 +289,6 @@ export async function makeCafe() {
     }
     scene.addChild(node);
   }
+  await applyCafeLightBake(doc);
   return saveAsset(doc, 'public/assets/art/env_cafe.glb', 150000);
 }

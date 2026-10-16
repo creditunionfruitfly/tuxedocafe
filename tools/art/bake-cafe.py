@@ -191,8 +191,12 @@ destination.with_suffix('.png').write_bytes(png)
 provenance = "source: tools/art/bake-cafe.py\ntool: Blender Cycles CPU original offline lighting\ndate: '2026-10-16'\nlicense: original\nauthor_role: artist\n"
 Path(str(destination.with_suffix('.png')) + '.prov.yaml').write_text(provenance)
 uv_bytes = np.concatenate(uv_arrays).astype('<f4').tobytes()
-np.savez_compressed(destination.with_suffix('.hdr.npz'), irradiance=irradiance,
-                    uv=np.concatenate(uv_arrays), primitives=json.dumps(primitives), signature=data['signature'])
+checkpoint = destination.with_suffix('.hdr.npz')
+temporary_checkpoint = destination.with_suffix('.hdr.npz.tmp')
+with temporary_checkpoint.open('wb') as file:
+    np.savez_compressed(file, irradiance=irradiance, uv=np.concatenate(uv_arrays),
+                        primitives=json.dumps(primitives), signature=data['signature'])
+temporary_checkpoint.replace(checkpoint)
 # Dynamic objects use actual low-frequency room radiance captured with Cycles.
 # A SUN lamp has no camera-visible disk, so its reflected room bounce belongs
 # in the probes while the runtime key supplies direct illumination separately.
