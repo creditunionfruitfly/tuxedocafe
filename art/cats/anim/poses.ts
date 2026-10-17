@@ -250,17 +250,25 @@ export function lieSideBody(rig: Rig, roll = 80 * DEG, stretch = 0): Body {
   return b;
 }
 
-/** Side-lying sleeping curl: a modest C through the spine, paws gathered under the muzzle. */
+/** Sleeping curl: spine bent into a C, chin turned toward the gathered paws, tail along the open flank. */
 export function curlBody(rig: Rig): Body {
   const b = loafBody(rig);
   b.pelvis[1] = 0.18; b.pelvis[2] = 0.08;
-  b.spine = [[0.04, 0.16, 0.02], [-0.01, 0.18, 0.02], [-0.04, 0.18, 0], [-0.04, 0.16, 0], [0, 0.12, -0.02]];
-  b.neck = [[-0.16, 0.18, -0.08], [0.01, 0.16, -0.08]];
-  b.head = [-0.13, 0.12, -0.08];
+  b.spine = [[0.04, 0.26, 0.02], [-0.01, 0.28, 0.02], [-0.04, 0.28, 0], [-0.04, 0.26, 0], [0, 0.22, -0.02]];
+  b.neck = [[-0.35, -0.1, -0.08], [-0.2, -0.2, -0.08]];
+  b.head = [-0.3, -0.15, -0.08];
   b.gaze = [0, 0, 0, 0];
   b.earL = [0.3, 0.2, -0.05]; b.earR = [0.3, 0.2, -0.05];
-  // Follow the outer haunch around to the tucked forepaws without cutting through the trunk.
-  b.tailCurve = { w: 1, pts: wrapCurve(rig, b, -1, 0.9) };
+  // Sweep around the outside of the haunch, then fold the tip over the tucked
+  // hind paws. The short tail cannot bridge the full rump-to-muzzle distance.
+  const k = rig.M.legScale, base = worldOf(rig, b, 'tail_01');
+  b.tailCurve = { w: 1, pts: [
+    [base.x + 0.025 * k, base.y - 0.04 * k, base.z - 0.025 * k],
+    [base.x + 0.08 * k, 0.045 * k, base.z + 0.045 * k],
+    [base.x + 0.13 * k, 0.035 * k, base.z + 0.16 * k],
+    [0.08 * k, 0.035 * k, b.legs.LF.c[2] - 0.02 * k],
+    [0.045 * k, 0.04 * k, b.legs.LF.c[2] + 0.02 * k],
+  ] };
   return b;
 }
 

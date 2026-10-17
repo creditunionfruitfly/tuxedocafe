@@ -267,7 +267,7 @@ export const perkClips: ClipSpec[] = [
   { name: 'cat.perk.catnip_sniff', body: catnipSniff, stance: allPlanted },
   { name: 'cat.perk.catnip_lick', body: catnipLick, stance: allPlanted },
   {
-    name: 'cat.perk.catnip_roll', body: (t, ctx) => rollOver(t, ctx, { drop: 0.4, back: 0.75, wriggleEnd: 2.5, T: 3.0, rub: 0.45 }),
+    name: 'cat.perk.catnip_roll', body: (t, ctx) => rollOver(t, ctx, { drop: 0.4, back: 0.9, wriggleEnd: 2.5, T: 3.0, rub: 0.45 }),
     tailSim: { wBase: 24, wTip: 11, zeta: 0.6 }, stance: () => ({}),
   },
   { name: 'cat.perk.catnip_zoom', body: catnipZoom, stance: zoomStance, groundSpeed: (_t, ctx) => zoomPlan(ctx).v, tailSim: { wBase: 38, wTip: 22, zeta: 0.85 }, extras: ctx => gaitExtras(zoomPlan(ctx)) },

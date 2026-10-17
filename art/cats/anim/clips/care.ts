@@ -132,12 +132,12 @@ function pawStrokes(rig: Rig, b: Body, ctx: Ctx, t: number, strokes: [LegId, num
     const L = b.legs[id], home = [...L.toe] as V3, u = (t - t0) / (t1 - t0);
     const a: V3 = [home[0], home[1], home[2] + (forward ? -0.04 : 0.06) * k];
     const c: V3 = [home[0], home[1], home[2] + (forward ? 0.06 : -0.05) * k];
-    if (u < 0.32) stepLeg(rig, L, id, u, 0, 0.32, home, a, 0.035 * sH, 1.1);
+    if (u < 0.32) stepLeg(rig, L, id, t, t0, lerp(t0, t1, 0.32), home, a, 0.035 * sH, 1.1);
     else if (u < 0.74) {
       // The drag: pads in the litter, claws working.
       const s = smooth((u - 0.32) / 0.42);
       L.toe = [a[0], a[1] + 0.004 * k * Math.sin(Math.PI * s), lerp(a[2], c[2], s)]; L.curl = forward ? 0 : 0.45; L.dig = rig.legs[id].digRestPitch + (forward ? -0.1 : 0.25);
-    } else stepLeg(rig, L, id, u, 0.74, 1, c, home, 0.025 * sH, 0.9);
+    } else stepLeg(rig, L, id, t, lerp(t0, t1, 0.74), t1, c, home, 0.025 * sH, 0.9);
   }
 }
 
