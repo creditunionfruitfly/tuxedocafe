@@ -71,9 +71,4 @@ export function simulateTail(rig: Rig, bodies: Body[], dt: number, loop: boolean
       bodies[f]!.tail[i]![axis] = tgt + 0.44 * Math.tanh(dev / 0.44);
     }));
   }
-  // Both axes together must stay inside the validator's anatomical limits (tail_01 110°, the rest 55°).
-  for (const b of bodies) b.tail.forEach((r, i) => {
-    const max = (i === 0 ? 108 : 53) * Math.PI / 180, m = Math.hypot(r[0]!, r[1]!);
-    if (m > max) { r[0] = r[0]! * max / m; r[1] = r[1]! * max / m; }
-  });
 }
