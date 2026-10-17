@@ -1,0 +1,6 @@
+source: art/cats/master/notes/atlas.json at pre-polish UV freeze
+tool: authored anatomical mesh and deterministic gzip/base64 archiving
+date: '2026-10-17'
+license: original
+author_role: artist
+notes: Exact generation-atlas registration; used only by authoring reprojection, never shipped to players
