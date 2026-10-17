@@ -1,4 +1,4 @@
-node_modules/
+node_modules
 dist/
 _site/
 test-results/
@@ -17,4 +17,12 @@ Thumbs.db
 public/assets/art/env_cafe.glb*
 public/assets/art/hand.glb*
 public/assets/art/cats/cat_placeholder_lod0.glb*
+public/assets/art/cats/cat_anims.glb*
+public/assets/art/cats/cat_expressions.json*
 public/assets/art/lighting/
+public/assets/art/cats/textures/
+public/assets/art/cats/cat_master_*.glb*
+public/assets/art/cats/cat_master_qa.json*
+art/cats/master/cat_master_source.bin*
+art/cats/master/notes/*.png*
+art/cats/master/notes/screenshots/

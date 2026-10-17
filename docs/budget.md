@@ -9,6 +9,7 @@ One line per Codex session (AGENTS.md, Token budget). Shares come from `/status`
 | 2026-10-16 | R1 cafe refactor | master + artists, dispatched engine | Session model | A | Not reported | Eight original texture-generation runs; authored meshes; actual Cycles/OIDN bake. Account allowance is unavailable; no spend percentage or budget-share compliance is claimed. |
 | 2026-10-16 | Maintenance | master, engine | Claude Code, not Codex | A | 0% | Not feature work: live smoke timeout fix (engine/R1-live-smoke-timeout) and project Codex subagent roles in .codex/ |
 | 2026-10-16 | R2-0 radial controls | master, artist, engine | Claude Code, not Codex | A | 0% | Owner-requested control optimization; outside the Codex allowance |
+| 2026-10-17 | M2 mesh, animation, IK, resident surfacing and offline viewer | master + artists, dispatched engine | GPT-6.1 Sol / GPT-6 Sol; interrupted Astra mesh pass | A | Not reported | Seventeen original image-generation runs (eight eyes, eight coats, shared fur); existing role work resumed from PRs #28–#30. Exact allowance usage is unavailable; no spend percentage is claimed. |
 
 ## Running totals
 
