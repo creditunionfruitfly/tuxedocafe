@@ -103,8 +103,11 @@ if (process.env.PREVIEW_AUDIT) {
   for (const [i, peak] of audit.results.filter(r => r.degreesPerFrame > 35).entries()) {
     const clip = catalog.clips.find(c => c.name === peak.clip)!;
     const times = [peak.t - 2 / 30, peak.t - 1 / 30, peak.t, peak.t + 1 / 30].map(t => Math.max(0, Math.min(clip.durationS - 0.00001, t)));
+    const view: Partial<Cell> = clip.heightM !== undefined
+      ? { target: [0, clip.heightM > 0 ? clip.heightM * 0.65 : clip.heightM * 0.55, 0.3], ortho: Math.abs(clip.heightM) + 0.7, followRoot: false, travel: false }
+      : { followRoot: true };
     SHEETS[`audit${i + 1}`] = { title: `${peak.clip}: ${peak.bone}, ${peak.degreesPerFrame.toFixed(1)} degrees per frame`, cols: 4, cellW: 360, cellH: 280,
-      cells: [...at(peak.clip, times, { ...side, followRoot: true }), ...at(peak.clip, times, { ...threeQ, followRoot: true })] };
+      cells: [...at(peak.clip, times, { ...side, ...view }), ...at(peak.clip, times, { ...threeQ, ...view })] };
   }
 }
 

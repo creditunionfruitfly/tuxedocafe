@@ -26,13 +26,13 @@ export function airPoint(ctx: Ctx, b: Body, id: LegId, local: V3): V3 {
  * Airborne paw from a planted spot through body-relative waypoints to a world landing spot. The carpus / hock folds
  * in the air and opens to reach for the landing; distal angles go free after liftoff and planted before contact.
  */
-export function flightLeg(ctx: Ctx, b: Body, L: Leg, id: LegId, s: number, from: V3, way: V3[], to: V3, reach = 0.3) {
+export function flightLeg(ctx: Ctx, b: Body, L: Leg, id: LegId, s: number, from: V3, way: V3[], to: V3, reach = 0.3, foldIn = 0.15) {
   const pts = [from, ...way.map(w => airPoint(ctx, b, id, w)), to];
   const seg = Math.min(pts.length - 2, Math.floor(s * (pts.length - 1))), u = s * (pts.length - 1) - seg;
   const a = pts[seg]!, c = pts[seg + 1]!, e = smooth(u);
   L.toe = [lerp(a[0], c[0], e), lerp(a[1], c[1], e), lerp(a[2], c[2], e)];
   const d = ctx.rig.legs[id], f = Math.sin(Math.PI * s);
-  L.rel = smooth(s / 0.15) * (1 - smooth((s - 0.62) / 0.36));
+  L.rel = smooth(s / foldIn) * (1 - smooth((s - 0.62) / 0.36));
   L.carpus = d.flexScale * ((d.front ? 1.6 : 1.4) * f * (1 - reach * smooth((s - 0.5) / 0.4))) + (d.front ? -0.2 : 0.8) * (1 - f);
   L.digits = d.dRest * (1 - f) + 0.1 * f; L.curl = 0.15 * f;
 }
@@ -83,10 +83,10 @@ function jumpUp(t: number, ctx: Ctx, o: JumpUp): Body {
     if (t <= off) L.toe = [...stand.legs[id].toe];
     else if (t < land) {
       const s = (t - off) / (land - off);
-      flightLeg(ctx, b, L, id, s, stand.legs[id].toe, [[0.035, -0.11, 0.06], [0.04, -0.16, 0.2]], frontLand(id));
+      flightLeg(ctx, b, L, id, s, stand.legs[id].toe, [[0.035, -0.11, 0.16], [0.04, -0.16, 0.24]], frontLand(id), 0.3, 0.45);
       // Reach above the rim before advancing over it; floor correction must
       // never teleport a below-ledge paw onto the upper surface.
-      const points = [stand.legs[id].toe, airPoint(ctx, b, id, [0.035, -0.11, 0.06]),
+      const points = [stand.legs[id].toe, airPoint(ctx, b, id, [0.035, -0.11, 0.16]),
         [stand.legs[id].toe[0], o.H + 0.11 * k, edge - 0.02 * k] as V3, frontLand(id)];
       const seg = Math.min(2, Math.floor(s * 3)), w = smooth(s * 3 - seg), a = points[seg]!, c = points[seg + 1]!;
       L.toe = [lerp(a[0], c[0], w), lerp(a[1], c[1], w), lerp(a[2], c[2], w)];
@@ -240,7 +240,7 @@ export function pounce(t: number, ctx: Ctx, o: { Dp: number; tCrouch: number; tW
   for (const id of ['LF', 'RF'] as const) {
     const L = b.legs[id];
     if (t <= o.tSpring) continue;
-    if (t < o.tPin) flightLeg(ctx, b, L, id, (t - o.tSpring) / (o.tPin - o.tSpring), stand.legs[id].toe, [[0.035, -0.14, 0.12]], fPin(id), 0.6);
+    if (t < o.tPin) flightLeg(ctx, b, L, id, (t - o.tSpring) / (o.tPin - o.tSpring), stand.legs[id].toe, [[0.035, -0.14, 0.12]], fPin(id), 0.6, 0.5);
     else { L.toe = fPin(id); L.yaw = 0; L.out = -0.15; L.curl = 0.2 * bump(t, o.tPin, o.tPin + 0.05, o.tPin + 0.3, o.tPin + 0.4); }
   }
   for (const id of ['LH', 'RH'] as const) {
