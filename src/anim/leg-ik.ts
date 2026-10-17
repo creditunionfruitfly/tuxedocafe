@@ -20,6 +20,8 @@ const RELEASE_S = .12, LOCK_BLEND_S = .1;
 const PELVIS_TAU = .07, MAX_PITCH = .26, MAX_TILT = .6;
 /** Planted limbs are kept just short of full extension when the pelvis drops (unless animated straighter). */
 const REACH_MARGIN = .985;
+/** Extra crouch a stretched planted leg may ask for, the lock drift that re-plants a paw, and a re-plant's lift (× leg length). */
+const REACH_DROP = .06, DRIFT = .3, STEP_LIFT = .06;
 
 export class Leg {
   readonly id: PawId; readonly front: boolean; readonly chain: TwoBoneChain; readonly effector: Object3D;
@@ -33,6 +35,7 @@ export class Leg {
   // Per-solve scratch.
   readonly padAnim = new Vector3(); readonly distal = new Vector3(); readonly distalWorld = new Quaternion();
   readonly target = new Vector3(); readonly align = new Quaternion(); contact = 0; lockWeight = 0; animReach = 0;
+  readonly swing = new Vector3(); swingGround = 0;
   readonly animA = new Quaternion(); readonly animB = new Quaternion(); readonly animC = new Quaternion();
   constructor(id: PawId, chain: TwoBoneChain, effector: Object3D, length: number) {
     this.id = id; this.front = id[1] === 'F'; this.chain = chain; this.effector = effector; this.length = length;
@@ -136,19 +139,16 @@ export class LegIK {
       _hit.normal.set(0, 1, 0);
       const groundY = this.ground(leg.padAnim.x, leg.padAnim.z, _hit) ? _hit.height : rootY;
       // Swing path: the animated pad height kept above the local support.
-      leg.target.copy(leg.padAnim); leg.target.y += groundY - rootY;
+      leg.swing.copy(leg.padAnim); leg.swing.y += groundY - rootY; leg.swingGround = groundY;
       if (this.lockEnabled && leg.contact >= .5) {
         // A stance pad rests on the support under where it touched down.
-        if (!leg.locked) { leg.locked = true; leg.lockWeight = 0; leg.lock.set(leg.target.x, groundY, leg.target.z); }
-        else if (Math.hypot(leg.lock.x - leg.target.x, leg.lock.z - leg.target.z) > leg.length * .45) {
-          leg.released.copy(leg.lock); leg.release = 1; leg.lock.set(leg.target.x, groundY, leg.target.z);
-        }
+        if (!leg.locked) { leg.locked = true; leg.lockWeight = 0; leg.lock.set(leg.swing.x, groundY, leg.swing.z); }
+        else if (Math.hypot(leg.lock.x - leg.swing.x, leg.lock.z - leg.swing.z) > leg.length * DRIFT) this.#replant(leg);
       } else if (leg.locked) { leg.locked = false; leg.released.copy(leg.lock); leg.release = 1; }
       // Reach weight ramps in around touchdown rather than snapping the pad down.
       leg.lockWeight = leg.locked ? Math.min(Math.min(1, (leg.contact - .5) / .3), leg.lockWeight + dt / LOCK_BLEND_S) : 0;
-      if (leg.lockWeight > 0) leg.target.lerp(leg.lock, leg.lockWeight);
-      if (leg.release > 0) { leg.target.lerp(leg.released, leg.release); leg.release = Math.max(0, leg.release - dt / RELEASE_S); }
-      if (leg.reachWeight > 0) leg.target.lerp(leg.reach, leg.reachWeight);
+      this.#target(leg);
+      if (leg.release > 0) leg.release = Math.max(0, leg.release - dt / RELEASE_S);
       // Planted paws tilt onto the support plane, up to MAX_TILT.
       leg.align.setFromUnitVectors(UP, _hit.normal);
       const angle = 2 * Math.acos(Math.min(1, Math.abs(leg.align.w)));
@@ -165,17 +165,15 @@ export class LegIK {
       ? Math.max(-MAX_PITCH, Math.min(MAX_PITCH, Math.atan2(frontSum / frontCount - hindSum / hindCount, this.#span) * this.pitchWeight)) : 0;
     this.pitch += (pitchTarget * w - this.pitch) * smoothing;
     this.#applyPelvis(this.pitch, 0);
-    // Lower the body by the lowest planted paw's height error, and further if a
-    // planted paw's wrist/hock target would otherwise be out of reach.
-    // The comfortable height is smoothed; reachability is a hard limit applied at once.
+    // Lower the body by the lowest planted paw's height error (smoothed), and at
+    // once as far as a planted paw needs to reach its support where the animation
+    // puts it. Horizontal drift from a lock is not a reason to crouch: that paw steps.
     let comfort = Infinity, limit = Infinity;
     for (const leg of this.legs) {
       if (leg.contact <= .25) continue;
       comfort = Math.min(comfort, leg.target.y - _p.copy(leg.padLocal).applyMatrix4(leg.effector.matrixWorld).y);
-      _v.copy(leg.distal).applyQuaternion(leg.align).add(leg.target);
-      _p.setFromMatrixPosition(leg.chain.a.matrixWorld);
-      const full = leg.chain.reach(), reach = Math.max(full * REACH_MARGIN, Math.min(full * .9999, leg.animReach)), horizontal = Math.hypot(_v.x - _p.x, _v.z - _p.z);
-      if (horizontal < reach) limit = Math.min(limit, _v.y - _p.y + Math.sqrt(reach * reach - horizontal * horizontal));
+      const terrain = this.#reachLimit(leg, leg.swing.x, leg.swing.z), locked = this.#reachLimit(leg, leg.target.x, leg.target.z);
+      limit = Math.min(limit, terrain, Math.max(locked, terrain - leg.length * REACH_DROP));
     }
     const maxDrop = this.#minLength * .3, maxRaise = this.#minLength * .15;
     const comfortTarget = supported ? Math.max(-maxDrop, Math.min(maxRaise, comfort)) : 0;
@@ -184,6 +182,11 @@ export class LegIK {
     this.#applyPelvis(this.pitch, this.pelvisOffset);
     for (const leg of this.legs) {
       _v.copy(leg.distal).applyQuaternion(leg.align).add(leg.target);
+      if (leg.locked && leg.release === 0 && Math.hypot(leg.lock.x - leg.swing.x, leg.lock.z - leg.swing.z) > leg.length * .02
+        && _v.distanceTo(_p.setFromMatrixPosition(leg.chain.a.matrixWorld)) > Math.max(leg.chain.reach() * REACH_MARGIN, leg.animReach) * 1.002) {
+        this.#replant(leg); this.#target(leg);
+        _v.copy(leg.distal).applyQuaternion(leg.align).add(leg.target);
+      }
       solveTwoBone(leg.chain, _v, leg.pole);
       // Distal paw: the animated world orientation, tilted onto the support.
       _q.copy(leg.align).multiply(leg.distalWorld);
@@ -196,6 +199,31 @@ export class LegIK {
       }
       leg.chain.a.updateMatrixWorld(true);
     }
+  }
+
+  /**
+   * The highest pelvis offset at which this leg's wrist/hock target (pad at
+   * x, z and the current goal height) is within reach; +∞ if it never is.
+   */
+  #reachLimit(leg: Leg, x: number, z: number): number {
+    _v.set(x, leg.target.y, z).add(_s.copy(leg.distal).applyQuaternion(leg.align));
+    _p.setFromMatrixPosition(leg.chain.a.matrixWorld);
+    const full = leg.chain.reach(), reach = Math.max(full * REACH_MARGIN, Math.min(full * .9999, leg.animReach)), horizontal = Math.hypot(_v.x - _p.x, _v.z - _p.z);
+    return horizontal < reach ? _v.y - _p.y + Math.sqrt(reach * reach - horizontal * horizontal) : Infinity;
+  }
+
+  /** The pad goal from swing path, lock, release and reach, in that order. */
+  #target(leg: Leg): void {
+    leg.target.copy(leg.swing);
+    if (leg.lockWeight > 0) leg.target.lerp(leg.lock, leg.lockWeight);
+    if (leg.release > 0) { leg.target.lerp(leg.released, leg.release); leg.target.y += Math.sin(Math.PI * leg.release) * leg.length * STEP_LIFT; }
+    if (leg.reachWeight > 0) leg.target.lerp(leg.reach, leg.reachWeight);
+  }
+
+  /** A planted paw that drifted too far or out of reach steps to its animated spot. */
+  #replant(leg: Leg): void {
+    leg.released.copy(leg.lock); leg.release = 1;
+    leg.lock.set(leg.swing.x, leg.swingGround, leg.swing.z);
   }
 
   /** Pitch the body about the cat's lateral axis at the pelvis joint and lift it by `offset` (world units). */

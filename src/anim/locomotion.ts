@@ -10,7 +10,7 @@ export type Gait = 'idle' | 'walk' | 'trot' | 'gallop';
 export const GAITS: readonly Gait[] = ['idle', 'walk', 'trot', 'gallop'];
 /** Below this normalized speed the cat stands. */
 export const IDLE_SPEED = .03;
-const START_BLEND = .3, WALK_TROT_HALF = .12, TROT_GALLOP_HALF = .2;
+const START_BLEND = .15, WALK_TROT_HALF = .12, TROT_GALLOP_HALF = .2;
 /** Playback rates outside this range would look wrong; IK foot locking absorbs the rest. */
 export const MIN_TIME_SCALE = .4, MAX_TIME_SCALE = 2.5;
 
