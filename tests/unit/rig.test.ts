@@ -14,7 +14,7 @@ describe('cat rig', () => {
     expect(rig.bone('nope')).toBeNull();
     expect(() => rig.require('nope')).toThrow(/no bone/);
     // Cat space ignores the root's placement and scale: pelvis rest is skeleton.json's.
-    expect(rig.restPositionCat(rig.index('pelvis'), new Vector3()).distanceTo(new Vector3(0, .32, -.22))).toBeLessThan(1e-9);
+    expect(rig.restPositionCat(rig.index('pelvis'), new Vector3()).distanceTo(new Vector3(...(SKELETON.bones.find(b => b.name === 'pelvis')!.restPosition as [number, number, number])))).toBeLessThan(1e-9);
     expect(rig.restQuaternionCat(0, new Quaternion()).w).toBeDefined();
     expect(rig.childIndices(rig.index('spine_04')).map(i => rig.names[i])).toEqual(['spine_05', 'front_L_scapula', 'front_R_scapula']);
     expect(rig.parentIndex(rig.index('neck_01'))).toBe(rig.index('spine_05'));
@@ -26,6 +26,6 @@ describe('cat rig', () => {
     rig.require('head').rotation.x = 1; rig.require('pelvis').position.y = 0;
     rig.restoreRest();
     expect(rig.require('head').quaternion.w).toBe(1);
-    expect(rig.require('pelvis').position.y).toBeCloseTo(.32, 12);
+    expect(rig.require('pelvis').position.y).toBeCloseTo(SKELETON.bones.find(b => b.name === 'pelvis')!.restPosition[1]!, 12);
   });
 });

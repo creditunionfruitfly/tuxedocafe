@@ -22,6 +22,8 @@ export interface ClipSpec {
   readonly durationS: number;
   /** m/s at adult scale for in-place locomotion; 0 otherwise. */
   readonly authoredSpeed: number;
+  /** Measured stance travel speed of this skeleton; playback compensates stride fitting. */
+  readonly rigSpeed: number;
   /** Per-paw stance windows, or null when the clip carries no contact data. */
   readonly contacts: Readonly<Partial<Record<PawId, StanceWindows>>> | null;
   readonly events: readonly ClipEvent[];
@@ -85,7 +87,8 @@ export function normalizeEvents(raw: unknown, duration: number): ClipEvent[] {
 export function parseAdditiveReference(raw: unknown, fps: number): AdditiveReference {
   if (typeof raw === 'string') {
     if (raw === '' || raw === 'rest' || raw === 'bind' || raw === 'bindPose') return { kind: 'rest' };
-    return { kind: 'clip', clip: raw, time: 0 };
+    const [clip, seconds] = raw.split('@');
+    return { kind: 'clip', clip: clip!, time: Math.max(0, Number(seconds) || 0) };
   }
   if (isRecord(raw) && typeof raw.clip === 'string' && raw.clip !== 'rest' && raw.clip !== 'bind') {
     return { kind: 'clip', clip: raw.clip, time: Math.max(0, typeof raw.time === 'number' ? raw.time : num(raw.frame, 0) / fps) };
@@ -103,11 +106,14 @@ export function parseClipSpec(name: string, base: Raw | null, override: Raw | nu
   const durationS = actualDuration > 0 ? actualDuration : Math.max(1 / fps, num(pick('durationS'), 1));
   const duty = typeof pick('dutyFactor') === 'number' ? pick('dutyFactor') as number : null;
   const morphs = pick('morphs');
+  const stance = override?.stance;
+  const contacts = isRecord(stance) ? Object.fromEntries(Object.entries(stance).map(([paw, windows]) => [paw, Array.isArray(windows) ? windows.map(pair => Array.isArray(pair) ? [num(pair[0], 0) / durationS, num(pair[1], 0) / durationS] : pair) : windows])) : pick('contacts');
   return {
     name, layer, durationS,
     loop: pick('loop') === true,
     authoredSpeed: Math.max(0, num(pick('authoredSpeed'), 0)),
-    contacts: normalizeContacts(pick('contacts'), duty),
+    rigSpeed: Math.max(0, num(pick('rigSpeed'), num(pick('authoredSpeed'), 0))),
+    contacts: normalizeContacts(contacts, duty),
     events: normalizeEvents(pick('events'), durationS),
     morphs: Array.isArray(morphs) ? morphs.filter((m): m is string => typeof m === 'string') : [],
     rootMotion: pick('rootMotion') === true,

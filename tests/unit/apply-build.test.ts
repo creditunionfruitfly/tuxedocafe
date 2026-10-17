@@ -36,9 +36,9 @@ describe('build application', () => {
   it('classifies chain and volume bones from the skeleton topology', () => {
     const cat = syntheticCat(), rig = new CatRig(cat.root, cat.bones), axes = segmentAxes(rig);
     const axis = (name: string) => axes[rig.index(name)];
-    expect(axis('spine_04')!.angleTo(new Vector3(0, .012, .086))).toBeLessThan(1e-6);
-    expect(axis('pelvis')!.angleTo(new Vector3(0, .022, .086))).toBeLessThan(1e-6);
-    expect(axis('tail_12')!.angleTo(new Vector3(0, .012, -.038))).toBeLessThan(1e-6);
+    expect(axis('spine_04')!.angleTo(rig.require('spine_05').position)).toBeLessThan(1e-6);
+    expect(axis('pelvis')!.angleTo(rig.require('spine_01').position)).toBeLessThan(1e-6);
+    expect(axis('tail_12')!.angleTo(rig.require('tail_12').position)).toBeLessThan(1e-6);
     for (const volume of ['head', 'jaw', 'eye_L', 'whisker_R', 'front_L_toe', 'hind_R_digit_outer']) expect(axis(volume), volume).toBeNull();
   });
 

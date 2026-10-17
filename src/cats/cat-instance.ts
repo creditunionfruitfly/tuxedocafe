@@ -1,4 +1,4 @@
-import { Color, Material, Mesh, MeshStandardMaterial, Skeleton, SkinnedMesh, Sphere, type Bone, type Group, type Object3D } from 'three';
+import { BufferGeometry, Color, Float32BufferAttribute, Material, Mesh, MeshStandardMaterial, Skeleton, SkinnedMesh, Sphere, type Bone, type Group, type Object3D } from 'three';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { CatAnimation } from '../anim/cat-animation.ts';
 import { speedFactor } from '../anim/locomotion.ts';
@@ -14,7 +14,7 @@ import { nearestAvailable } from './lod.ts';
  * One resident cat instanced from the shared template: its own bones and one
  * Skeleton for every LOD's skinned meshes (geometry shared with every other
  * cat), its build applied to the skeleton and bind data, static shape morphs,
- * and materials tinted from its model colours (coat textures arrive with M3).
+ * and materials tinted from its model colours before lazy resident maps bind.
  */
 export interface CatInstanceOptions { readonly bus?: EventBus | null; readonly rng: Rng; readonly shadows?: boolean }
 
@@ -38,18 +38,20 @@ export class ResidentCat {
   readonly animation: CatAnimation;
   /** Renderable meshes per LOD level (empty arrays for levels not loaded). */
   readonly levels: readonly Mesh[][];
-  readonly #materials: Material[];
+  readonly materials: readonly Material[];
   readonly #skeletons: Skeleton[];
+  readonly #geometries: readonly BufferGeometry[];
+  readonly #available: readonly boolean[];
   level = -1;
 
-  constructor(id: string, data: ResidentCatData, build: ResolvedBuild, buildResult: BuildResult, root: Group, rig: CatRig, skeletons: Skeleton[], animation: CatAnimation, levels: Mesh[][], materials: Material[]) {
+  constructor(id: string, data: ResidentCatData, build: ResolvedBuild, buildResult: BuildResult, root: Group, rig: CatRig, skeletons: Skeleton[], animation: CatAnimation, levels: Mesh[][], materials: Material[], geometries: BufferGeometry[]) {
     this.id = id; this.data = data; this.build = build; this.buildResult = buildResult; this.root = root; this.rig = rig;
-    this.skeleton = skeletons[0]!; this.#skeletons = skeletons; this.animation = animation; this.levels = levels; this.#materials = materials;
+    this.skeleton = skeletons[0]!; this.#skeletons = skeletons; this.animation = animation; this.levels = levels; this.#geometries = geometries; this.#available = levels.map(meshes => meshes.length > 0); this.materials = materials;
   }
 
   /** Shows the loaded level nearest to `wanted`; returns the level shown. */
   setLevel(wanted: number): number {
-    const level = nearestAvailable(wanted, this.levels.map(meshes => meshes.length > 0));
+    const level = nearestAvailable(wanted, this.#available);
     if (level === this.level) return level;
     this.levels.forEach((meshes, k) => { for (const mesh of meshes) mesh.visible = k === level; });
     this.level = level;
@@ -65,7 +67,8 @@ export class ResidentCat {
   dispose(): void {
     this.animation.dispose();
     this.root.removeFromParent();
-    for (const material of this.#materials) material.dispose();
+    for (const material of this.materials) material.dispose();
+    for (const geometry of this.#geometries) geometry.dispose();
     for (const skeleton of this.#skeletons) skeleton.dispose();
   }
 }
@@ -111,11 +114,30 @@ export function createResidentCat(kit: CatKit, data: ResidentCatData, options: C
     const existing = clones.get(material); if (existing) return existing;
     const pick = TINTS[material.name] ?? (template.plan.source === 'placeholder' ? TINTS.cat_fur : undefined);
     const hex = pick?.(data.model);
-    if (!hex || !(material instanceof MeshStandardMaterial)) { clones.set(material, material); return material; }
-    const copy = material.clone(); copy.color.multiply(new Color(hex)); clones.set(material, copy); owned.push(copy);
+    const copy = material.clone();
+    if (hex && copy instanceof MeshStandardMaterial) copy.color.copy(new Color(hex)); clones.set(material, copy); owned.push(copy);
     return copy;
   };
-  const all = levels.flat();
+  const all = levels.flat(), geometries: BufferGeometry[] = [];
+  // Combined phone meshes retain semantic surface IDs. Share all immutable
+  // vertex/bind data; only this cat's small colour buffer is unique.
+  for (const mesh of all) {
+    const source = mesh.geometry, surface = source.getAttribute('_surface');
+    if (!surface) continue;
+    const geometry = new BufferGeometry(); geometry.setIndex(source.index);
+    for (const [name, attribute] of Object.entries(source.attributes)) geometry.setAttribute(name, attribute);
+    geometry.morphAttributes = source.morphAttributes; geometry.morphTargetsRelative = source.morphTargetsRelative;
+    geometry.groups = source.groups.map(group => ({ ...group })); geometry.boundingBox = source.boundingBox; geometry.boundingSphere = source.boundingSphere;
+    const sourceColors = source.getAttribute('color'), colors = new Float32BufferAttribute(new Float32Array(surface.count * 3), 3);
+    const nose = new Color(data.model.leather?.nose ?? '#b97674'), pads = new Color(data.model.leather?.pads ?? '#81565c'), ear = new Color(data.model.leather?.nose ?? '#bf8e87');
+    for (let vertex = 0; vertex < surface.count; vertex++) {
+      const id = surface.getX(vertex), color = id === 1 ? nose : id === 2 ? pads : id === 3 ? ear : null;
+      if (color) colors.setXYZ(vertex, color.r, color.g, color.b);
+      else if (sourceColors) colors.setXYZ(vertex, sourceColors.getX(vertex), sourceColors.getY(vertex), sourceColors.getZ(vertex));
+      else colors.setXYZ(vertex, 1, 1, 1);
+    }
+    geometry.setAttribute('color', colors); mesh.geometry = geometry; geometries.push(geometry);
+  }
   for (const mesh of all) {
     mesh.material = Array.isArray(mesh.material) ? mesh.material.map(tint) : tint(mesh.material);
     mesh.castShadow = options.shadows ?? false; mesh.receiveShadow = false;
@@ -142,7 +164,7 @@ export function createResidentCat(kit: CatKit, data: ResidentCatData, options: C
     if (index >= 0) animation.staticMorphs[index] = weight;
   }
   for (const mesh of all) animation.addMorphMesh(mesh);
-  const cat = new ResidentCat(data.id, data, build, buildResult, root, rig, [skeleton, ...extraSkeletons], animation, levels, owned);
+  const cat = new ResidentCat(data.id, data, build, buildResult, root, rig, [skeleton, ...extraSkeletons], animation, levels, owned, geometries);
   cat.setLevel(base.level);
   return cat;
 }

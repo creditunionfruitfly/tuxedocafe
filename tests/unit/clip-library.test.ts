@@ -9,9 +9,10 @@ const turn = (degrees: number): number[] => new Quaternion().setFromAxisAngle(ne
 
 function synthetic() {
   const cat = syntheticCat(), rig = new CatRig(cat.root, cat.bones), rest = restPoseOf(rig);
+  const pelvisRest = rest.get('pelvis')!.position;
   const walk = new AnimationClip('cat.loco.walk', 1, [
     new QuaternionKeyframeTrack('head.quaternion', [0, .5, 1], [...turn(0), ...turn(10), ...turn(0)]),
-    new VectorKeyframeTrack('pelvis.position', [0, 1], [0, .32, -.22, 0, .30, -.22]),
+    new VectorKeyframeTrack('pelvis.position', [0, 1], [...pelvisRest.toArray(), ...pelvisRest.clone().add(new Vector3(0, -.02, 0)).toArray()]),
     new VectorKeyframeTrack('root.position', [0, 1], [0, 0, 0, 0, 0, .7]),
     new VectorKeyframeTrack('spine_02.scale', [0], [1, 1, 1]),
     new QuaternionKeyframeTrack('not_a_bone.quaternion', [0], turn(5)),
@@ -20,7 +21,7 @@ function synthetic() {
   const tailUp = new AnimationClip('cat.layer.tail_up', 2, [new QuaternionKeyframeTrack('tail_01.quaternion', [0, 2], [...turn(30), ...turn(30)])]);
   const idleRef = new AnimationClip('cat.loco.idle', 1, [new QuaternionKeyframeTrack('head.quaternion', [0, 1], [...turn(20), ...turn(20)])]);
   const lean = new AnimationClip('cat.layer.lean_in', 1, [new QuaternionKeyframeTrack('head.quaternion', [0, 1], [...turn(25), ...turn(25)])]);
-  lean.userData = { additiveReference: 'cat.loco.idle' };
+  lean.userData = { additiveReference: 'cat.loco.idle@0.5' };
   return { rig, library: new ClipLibrary([walk, tailUp, idleRef, lean], rest) };
 }
 

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { Animator } from '../../src/anim/animator.ts';
+import { parseExpressions } from '../../src/anim/expressions.ts';
 import { syntheticRuntime } from './helpers/synthetic-runtime.ts';
 
 const DT = 1 / 30;
@@ -92,6 +94,36 @@ describe('animator (mixer stack)', () => {
       previous = Array.from(a.contacts);
     }
     expect(order.slice(0, 4).join(',')).toMatch(/LH,LF,RH,RF|LF,RH,RF,LH|RH,RF,LH,LF|RF,LH,LF,RH/);
+  });
+
+  it('retimes stride-fitted clips from measured rigSpeed while preserving gait thresholds', () => {
+    const { animation, rig } = syntheticRuntime(), tracks = new Map(animation.animator.tracks);
+    const bound = new Map([...tracks].map(([name, track]) => [name, { ...track.bound, spec: { ...track.bound.spec, rigSpeed: track.bound.spec.authoredSpeed * .5 } }]));
+    const animator = new Animator(rig.root, bound, 1);
+    animator.setLocomotion(.7, 0); animator.advance(.1);
+    expect(animator.tracks.get('cat.loco.walk')!.time).toBeCloseTo(.2, 8);
+    expect(animator.tracks.get('cat.loco.trot')!.weight).toBe(0);
+    animator.dispose();
+  });
+
+  it('samples the authored clip facial curve at the same clip time and emits typed markers', () => {
+    const { animation, events } = syntheticRuntime(), a = animation.animator, morph = a.catalog.morphTargets.indexOf('mouthOpen');
+    a.expressions = parseExpressions({ clips: { 'cat.react.hiss': { durationS: 1.2, curves: { mouthOpen: [[0, 0], [.2, .3], [.4, 0]] } } } }, a.catalog);
+    a.preview('cat.react.hiss'); a.setPreviewTime(.2); a.previewPaused = true;
+    a.advance(0, (clip, name) => events.push(`${clip}:${name}`));
+    expect(a.morphs[morph]).toBeCloseTo(.3, 8);
+    a.setPreviewTime(.4); a.advance(0);
+    expect(a.morphs[morph]).toBe(0);
+    a.previewPaused = false; a.preview('cat.react.hiss'); a.advance(.5, (clip, name) => events.push(`${clip}:${name}`));
+    expect(events.some(event => event.includes('sfx:cat.warn.hiss'))).toBe(true);
+  });
+
+  it('keeps locomotion weights nonnegative during simultaneous stop and turn', () => {
+    const { animation } = syntheticRuntime(), a = animation.animator;
+    a.setLocomotion(.7, 0); a.advance(DT); a.setLocomotion(0, 1.5); a.advance(DT);
+    for (const track of a.tracks.values()) expect(track.weight).toBeGreaterThanOrEqual(0);
+    const sum = [...a.tracks.values()].filter(track => !track.bound.additive).reduce((total, track) => total + track.weight, 0);
+    expect(sum).toBeCloseTo(1, 8);
   });
 
   it('previews any clip alone with pause and scrub', () => {

@@ -127,6 +127,16 @@ describe('leg IK', () => {
     expect(pad('LF').distanceTo(start)).toBeLessThan(.002);
   });
 
+  it('releases locks over a support gap and follows the animated paw', () => {
+    const { ik, rig, cat, tick, pad } = setup();
+    tick(5); const start = pad('LF');
+    ik.ground = () => false;
+    tick(8);
+    expect(ik.legs.every(leg => !leg.locked)).toBe(true);
+    rig.restoreRest(); cat.root.updateMatrixWorld(true);
+    expect(pad('LF').distanceTo(start)).toBeLessThan(.001);
+  });
+
   it('fades out entirely when disabled (root-motion clips)', () => {
     const { ik, rig, cat } = setup();
     ik.ground = flatGround(.05);

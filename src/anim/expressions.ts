@@ -9,7 +9,7 @@ import type { Catalog } from './catalog.ts';
  */
 export interface MorphCurve { readonly morph: number; readonly times: Float64Array; readonly values: Float64Array }
 export interface ExpressionCurve { readonly name: string; readonly durationS: number; readonly curves: readonly MorphCurve[] }
-export interface ExpressionLibrary { readonly morphNames: readonly string[]; readonly byName: ReadonlyMap<string, ExpressionCurve> }
+export interface ExpressionLibrary { readonly morphNames: readonly string[]; readonly byName: ReadonlyMap<string, ExpressionCurve>; readonly clips: ReadonlyMap<string, ExpressionCurve> }
 
 type Raw = Record<string, unknown>;
 const isRecord = (value: unknown): value is Raw => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -69,7 +69,18 @@ export function parseExpressions(json: unknown, catalog: Catalog): ExpressionLib
     const shape = DEFAULT_SHAPES[spec.name] ?? GENERIC_SHAPE;
     byName.set(spec.name, { name: spec.name, durationS: spec.durationS, curves: spec.morphs.map(m => morphNames.indexOf(m)).filter(m => m >= 0).map(m => shapeCurve(m, spec.durationS, shape)) });
   }
-  return { morphNames, byName };
+  const clips = new Map<string, ExpressionCurve>();
+  if (isRecord(json) && isRecord(json.clips)) for (const [name, entry] of Object.entries(json.clips)) {
+    if (!isRecord(entry) || !isRecord(entry.curves)) continue;
+    const durationS = typeof entry.durationS === 'number' ? entry.durationS : catalog.byName.get(name)?.durationS ?? 1;
+    const curves: MorphCurve[] = [];
+    for (const [morphName, raw] of Object.entries(entry.curves)) {
+      const morph = morphNames.indexOf(morphName), keys = keysFrom(raw, durationS, fileFps);
+      if (morph >= 0 && keys) curves.push({ morph, times: keys[0], values: keys[1] });
+    }
+    clips.set(name, { name, durationS, curves });
+  }
+  return { morphNames, byName, clips };
 }
 
 /** Linear interpolation over sorted keys, clamped at both ends. */

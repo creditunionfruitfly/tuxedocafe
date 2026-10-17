@@ -35,9 +35,15 @@ describe('animation catalog', () => {
     expect(parseClipSpec('cat.unknown', null, null, 30).layer).toBe('action');
   });
 
+  it('reads authored stance windows in seconds instead of catalog contact phases', () => {
+    const spec = parseClipSpec('cat.rest.sit_idle', null, { stance: { LF: [[1, 3]] } }, 30, 5);
+    expect(spec.contacts!.LF).toEqual([[.2, .6]]);
+  });
+
   it('parses additive references', () => {
     expect(parseAdditiveReference(undefined, 30)).toEqual({ kind: 'rest' });
     expect(parseAdditiveReference('bind', 30)).toEqual({ kind: 'rest' });
+    expect(parseAdditiveReference('cat.loco.idle@1.25', 30)).toEqual({ kind: 'clip', clip: 'cat.loco.idle', time: 1.25 });
     expect(parseAdditiveReference('cat.loco.idle', 30)).toEqual({ kind: 'clip', clip: 'cat.loco.idle', time: 0 });
     expect(parseAdditiveReference({ clip: 'cat.rest.sit_idle', time: 1 }, 30)).toEqual({ kind: 'clip', clip: 'cat.rest.sit_idle', time: 1 });
   });

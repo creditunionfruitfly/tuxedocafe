@@ -2,6 +2,7 @@ import { AdditiveAnimationBlendMode, AnimationMixer, LoopRepeat, NormalAnimation
 import { CATALOG, PAWS, stanceWeight, type Catalog, type ClipEvent } from './catalog.ts';
 import type { BoundClip } from './clip-library.ts';
 import { advanceTime, visitCrossedEvents } from './clip-timeline.ts';
+import { sampleCurve, type ExpressionLibrary } from './expressions.ts';
 import { gaitTimeScale, gaitWeights, IDLE_SPEED, normalizeSpeed } from './locomotion.ts';
 
 /**
@@ -44,6 +45,7 @@ export class Animator {
   speed = 0; turnRate = 0;
   style: 'walk' | 'walk_away' = 'walk';
   previewPaused = false;
+  expressions: ExpressionLibrary | null = null;
   #phase = 0; #moving = false;
   readonly #gait = new Float64Array(4);
   readonly #list: Track[];
@@ -164,7 +166,9 @@ export class Animator {
     track.time = advanceTime(track.time, delta, track.duration, loop);
     track.weight += weight;
     const spec = track.bound.spec;
-    if (spec.morphs.length && weight > 0) {
+    const curves = this.expressions?.clips.get(track.name);
+    if (curves && weight > 0) for (const curve of curves.curves) this.morphs[curve.morph] = Math.max(this.morphs[curve.morph]!, sampleCurve(curve, track.time / track.duration * curves.durationS) * weight);
+    else if (spec.morphs.length && weight > 0) {
       const envelope = loop ? 1 : Math.sin(Math.PI * Math.min(1, track.time / track.duration)) ** .5;
       for (let i = 0; i < spec.morphs.length; i++) {
         const index = this.catalog.morphTargets.indexOf(spec.morphs[i]!);
@@ -178,6 +182,7 @@ export class Animator {
     if (p.bound.additive) { const idle = this.tracks.get('cat.loco.idle'); if (idle) this.#step(idle, step, true, 1); }
     this.#step(p, step, p.bound.spec.loop || p.bound.spec.layer === 'locomotion', 1);
     if (!p.bound.spec.loop && p.time >= p.duration && !this.previewPaused) { p.time = 0; p.fresh = true; }
+    if (p.bound.spec.contacts) this.#addContacts(p.bound.spec.contacts, p.time / p.duration, 1);
     if (p.bound.spec.rootMotion) this.rootMotion = 1;
   }
 
@@ -221,14 +226,15 @@ export class Animator {
     const turnRate = Math.abs(this.turnRate), turnName = this.turnRate >= 0 ? 'cat.loco.turn_left' : 'cat.loco.turn_right';
     const turn = this.tracks.get(turnName);
     const turnWeight = turn ? Math.min(1, Math.max(0, (turnRate - .25) / .65)) * g[0]! * share : 0;
-    const base = share - edgeWeight - turnWeight;
+    const available = Math.max(0, share - edgeWeight), turnShare = Math.min(available, turnWeight);
+    const base = available - turnShare;
     // Gaits share one phase so footfalls line up while blending.
     const gaits = this.#gaits; gaits[0] = walk; gaits[1] = trot; gaits[2] = gallop;
     let cycle = 0, moveWeight = 0;
     for (let i = 0; i < 3; i++) {
       const track = gaits[i], w = g[i + 1]!;
       if (!track || w <= 0) continue;
-      cycle += w * track.duration / gaitTimeScale(s, track.bound.spec.authoredSpeed); moveWeight += w;
+      cycle += w * track.duration / gaitTimeScale(s, track.bound.spec.rigSpeed); moveWeight += w;
     }
     const phaseStep = moveWeight > 0 ? dt / (cycle / moveWeight) : 0, phase = (this.#phase + phaseStep) % 1;
     for (let i = 0; i < 3; i++) {
@@ -241,12 +247,12 @@ export class Animator {
     this.#phase = phase;
     if (idle) this.#step(idle, dt, true, g[0]! * base);
     if (edge && this.#startStop) {
-      this.#step(edge, dt * gaitTimeScale(Math.max(s, .35), edge.bound.spec.authoredSpeed || .35), false, edgeWeight);
+      this.#step(edge, dt * gaitTimeScale(Math.max(s, .35), edge.bound.spec.rigSpeed || .35), false, edgeWeight);
       if (edge.bound.spec.contacts) this.#addContacts(edge.bound.spec.contacts, edge.time / edge.duration, edgeWeight);
     }
     if (turn && turnWeight > 0) {
       const radians = Math.abs(turn.bound.spec.rootRotationDeg || 90) * Math.PI / 180;
-      this.#step(turn, turnRate * dt / radians * turn.duration, true, turnWeight);
+      this.#step(turn, turnRate * dt / radians * turn.duration, true, turnShare);
     }
   }
 

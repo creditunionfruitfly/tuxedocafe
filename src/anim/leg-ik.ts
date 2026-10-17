@@ -30,7 +30,7 @@ export class Leg {
   /** Upper + lower + distal length at bind (world units). */
   readonly length: number;
   locked = false; planted = false; release = 0;
-  readonly lock = new Vector3(); readonly released = new Vector3();
+  readonly lock = new Vector3(); readonly lockNormal = new Vector3(0, 1, 0); readonly released = new Vector3();
   readonly reach = new Vector3(); reachWeight = 0; pole: Vector3 | null = null;
   // Per-solve scratch.
   readonly padAnim = new Vector3(); readonly distal = new Vector3(); readonly distalWorld = new Quaternion();
@@ -137,12 +137,14 @@ export class LegIK {
       if (height < leg.length * .04) leg.planted = true; else if (height > leg.length * .1) leg.planted = false;
       leg.contact = Math.min(1, (phaseContacts[PAWS.indexOf(leg.id)] ?? 0) + (1 - locoWeight) * (leg.planted ? 1 : 0));
       _hit.normal.set(0, 1, 0);
-      const groundY = this.ground(leg.padAnim.x, leg.padAnim.z, _hit) ? _hit.height : rootY;
+      const hasSupport = this.ground(leg.padAnim.x, leg.padAnim.z, _hit);
+      const groundY = hasSupport ? _hit.height : rootY;
+      if (!hasSupport) leg.contact = 0;
       // Swing path: the animated pad height kept above the local support.
       leg.swing.copy(leg.padAnim); leg.swing.y += groundY - rootY; leg.swingGround = groundY;
       if (this.lockEnabled && leg.contact >= .5) {
         // A stance pad rests on the support under where it touched down.
-        if (!leg.locked) { leg.locked = true; leg.lockWeight = 0; leg.lock.set(leg.swing.x, groundY, leg.swing.z); }
+        if (!leg.locked) { leg.locked = true; leg.lockWeight = 0; leg.lock.set(leg.swing.x, groundY, leg.swing.z); leg.lockNormal.copy(_hit.normal); }
         else if (Math.hypot(leg.lock.x - leg.swing.x, leg.lock.z - leg.swing.z) > leg.length * DRIFT) this.#replant(leg);
       } else if (leg.locked) { leg.locked = false; leg.released.copy(leg.lock); leg.release = 1; }
       // Reach weight ramps in around touchdown rather than snapping the pad down.
@@ -150,9 +152,9 @@ export class LegIK {
       this.#target(leg);
       if (leg.release > 0) leg.release = Math.max(0, leg.release - dt / RELEASE_S);
       // Planted paws tilt onto the support plane, up to MAX_TILT.
-      leg.align.setFromUnitVectors(UP, _hit.normal);
+      leg.align.setFromUnitVectors(UP, leg.locked ? leg.lockNormal : _hit.normal);
       const angle = 2 * Math.acos(Math.min(1, Math.abs(leg.align.w)));
-      const tilt = leg.lockWeight * (1 - leg.reachWeight) * (angle > MAX_TILT ? MAX_TILT / angle : 1);
+      const tilt = (this.lockEnabled ? leg.lockWeight : leg.contact) * (1 - leg.reachWeight) * (angle > MAX_TILT ? MAX_TILT / angle : 1);
       leg.align.slerpQuaternions(_identity, leg.align, tilt);
       if (leg.contact > .25) {
         const delta = leg.target.y - leg.padAnim.y;
@@ -224,6 +226,7 @@ export class LegIK {
   #replant(leg: Leg): void {
     leg.released.copy(leg.lock); leg.release = 1;
     leg.lock.set(leg.swing.x, leg.swingGround, leg.swing.z);
+    if (this.ground(leg.swing.x, leg.swing.z, _hit)) leg.lockNormal.copy(_hit.normal);
   }
 
   /** Pitch the body about the cat's lateral axis at the pelvis joint and lift it by `offset` (world units). */

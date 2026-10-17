@@ -71,6 +71,7 @@ export class CatAnimation {
     const rig = this.rig, count = rig.bones.length, morphs = this.catalog.morphTargets.length;
     rig.restoreRest(); rig.root.updateMatrixWorld(true);
     this.animator = new Animator(rig.root, options.clips, options.speedFactor, this.catalog);
+    this.animator.expressions = options.expressions;
     this.look = new LookAt(rig);
     this.legs = new LegIK(rig, options.ikChains);
     const tail = TAIL_BONES.map(name => rig.bone(name)).filter((bone, i, all) => bone && (i === 0 || bone.parent === all[i - 1]));
@@ -114,6 +115,13 @@ export class CatAnimation {
 
   lookAt(point: Vector3 | null, weight = 1): void { this.look.setTarget(point, weight); }
   reach(paw: PawId, point: Vector3 | null, weight = 1): void { this.legs.setReach(paw, point, weight); }
+
+  /** Re-evaluate a paused preview after scrubbing without advancing clocks or emitting events. */
+  seekPreview(time: number): void {
+    this.animator.setPreviewTime(time); this.animator.advance(0);
+    this.legs.reset(); this.tail?.reset(); for (const ear of this.ears) ear.reset();
+    this.#evaluated = false; this.#evaluate(0); this.render(1);
+  }
 
   /** One fixed simulation step. */
   tick(dt: number): void {
