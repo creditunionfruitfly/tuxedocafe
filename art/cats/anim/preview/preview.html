@@ -1,0 +1,126 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Cat clip contact sheet</title>
+<style>
+  html, body { margin: 0; background: #f4efe6; font: 13px system-ui, sans-serif; }
+  #wrap { position: relative; display: inline-block; }
+  canvas { display: block; }
+  #labels { position: absolute; inset: 0; pointer-events: none; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "/three/build/three.module.js", "three/addons/": "/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div id="wrap"><canvas id="gl"></canvas><canvas id="labels"></canvas></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+const loader = new GLTFLoader();
+loader.setMeshoptDecoder(MeshoptDecoder);
+const [cat, anims] = await Promise.all([
+  loader.loadAsync('/assets/art/cats/cat_placeholder_lod0.glb'),
+  loader.loadAsync('/assets/art/cats/cat_anims.glb'),
+]);
+const clips = new Map(anims.animations.map(c => [c.name, c]));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf4efe6);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7a66, 1.6));
+const sun = new THREE.DirectionalLight(0xffffff, 1.8); sun.position.set(1.5, 3, 2); scene.add(sun);
+const showMesh = new URLSearchParams(location.search).get('mesh') !== '0';
+const model = cat.scene, skel = anims.scene;
+model.traverse(o => {
+  if (o.isMesh) { o.material = new THREE.MeshStandardMaterial({ color: 0x55505a, roughness: 0.8, transparent: true, opacity: 0.22, depthWrite: false }); o.frustumCulled = false; o.renderOrder = 20; }
+});
+model.visible = showMesh;
+scene.add(model, skel);
+// Thick bone sticks (from the animation file's own skeleton) over the faint capsule rig: left limbs
+// blue, right limbs red, spine and head charcoal, tail brown. The capsule rig's root-to-pelvis
+// capsule is a diagnostic artefact.
+const bones = []; skel.traverse(o => { if (o !== skel && o.name && !o.isMesh) { o.isBone = true; bones.push(o); } });
+const colorOf = n => /_L_/.test(n) ? 0x2f6fe8 : /_R_/.test(n) ? 0xd8432c : /tail/.test(n) ? 0x8a5a24 : 0x2b2b30;
+const radiusOf = n => /spine|pelvis/.test(n) ? 0.022 : /neck|head/.test(n) ? 0.018 : /tail/.test(n) ? 0.009 : /digit|toe|eye|whisk/.test(n) ? 0.006 : 0.011;
+const sticks = new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 1, 10), new THREE.MeshStandardMaterial({ roughness: 0.6 }), bones.length);
+const balls = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 12, 8), new THREE.MeshStandardMaterial({ roughness: 0.6 }), bones.length);
+bones.forEach((b, i) => { sticks.setColorAt(i, new THREE.Color(colorOf(b.name))); balls.setColorAt(i, new THREE.Color(colorOf(b.name)).multiplyScalar(0.7)); });
+sticks.frustumCulled = balls.frustumCulled = false;
+scene.add(sticks, balls);
+const v1 = new THREE.Vector3(), v2 = new THREE.Vector3(), m4 = new THREE.Matrix4(), qq = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
+function updateLines() {
+  model.updateMatrixWorld(true); skel.updateMatrixWorld(true);
+  bones.forEach((b, i) => {
+    b.getWorldPosition(v1);
+    const r = radiusOf(b.name);
+    balls.setMatrixAt(i, m4.compose(v1, qq.identity(), new THREE.Vector3(r * 1.15, r * 1.15, r * 1.15)));
+    const hasParent = b.parent && b.parent.isBone && b.name !== 'pelvis';
+    if (!hasParent) { sticks.setMatrixAt(i, m4.makeScale(0, 0, 0)); return; }
+    b.parent.getWorldPosition(v2);
+    const dir = v1.clone().sub(v2), len = dir.length();
+    qq.setFromUnitVectors(up, dir.normalize());
+    sticks.setMatrixAt(i, m4.compose(v2.clone().lerp(v1, 0.5), qq, new THREE.Vector3(r, len, r)));
+  });
+  sticks.instanceMatrix.needsUpdate = true; balls.instanceMatrix.needsUpdate = true;
+}
+// Floor grid (5 cm) and a raised platform for jump clips.
+const grid = new THREE.GridHelper(4, 80, 0xb8a990, 0xd8ccb8); scene.add(grid);
+const platform = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1, 0.6), new THREE.MeshStandardMaterial({ color: 0xc9b48f, transparent: true, opacity: 0.6 }));
+platform.visible = false; scene.add(platform);
+
+const mixer = new THREE.AnimationMixer(model), mixer2 = new THREE.AnimationMixer(skel);
+const canvas = document.getElementById('gl'), labels = document.getElementById('labels');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1);
+
+window.renderSheet = async (sheet) => {
+  const { cols, cellW, cellH, cells, title } = sheet;
+  const rows = Math.ceil(cells.length / cols), W = cols * cellW, H = rows * cellH + 28;
+  renderer.setSize(W, H, false); canvas.width = W; canvas.height = H;
+  labels.width = W; labels.height = H; labels.style.width = W + 'px'; labels.style.height = H + 'px';
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = labels.getContext('2d'); ctx.clearRect(0, 0, W, H);
+  ctx.font = 'bold 15px system-ui'; ctx.fillStyle = '#3a2a1a'; ctx.fillText(title, 8, 19);
+  renderer.setScissorTest(true);
+  renderer.setClearColor(0xf4efe6, 1); renderer.setViewport(0, 0, W, H); renderer.setScissor(0, 0, W, H); renderer.clear();
+  for (let i = 0; i < cells.length; i++) {
+    const c = cells[i], col = i % cols, row = Math.floor(i / cols);
+    const clip = clips.get(c.clip);
+    if (!clip && c.clip !== 'rest') throw new Error('no clip ' + c.clip);
+    for (const [mx, root] of [[mixer, model], [mixer2, skel]]) {
+      mx.stopAllAction();
+      root.traverse(o => { if (o.userData.rest) { o.position.copy(o.userData.rest.p); o.quaternion.copy(o.userData.rest.q); } });
+      if (clip) { const action = mx.clipAction(clip); action.reset(); action.play(); action.time = Math.min(c.t, clip.duration); mx.update(0); }
+    }
+    updateLines();
+    platform.visible = !!c.platform;
+    if (c.platform) { platform.scale.set(1, c.platform.h, 1); platform.position.set(0, c.platform.h / 2, c.platform.z + 0.3); }
+    const cam = new THREE.PerspectiveCamera(c.fov ?? 26, cellW / cellH, 0.05, 20);
+    // Camera framing is authored for the 0.39 m rig; scale it to whatever skeleton is loaded.
+    const k = c.platform ? 1 : rigScale;
+    const target = new THREE.Vector3(...(c.target ?? [0, 0.2, 0])).multiplyScalar(k);
+    if (clip && c.followRoot) { const r = skel.getObjectByName('root'); target.x += r.position.x; target.z += r.position.z; }
+    const dist = (c.dist ?? 1.9) * k, az = (c.az ?? 90) * Math.PI / 180, el = (c.el ?? 6) * Math.PI / 180;
+    cam.position.set(target.x + dist * Math.sin(az) * Math.cos(el), target.y + dist * Math.sin(el), target.z + dist * Math.cos(az) * Math.cos(el));
+    cam.lookAt(target);
+    const x = col * cellW, y = H - 28 - (row + 1) * cellH;
+    renderer.setViewport(x, y, cellW, cellH); renderer.setScissor(x, y, cellW, cellH);
+    renderer.setClearColor(0xf4efe6, 1); renderer.clear();
+    renderer.render(scene, cam);
+    ctx.font = '12px system-ui'; ctx.fillStyle = '#3a2a1a';
+    ctx.fillText(c.label ?? `${c.clip.replace('cat.', '')} t=${c.t.toFixed(2)}`, x + 6, 28 + row * cellH + 15);
+    ctx.strokeStyle = '#cdbfa8'; ctx.strokeRect(x + 0.5, 28 + row * cellH + 0.5, cellW - 1, cellH - 1);
+  }
+  renderer.setScissorTest(false);
+  return true;
+};
+for (const root of [model, skel]) root.traverse(o => { if (o !== root) o.userData.rest = { p: o.position.clone(), q: o.quaternion.clone() }; });
+skel.updateMatrixWorld(true);
+const rigScale = skel.getObjectByName('front_L_scapula').getWorldPosition(new THREE.Vector3()).y / 0.39;
+window.clipInfo = () => [...clips.values()].map(c => ({ name: c.name, duration: c.duration }));
+window.ready = true;
+</script>
+</body>
+</html>
