@@ -1,54 +1,69 @@
 // In-place gait generator. Footfalls follow the catalog contact phases and
-// duty factor; planted toes slide backward at the ground speed; swing paws
-// lift sharply (carpus / hock flexion first), travel low and set down softly
-// with zero ground-relative velocity. Girdle bob, roll and yaw are derived
-// from the support pattern rather than imposed as equal sine waves.
-import { type Body, type Leg, type SolveInfo, restBody, solve } from './body.ts';
+// duty factor; planted toes slide backward at exactly the in-place ground
+// speed; swing paws peel off heel-first (wrist or hock rises while the pads
+// stay down), fold at the carpus / hock, travel low and set down softly with
+// near-zero ground-relative velocity. Girdle bob, roll and yaw follow the
+// support pattern rather than equal sine waves.
+import { type Body, type Leg, restBody, solve } from './body.ts';
+import type { LegInfo } from './legs.ts';
 import { type V3, clamp, curve, hermite, loopNoise, smooth, wrap01 } from './math.ts';
 import { LEGS, type LegId, type Rig } from './rig.ts';
 
+const DEG = Math.PI / 180;
+
 export interface GaitStyle {
   T: number;
-  /** Catalog speed (adult m/s). The in-place ground speed is speed × legScale × fit. */
+  /** In-place ground speed (m/s) before fitting: the catalog authoredSpeed. */
   speed: number;
   contacts: Record<LegId, number>;
   duty: number;
-  /** Chest and pelvis drop below rest (fractions of shoulder height). */
-  dropF: number; dropH: number;
-  /** Peak toe lift during swing (fractions of shoulder height). */
+  /** Girdle drop below the rest stance (fractions of shoulder height) and extra trunk pitch (rad, + nose up). */
+  dropF: number; dropH: number; pitch: number;
+  /** Peak toe lift in swing (fractions of shoulder height). */
   liftF: number; liftH: number;
-  /** Peak carpal / hock flexion during swing (rad). */
-  flexF: number; flexH: number;
-  /** Heel roll-off at liftoff (rad). */
-  rollF: number; rollH: number;
-  /** Hind touchdown relative to the ipsilateral front print (m at legScale 1, + behind). */
-  register: number;
-  /** Front and hind stance centre offsets from the rest toe (fractions of stance length, + forward). */
-  frontBias: number; hindBias: number;
-  /** Track width as a fraction of the rest paw spacing. */
+  /** Peak swing flexion at the carpus / hock (rad) and digit curl (rad). */
+  carpusF: number; carpusH: number; curlF: number; curlH: number;
+  /** Stance metapodial pitch at touchdown, mid-stance and liftoff (rad, relative to the rig's standing pitch); heel-off starts at this stance fraction. */
+  metaF: [number, number, number]; metaH: [number, number, number]; heelOffF: number; heelOffH: number;
+  /** Fraction of the swing velocity matched at touchdown (1 = paw arrives at rest relative to the ground). */
+  matchTd: number;
+  /** Track width relative to the rest paw spacing. */
   width: number;
-  /** Girdle bob, roll and yaw amplitudes (fractions of shoulder height / rad). */
+  /** Hind touchdown relative to the ipsilateral front print (m, + behind); a soft goal within reach. */
+  register: number;
+  /** Preferred stance centres relative to the shoulder / hip joint (fractions of the stance length, + forward). */
+  frontBias: number; hindBias: number;
+  /** Girdle bob, hip/shoulder roll and yaw amplitudes (fraction of shoulder height / rad). */
   bob: number; roll: number; yaw: number;
+  /** Scapula slide amplitude (fraction of shoulder height): the stance blade rides up; glide: forward with protraction. */
+  blade: number; glide: number;
   headPitch: number; headBob: number;
-  /** Swing timing skew: < 1 brings the paw forward early. */
+  /** Swing timing: < 1 brings the paw forward early. */
   skewF: number; skewH: number;
+  /** Elbow outward / forearm preference gain (forearm angle follows this share of the limb's protraction). */
+  foreK: number;
   ears: V3; tail: (i: number, phase: number) => V3;
-  spinePitch: number;
-  /** Preferred elbow / knee extension relative to rest. */
-  flex: number;
-  /** Extra per-phase trunk motion (gallop flexion): returns [pelvisPitch, spineFlex, pelvisRise, pelvisSurge]. */
+  /** Extra per-phase trunk motion (gallop): [pelvis pitch, spine flexion (+ gathers), girdle rise (fraction), surge (fraction)]. */
   trunk?: (phase: number) => [number, number, number, number];
   seed: number;
 }
 
-export interface GaitPlan { style: GaitStyle; v: number; S: number; fit: number; zTd: Record<LegId, number>; x: Record<LegId, number> }
+export interface GaitPlan {
+  style: GaitStyle;
+  /** In-place ground speed actually used (m/s), stride length and stance length (m). */
+  v: number; L: number; S: number; fit: number;
+  /** Touchdown z (root frame) and lateral x per paw. */
+  zTd: Record<LegId, number>; x: Record<LegId, number>;
+  /** Measured free-mode joint angles at liftoff and touchdown (for seamless swing blending). */
+  lift: Record<LegId, { carpus: number; digits: number }>; land: Record<LegId, { carpus: number; digits: number }>;
+}
 
 export const legPhase = (style: GaitStyle, id: LegId, phase: number) => {
   const u = wrap01(phase - style.contacts[id]);
   return u < style.duty ? { stance: true, s: u / style.duty, u } : { stance: false, s: (u - style.duty) / (1 - style.duty), u };
 };
 
-/** Stance-weighted support bump per girdle: high in single-support mid-stance, low in double support. */
+/** Stance-weighted support per girdle: high in single-support mid-stance (vaulting), low in double support. */
 function girdleBob(style: GaitStyle, front: boolean, phase: number) {
   const legs = LEGS.filter(id => (id[1] === 'F') === front);
   const one = (p: number) => legs.reduce((s, id) => { const lp = legPhase(style, id, p); return s + (lp.stance ? Math.sin(Math.PI * lp.s) ** 2 : 0); }, 0);
@@ -57,140 +72,197 @@ function girdleBob(style: GaitStyle, front: boolean, phase: number) {
   return one(phase) - mean;
 }
 
-export function planGait(rig: Rig, style: GaitStyle, fit: number): GaitPlan {
-  const M = rig.M, v = style.speed * M.legScale * fit, stride = v * style.T, S = stride * style.duty;
-  const zTd = {} as Record<LegId, number>, x = {} as Record<LegId, number>;
-  for (const side of ['L', 'R'] as const) {
-    const F = `${side}F` as LegId, H = `${side}H` as LegId;
-    const restF = rig.legs[F].restToe, restH = rig.legs[H].restToe;
-    // Stances centre under their girdles; then both shift (within a quarter stance)
-    // toward the catalogued register of the hind paw on the front print.
-    let zF = restF.z + S / 2 + style.frontBias * S, zH = restH.z + S / 2 + style.hindBias * S;
-    const dc = wrap01(style.contacts[H] - style.contacts[F]);
-    const want = dc * stride + style.register * M.legScale, have = zF - zH;
-    const shift = clamp((want - have) / 2, -0.25 * S, 0.25 * S);
-    zF += shift; zH -= shift;
-    zTd[F] = zF; zTd[H] = zH;
-    x[F] = restF.x * style.width; x[H] = restH.x * style.width;
-  }
-  return { style, v, S, fit, zTd, x };
-}
+const liftCurveF = curve([[0, 0], [0.08, 0.3], [0.26, 0.92], [0.38, 1], [0.6, 0.72], [0.8, 0.3], [0.93, 0.06], [1, 0]]);
+const liftCurveH = curve([[0, 0], [0.1, 0.28], [0.3, 0.88], [0.45, 1], [0.68, 0.62], [0.86, 0.2], [0.95, 0.04], [1, 0]]);
+/** Swing blend from planted to free distal angles and back. */
+const relCurve = (s: number) => smooth(s / 0.14) * (1 - smooth((s - 0.8) / 0.18));
 
-const liftCurveF = curve([[0, 0], [0.12, 0.52], [0.34, 1], [0.62, 0.78], [0.84, 0.3], [0.95, 0.05], [1, 0]]);
-const liftCurveH = curve([[0, 0], [0.15, 0.45], [0.4, 1], [0.7, 0.6], [0.88, 0.18], [0.96, 0.03], [1, 0]]);
-
-export function baseLeg(rig: Rig, id: LegId, x: number, z: number, flex: number): Leg {
-  const d = rig.legs[id];
-  return {
-    toe: [x, d.padY, z], heel: d.stanceHeel, toeP: 0, curl: 0, spread: 0, yaw: 0, out: 0.06, roll: 0,
-    swing: 0, share: d.front ? 0.5 : 0.4, abduct: 0, flex, comfort: 1, c: [0, 0, 0], cw: 0,
-  };
-}
-
-/** Planted paw at stance fraction s: the heel peels off late while the digits stay down. */
+/** A planted paw at stance fraction s: digits flat, then the heel peels off while the pads stay down. */
 export function stanceLeg(rig: Rig, style: GaitStyle, leg: Leg, id: LegId, s: number) {
-  const d = rig.legs[id], front = d.front, roll = front ? style.rollF : style.rollH;
-  leg.heel = d.stanceHeel + roll * Math.pow(smooth((s - (front ? 0.5 : 0.42)) / (front ? 0.5 : 0.58)), 1.4);
-  leg.spread = 0.04 * Math.sin(Math.PI * s);
+  const d = rig.legs[id], m = d.front ? style.metaF : style.metaH, off = d.front ? style.heelOffF : style.heelOffH;
+  const peel = smooth((s - off) / (1 - off));
+  leg.meta = d.stanceMeta + (s < 0.5 ? m[0] + (m[1] - m[0]) * smooth(s / 0.5) : m[1] + (m[2] - m[1]) * Math.pow(peel, 1.3));
+  leg.dig = d.digRestPitch + (d.front ? 0.75 : 0.65) * Math.pow(peel, 1.8);
+  leg.spread = 0.05 * Math.sin(Math.PI * clamp(s * 1.2, 0, 1));
+  leg.rel = 0;
   return leg;
 }
 
 /**
- * Swinging paw at swing fraction s from zLo to zTd, leaving and arriving with ground-relative
- * velocities vFrom / vTo (in-place m/s backward) over a swing of Tsw seconds.
+ * A swinging paw at swing fraction s from zLo to zTd, leaving and arriving with ground-relative velocity matched
+ * (in-place speed v, swing duration Tsw). Distal angles go free shortly after liftoff and planted again before contact.
  */
-export function swingLeg(rig: Rig, style: GaitStyle, leg: Leg, id: LegId, s: number, zLo: number, zTd: number, vFrom: number, vTo: number, Tsw: number) {
-  const d = rig.legs[id], front = d.front, M = rig.M, roll = front ? style.rollF : style.rollH, h0 = d.stanceHeel;
+export function swingLeg(rig: Rig, style: GaitStyle, leg: Leg, id: LegId, s: number, zLo: number, zTd: number, v: number, Tsw: number,
+  lift: { carpus: number; digits: number }, land: { carpus: number; digits: number }) {
+  const d = rig.legs[id], front = d.front, M = rig.M;
   const w = Math.pow(s, front ? style.skewF : style.skewH);
-  leg.toe[2] = hermite(zLo, zTd, -vFrom * Tsw, -vTo * Tsw * 0.6, w);
-  const lift = (front ? style.liftF : style.liftH) * M.shoulderH;
-  leg.toe[1] = d.padY + lift * (front ? liftCurveF : liftCurveH)(s);
-  const flex = front ? style.flexF : style.flexH;
-  // Flex fast after liftoff, extend before touchdown, slight dorsiflexion just before contact.
-  leg.heel = h0 + curve(front
-    ? [[0, roll], [0.2, flex], [0.42, flex * 0.82], [0.72, 0.15], [0.88, -0.1], [1, 0]]
-    : [[0, roll], [0.24, flex], [0.5, flex * 0.7], [0.78, 0.1], [0.9, -0.08], [1, 0]])(s);
-  // Digits hang curled through the swing and open flat for the soft set-down.
-  leg.toeP = curve(front
-    ? [[0, 0], [0.2, flex + 0.3], [0.45, flex * 0.8 + 0.2], [0.75, 0.12], [0.9, -0.06], [1, 0]]
-    : [[0, 0], [0.24, flex + 0.25], [0.5, flex * 0.7 + 0.15], [0.8, 0.08], [0.92, -0.04], [1, 0]])(s);
-  leg.curl = 0.2 * Math.sin(Math.PI * clamp(s * 1.3, 0, 1));
+  leg.toe[2] = hermite(zLo, zTd, -v * Tsw, -v * Tsw * style.matchTd, w);
+  leg.toe[1] = d.padY + (front ? style.liftF : style.liftH) * M.shoulderH * (front ? liftCurveF : liftCurveH)(s);
+  // Planted angles at both ends (heel peeled at liftoff, touchdown pitch at contact).
+  const m = front ? style.metaF : style.metaH;
+  leg.meta = d.stanceMeta + m[2] + (m[0] - m[2]) * smooth(s);
+  leg.dig = d.digRestPitch + (front ? 0.75 : 0.65) * (1 - smooth(s / 0.3));
+  leg.rel = relCurve(s);
+  const peak = (front ? style.carpusF : style.carpusH) * d.flexScale;
+  // Carpus: fold fast after liftoff, open through mid-swing, reach slightly extended before contact.
+  leg.carpus = front
+    ? curve([[0, lift.carpus], [0.12, lift.carpus + 0.55 * (peak - lift.carpus)], [0.3, peak], [0.48, peak * 0.78], [0.72, 0.15 * peak], [0.86, land.carpus - 0.08], [1, land.carpus]])(s)
+    : curve([[0, lift.carpus], [0.16, lift.carpus + 0.5 * (peak - lift.carpus)], [0.36, peak], [0.58, peak * 0.85], [0.8, land.carpus + 0.1], [1, land.carpus]])(s);
+  const curl = front ? style.curlF : style.curlH;
+  leg.digits = curve([[0, lift.digits], [0.2, curl], [0.5, curl * 0.8], [0.8, land.digits - 0.1], [1, land.digits]])(s);
+  leg.curl = 0.25 * Math.sin(Math.PI * clamp(s * 1.25, 0, 1));
   return leg;
+}
+
+export function baseLeg(rig: Rig, id: LegId, x: number, z: number, style: GaitStyle): Leg {
+  const d = rig.legs[id];
+  return {
+    toe: [x, d.padY, z], c: [0, 0, 0], cw: 0, meta: d.stanceMeta + (d.front ? style.metaF[1] : style.metaH[1]), dig: d.digRestPitch, rel: 0,
+    carpus: 0, digits: d.dRest, curl: 0, spread: 0, yaw: 0, out: d.front ? 0.05 : 0.08, roll: 0,
+    share: 0.38, swing: 0, fore: d.foreRest, foreW: 1.2, foreK: style.foreK,
+    abduct: 0, slide: 0, glide: 0,
+  };
 }
 
 function gaitLeg(rig: Rig, plan: GaitPlan, id: LegId, phase: number): Leg {
   const { style, v, S } = plan;
   const lp = legPhase(style, id, phase);
   const zTd = plan.zTd[id];
-  const leg = baseLeg(rig, id, plan.x[id], zTd, style.flex);
+  const leg = baseLeg(rig, id, plan.x[id], zTd, style);
   if (lp.stance) { leg.toe[2] = zTd - S * lp.s; stanceLeg(rig, style, leg, id, lp.s); }
-  else swingLeg(rig, style, leg, id, lp.s, zTd - S, zTd, v, v, (1 - style.duty) * style.T);
+  else swingLeg(rig, style, leg, id, lp.s, zTd - S, zTd, v, (1 - style.duty) * style.T, plan.lift[id], plan.land[id]);
   return leg;
 }
 
 export function gaitBody(rig: Rig, plan: GaitPlan, phase: number): Body {
-  const { style } = plan, M = rig.M, b = restBody(rig);
+  const { style } = plan, M = rig.M, b = restBody(rig), sH = M.shoulderH;
   for (const id of LEGS) b.legs[id] = gaitLeg(rig, plan, id, phase);
-  const bobF = girdleBob(style, true, phase) * style.bob * M.shoulderH;
-  const bobH = girdleBob(style, false, phase) * style.bob * M.shoulderH;
+  const bobF = girdleBob(style, true, phase) * style.bob * sH;
+  const bobH = girdleBob(style, false, phase) * style.bob * sH;
   const trunk = style.trunk?.(phase) ?? [0, 0, 0, 0];
-  const dropH = style.dropH * M.shoulderH - bobH - trunk[2] * M.shoulderH;
-  const dropF = style.dropF * M.shoulderH - bobF - trunk[2] * M.shoulderH;
-  const pitch = Math.asin(clamp((dropH - dropF) / M.trunk, -1, 1)) + style.spinePitch + trunk[0];
-  // Hips drop on the swing side; the pelvis yaws so the protracted hind leg's hip leads.
+  const dropH = style.dropH * sH - bobH - trunk[2] * sH;
+  const dropF = style.dropF * sH - bobF - trunk[2] * sH;
+  const pitch = Math.asin(clamp((dropH - dropF) / M.girdle, -1, 1)) + style.pitch + trunk[0];
+  const swingW = (id: LegId) => { const lp = legPhase(style, id, phase); return lp.stance ? 0 : Math.sin(Math.PI * lp.s); };
+  // The hip and shoulder sag a little on the swing side; the pelvis yaws so the protracted hind leg's hip leads.
+  const rollH = style.roll * (swingW('RH') - swingW('LH'));
+  const rollF = 0.7 * style.roll * (swingW('RF') - swingW('LF'));
   const z = (id: LegId) => b.legs[id].toe[2];
-  const swingDrop = (id: LegId) => { const lp = legPhase(style, id, phase); return lp.stance ? 0 : Math.sin(Math.PI * lp.s); };
-  const rollH = -style.roll * (swingDrop('LH') - swingDrop('RH'));
-  const rollF = -style.roll * 0.8 * (swingDrop('LF') - swingDrop('RF'));
   const yawH = -style.yaw * (z('LH') - z('RH')) / Math.max(plan.S, 1e-6);
-  const yawF = -style.yaw * 0.7 * (z('LF') - z('RF')) / Math.max(plan.S, 1e-6);
-  b.pelvisOff = [0, -dropH, trunk[3] * M.shoulderH];
+  const yawF = -0.6 * style.yaw * (z('LF') - z('RF')) / Math.max(plan.S, 1e-6);
+  b.pelvisOff = [0, -dropH, trunk[3] * sH];
   b.pelvis = [pitch, yawH, rollH];
   const flex = trunk[1];
   b.spine = [0, 1, 2, 3, 4].map(k => [
     -flex * [0.3, 0.28, 0.22, 0.12, 0.08][k]!,
-    (yawF - yawH) * [0.15, 0.2, 0.25, 0.25, 0.15][k]!,
+    (yawF - yawH) * [0.14, 0.22, 0.26, 0.24, 0.14][k]!,
     (rollF - rollH) * [0.1, 0.15, 0.25, 0.3, 0.2][k]!,
   ] as V3);
+  // Shoulder blades ride up on the stance side.
+  for (const id of ['LF', 'RF'] as const) {
+    const lp = legPhase(style, id, phase);
+    b.legs[id].slide = style.blade * sH * (lp.stance ? Math.sin(Math.PI * lp.s) ** 0.8 : -0.35 * Math.sin(Math.PI * lp.s));
+    const zMid = plan.zTd[id] - plan.S / 2;
+    b.legs[id].glide = style.glide * sH * Math.tanh(1.3 * (b.legs[id].toe[2] - zMid) / Math.max(plan.S / 2, 1e-6)) / Math.tanh(1.3);
+  }
   const nz = loopNoise(style.seed, 1, [1, 2, 3]);
-  b.gaze = [style.headPitch + style.headBob * (bobF / M.shoulderH) * 2 + 0.01 * nz(phase), 0.012 * nz(phase + 0.37), 0, 0.92];
+  b.gaze = [style.headPitch + style.headBob * (bobF / sH) * 2 + 0.008 * nz(phase), 0.012 * nz(phase + 0.37), 0, 0.9];
   b.earL = [...style.ears]; b.earR = [...style.ears];
   b.tail = Array.from({ length: 12 }, (_, i) => style.tail(i, phase));
   return b;
 }
 
-/**
- * Largest stride fit (≤ 1) at which every leg reaches its targets without clamping, searching the
- * front / hind stance placement near the authored biases so each rig uses its own best footprint.
- */
-export function fitGait(rig: Rig, style: GaitStyle, samples = 36): GaitStyle & { fit: number } {
-  const ok = (s: GaitStyle, fit: number) => {
-    const plan = planGait(rig, s, fit);
-    for (let k = 0; k < samples; k++) {
-      const info = {} as Record<LegId, SolveInfo>;
-      solve(rig, gaitBody(rig, plan, k / samples), info);
-      // Planted paws must be reached exactly; a swing paw may ride a little short of its arc.
-      for (const id of LEGS) if (info[id].reachError > (legPhase(s, id, k / samples).stance ? 1e-5 : 0.25 * rig.M.shoulderH)) return false;
-    }
-    return true;
-  };
-  const fitOf = (s: GaitStyle) => {
-    if (ok(s, 1)) return 1;
-    let lo = 0.1, hi = 1;
-    if (!ok(s, lo)) return 0;
-    for (let it = 0; it < 14; it++) { const m = (lo + hi) / 2; if (ok(s, m)) lo = m; else hi = m; }
-    return lo;
-  };
-  let best = { ...style, fit: -1 }, bestCost = Infinity;
-  for (const df of [0, 0.15, -0.15, 0.3]) for (const dh of [0, 0.15, -0.15]) {
-    const s = { ...style, frontBias: style.frontBias + df, hindBias: style.hindBias + dh };
-    const fit = fitOf(s), cost = -fit + 0.02 * (Math.abs(df) + Math.abs(dh));
-    if (cost < bestCost) { bestCost = cost; best = { ...s, fit }; }
+/** Plan a gait: stride from the in-place speed, touchdown points from girdle-relative stance centres. */
+export function planGait(rig: Rig, style: GaitStyle, fit: number, centreF: number, centreH: number): GaitPlan {
+  const v = style.speed * fit, L = v * style.T, S = L * style.duty;
+  const zTd = {} as Record<LegId, number>, x = {} as Record<LegId, number>;
+  for (const id of LEGS) {
+    const d = rig.legs[id];
+    const shoulder = rig.restWorld[d.a]!;
+    // Stance centre: under the shoulder / hip joint, offset by the fitted centre (m).
+    const mid = d.front ? shoulder.z + centreF : shoulder.z + centreH;
+    zTd[id] = mid + S / 2;
+    x[id] = d.restToe.x * style.width;
   }
-  return { ...best, fit: Math.floor(best.fit * 0.985 * 1000) / 1000 };
+  const empty = () => ({ LF: { carpus: 0, digits: 0 }, RF: { carpus: 0, digits: 0 }, LH: { carpus: 0, digits: 0 }, RH: { carpus: 0, digits: 0 } });
+  const plan: GaitPlan = { style, v, L, S, fit, zTd, x, lift: empty(), land: empty() };
+  measureEnds(rig, plan);
+  return plan;
+}
+
+/** Solve the liftoff and touchdown frames of each paw to read the joint angles the swing must start and end with. */
+function measureEnds(rig: Rig, plan: GaitPlan) {
+  for (const id of LEGS) {
+    const c = plan.style.contacts[id];
+    for (const [phase, key] of [[c + plan.style.duty - 1e-6, 'lift'], [c, 'land']] as const) {
+      const info: Partial<Record<LegId, LegInfo>> = {};
+      solve(rig, gaitBody(rig, plan, wrap01(phase)), info);
+      plan[key][id] = { carpus: info[id]!.carpus, digits: info[id]!.digits };
+    }
+  }
+}
+
+/** Register achieved: hind touchdown behind the ipsilateral front print (m, + behind). */
+export function registerOf(plan: GaitPlan, side: 'L' | 'R') {
+  const F = `${side}F` as LegId, H = `${side}H` as LegId;
+  const dc = wrap01(plan.style.contacts[H] - plan.style.contacts[F]);
+  return plan.zTd[F] - plan.zTd[H] - dc * plan.L;
+}
+
+export interface FitReport { fit: number; centreF: number; centreH: number; maxReach: number; register: number }
+
+/**
+ * Fit the stance centres (and, only if the rig cannot reach the stride, the stride) so every planted
+ * paw is reached exactly with margin; among reachable centres prefer the catalogued hind register.
+ */
+export function fitGait(rig: Rig, style: GaitStyle, samples = 24): FitReport {
+  const sH = rig.M.shoulderH;
+  const evalCentres = (fit: number, cF: number, cH: number) => {
+    const plan = planGait(rig, style, fit, cF, cH);
+    let maxF = 0, maxH = 0, missF = 0, missH = 0;
+    for (let k = 0; k < samples; k++) {
+      const info: Partial<Record<LegId, LegInfo>> = {};
+      solve(rig, gaitBody(rig, plan, k / samples), info);
+      for (const id of LEGS) {
+        const r = info[id]!, stance = legPhase(style, id, k / samples).stance, front = id[1] === 'F';
+        const miss = stance ? r.reachError : Math.max(0, r.reachError - 0.15 * sH);
+        if (front) { maxF = Math.max(maxF, r.reach); missF = Math.max(missF, miss); } else { maxH = Math.max(maxH, r.reach); missH = Math.max(missH, miss); }
+      }
+    }
+    return { plan, maxF, maxH, missF, missH };
+  };
+  const search = (fit: number) => {
+    const S = style.speed * fit * style.T * style.duty;
+    let bestF = 0, bestH = 0, costF = Infinity, costH = Infinity, okF = false, okH = false;
+    const grid = Array.from({ length: 13 }, (_, i) => (i - 6) / 6 * 0.45 * S);
+    for (const g of grid) {
+      const r = evalCentres(fit, g, 0);
+      const c = (r.missF > 1e-5 ? 10 + r.missF : 0) + Math.max(0, r.maxF - 0.93) * 5 + 0.3 * Math.abs(g / Math.max(S, 1e-6) - style.frontBias);
+      if (c < costF) { costF = c; bestF = g; okF = r.missF <= 1e-5; }
+    }
+    for (const g of grid) {
+      const r = evalCentres(fit, bestF, g);
+      const reg = registerOf(r.plan, 'L');
+      const c = (r.missH > 1e-5 ? 10 + r.missH : 0) + Math.max(0, r.maxH - 0.93) * 5 + 0.3 * Math.abs(g / Math.max(S, 1e-6) - style.hindBias)
+        + 0.15 * Math.abs(reg - style.register) / Math.max(S, 1e-6);
+      if (c < costH) { costH = c; bestH = g; okH = r.missH <= 1e-5; }
+    }
+    return { ok: okF && okH, cF: bestF, cH: bestH };
+  };
+  let fit = 1, res = search(1);
+  if (!res.ok) {
+    let lo = 0.2, hi = 1;
+    for (let it = 0; it < 10; it++) { const m = (lo + hi) / 2, r = search(m); if (r.ok) { lo = m; res = r; } else hi = m; }
+    fit = Math.floor(lo * 0.98 * 1000) / 1000;
+    res = search(fit);
+  }
+  const final = evalCentres(fit, res.cF, res.cH);
+  return { fit, centreF: res.cF, centreH: res.cH, maxReach: Math.max(final.maxF, final.maxH), register: registerOf(final.plan, 'L') };
 }
 
 /** Stance intervals (seconds) for the catalog contacts and duty factor. */
 export function gaitStance(style: GaitStyle): Partial<Record<LegId, [number, number][]>> {
   return Object.fromEntries(LEGS.map(id => [id, [[style.contacts[id] * style.T, (style.contacts[id] + style.duty) * style.T]]]));
 }
+
+export { DEG };

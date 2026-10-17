@@ -1,39 +1,11 @@
-// A cat pose described the way an animator thinks (paw targets, body angles,
-// head gaze, tail shape) and its solve to local bone rotations. Legs use an
-// analytic two-bone solve (upper/fore/wrist, thigh/shin/hock) after the
-// scapula or hip takes its share of the swing; the distal paw is posed
-// from the toe contact upward so planted pads stay exactly where they are put.
+// A cat pose described the way an animator thinks (paw targets, trunk angles,
+// head gaze, ears, tail shape) and its solve to local bone rotations.
 import { Quaternion, Vector3 } from 'three';
-import { AX, AY, AZ, type V3, clamp, frameQuat, lerp, qAxis, qBody, qPow, wrapPi } from './math.ts';
-import { LEGS, type LegDef, type LegId, type Pose, type Rig, type World, fk, restPose } from './rig.ts';
+import { type Leg, type LegInfo, type V3, defaultLeg, solveLeg } from './legs.ts';
+import { AX, AY, AZ, clamp, lerp, qAxis, qBody, qPow } from './math.ts';
+import { LEGS, type LegId, type Pose, type Rig, type World, fk, restPose } from './rig.ts';
 
-export interface Leg {
-  /** World target of the toe joint (the digital pads). */
-  toe: V3;
-  /** Metacarpus / metatarsus rotation about the paw's lateral axis; + lifts the wrist or hock. */
-  heel: number;
-  /** Digits (paw bone) pitch; + flexes the digits down and back. */
-  toeP: number;
-  /** Toe bone flex (claw curl). */
-  curl: number;
-  spread: number;
-  /** World heading of the paw (+ left). */
-  yaw: number;
-  /** Toe-out, + outward for that side. */
-  out: number;
-  /** Sole turned inward (+). */
-  roll: number;
-  /** Extra scapula / hip pitch (+ retracts). */
-  swing: number;
-  /** Share of the limb's swing taken by the scapula / hip. */
-  share: number;
-  /** Twist of the hinge plane about the limb axis, + puts the elbow or knee outward. */
-  abduct: number;
-  /** Preferred elbow / knee extension relative to rest (1 = rest, < 1 more flexed) and its weight. */
-  flex: number; comfort: number;
-  /** Optional direct target for the wrist / hock joint, blended by cw. */
-  c: V3; cw: number;
-}
+export type { Leg, V3 };
 
 export interface TailCurve { pts: V3[]; w: number }
 
@@ -42,7 +14,7 @@ export interface Body {
   /** Pelvis offset from rest (root frame) and rotation [pitch up, yaw left, roll left-up]. */
   pelvisOff: V3; pelvis: V3;
   spine: V3[]; neck: V3[]; head: V3;
-  /** World head orientation [pitch up, yaw left, roll] and how much it overrides the authored neck. */
+  /** World head orientation [pitch up, yaw left, roll] and how much it overrides the authored neck/head. */
   gaze: [number, number, number, number];
   jaw: number;
   /** Ear [swivel back, flatten outward, tilt forward]; tips bend [forward, outward]. */
@@ -59,38 +31,18 @@ export interface Body {
 
 export type DeepPartial<T> = T extends (infer U)[] ? (U extends number ? T : DeepPartial<U>[]) : T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
 
-export function restLeg(rig: Rig, id: LegId): Leg {
-  const d = rig.legs[id], t = rig.restWorld[d.toe]!;
-  return { toe: [t.x, t.y, t.z], heel: 0, toeP: 0, curl: 0, spread: 0, yaw: 0, out: 0, roll: 0, swing: 0,
-    share: d.front ? 0.45 : 0.35, abduct: 0, flex: 1, comfort: 1, c: [0, 0, 0], cw: 0 };
-}
-
 export function restBody(rig: Rig): Body {
   const z = (): V3 => [0, 0, 0];
   return {
     rootPos: z(), rootYaw: 0, pelvisOff: z(), pelvis: z(),
     spine: Array.from({ length: 5 }, z), neck: [z(), z()], head: z(), gaze: [0, 0, 0, 0], jaw: 0,
     earL: z(), earR: z(), tipL: [0, 0], tipR: [0, 0], eyes: [0, 0, 0, 0], whisk: 0,
-    legs: { LF: restLeg(rig, 'LF'), RF: restLeg(rig, 'RF'), LH: restLeg(rig, 'LH'), RH: restLeg(rig, 'RH') },
+    legs: { LF: defaultLeg(rig.legs.LF), RF: defaultLeg(rig.legs.RF), LH: defaultLeg(rig.legs.LH), RH: defaultLeg(rig.legs.RH) },
     tail: Array.from({ length: 12 }, z), tailCurve: null,
   };
 }
 
 export const cloneBody = (b: Body): Body => structuredClone(b);
-
-/** Deep merge of a partial description onto a body (arrays of numbers replace, arrays of objects merge by index). */
-export function apply<T>(base: T, over: unknown): T {
-  if (over === undefined) return base;
-  if (over === null || typeof over !== 'object') return over as T;
-  if (Array.isArray(over)) {
-    if (!Array.isArray(base) || over.every(x => typeof x === 'number')) return over as T;
-    return base.map((x, i) => apply(x, over[i])) as T;
-  }
-  if (base === null || typeof base !== 'object') return over as T;
-  const out = { ...(base as Record<string, unknown>) };
-  for (const [k, v] of Object.entries(over)) out[k] = apply(out[k], v);
-  return out as T;
-}
 
 function mixAny(a: unknown, b: unknown, w: number): unknown {
   if (typeof a === 'number') return lerp(a, b as number, w);
@@ -117,6 +69,7 @@ export function mixBody(a: Body, b: Body, w: number): Body {
   return out;
 }
 
+/** Mirror left/right (authoring a left-side action once and deriving the right). */
 export function mirrorBody(b: Body): Body {
   const m = cloneBody(b);
   const mx = (v: V3): V3 => [-v[0], v[1], v[2]];
@@ -134,12 +87,10 @@ export function mirrorBody(b: Body): Body {
   return m;
 }
 
-export interface SolveInfo { reachError: number; reachRatio: number }
-
 export const qTail = (t: V3) => qAxis(AY, t[1]).multiply(qAxis(AX, t[0])).multiply(qAxis(AZ, t[2]));
 
-/** Solve a body description to local rotations plus root and pelvis translations. */
-export function solve(rig: Rig, b: Body, info?: Record<LegId, SolveInfo>): Pose {
+/** Trunk, head, ears, eyes and tail rotations plus translations (no legs). */
+export function solveTrunk(rig: Rig, b: Body): Pose {
   const pose = restPose(rig), q = pose.q, I = rig.index;
   pose.root.set(...b.rootPos);
   q[0] = qAxis(AY, b.rootYaw);
@@ -148,6 +99,16 @@ export function solve(rig: Rig, b: Body, info?: Record<LegId, SolveInfo>): Pose 
   rig.spine.forEach((i, k) => { q[i] = qBody(...b.spine[k]!); });
   rig.neck.forEach((i, k) => { q[i] = qBody(...b.neck[k]!); });
   q[I('head')] = qBody(...b.head);
+  for (const id of ['LF', 'RF'] as const) {
+    const d = rig.legs[id], s = b.legs[id].slide, g = b.legs[id].glide;
+    if (s !== 0 || g !== 0) pose.t.set(d.prox, rig.offset[d.prox]!.clone().add(new Vector3(0, s, g)));
+  }
+  return pose;
+}
+
+/** Solve a body description to local rotations plus root, pelvis and scapula translations. */
+export function solve(rig: Rig, b: Body, info?: Partial<Record<LegId, LegInfo>>): Pose {
+  const pose = solveTrunk(rig, b), q = pose.q, I = rig.index;
   q[I('jaw')] = qAxis(AX, b.jaw);
   for (const [s, ear, tip] of [[1, b.earL, b.tipL], [-1, b.earR, b.tipR]] as const) {
     const n = s > 0 ? 'L' : 'R';
@@ -160,86 +121,40 @@ export function solve(rig: Rig, b: Body, info?: Record<LegId, SolveInfo>): Pose 
   rig.tail.forEach((i, k) => { q[i] = qTail(b.tail[k]!); });
 
   let W = fk(rig, pose);
-  if (b.gaze[3] > 0) {
-    const s5 = W.rot[I('spine_05')]!;
-    const Qd = s5.clone().invert().multiply(qBody(b.gaze[0], b.gaze[1], b.gaze[2]));
-    const chain = [rig.neck[0]!, rig.neck[1]!, I('head')], share = [0.36, 0.34, 0.30];
-    chain.forEach((i, k) => { q[i] = q[i]!.clone().slerp(qPow(Qd, share[k]!).multiply(q[i]!), clamp(b.gaze[3], 0, 1)); });
-  }
+  if (b.gaze[3] > 0) aimHead(rig, pose, W, qAxis(AY, b.rootYaw).multiply(qBody(b.gaze[0], b.gaze[1], b.gaze[2])), clamp(b.gaze[3], 0, 1));
   if (b.tailCurve && b.tailCurve.w > 0) {
+    W = fk(rig, pose);
     const locals = followCurve(rig, W, b.tailCurve.pts);
     rig.tail.forEach((i, k) => { q[i] = q[i]!.clone().slerp(locals[k]!, clamp(b.tailCurve!.w, 0, 1)); });
   }
   W = fk(rig, pose);
   for (const id of LEGS) {
-    const r = solveLeg(rig, q, W, rig.legs[id], b.legs[id]);
+    const r = solveLeg(rig, pose, W, rig.legs[id], b.legs[id]);
     if (info) info[id] = r;
   }
   return pose;
 }
 
-const _v = new Vector3();
-
-function solveLeg(rig: Rig, q: Quaternion[], W: World, d: LegDef, L: Leg): SolveInfo {
-  const G = W.rot[d.girdle]!, P0 = W.pos[d.prox]!, s = d.side;
-  const Rf = qAxis(AY, L.yaw + s * L.out).multiply(qAxis(AZ, -s * L.roll));
-  const Rheel = Rf.clone().multiply(qAxis(AX, L.heel));
-  const Rdig = Rf.clone().multiply(qAxis(AX, L.toeP));
-  const Rtoe = Rf.clone().multiply(qAxis(AX, L.toeP + L.curl));
-  const nd = d.distal.length;
-  const distRot = d.distal.map((_, k) => (k === nd - 1 ? Rdig : Rheel));
-  const J = new Vector3(...L.toe);
-  for (let k = nd - 1; k >= 0; k--) {
-    const child = k === nd - 1 ? d.toe : d.distal[k + 1]!;
-    J.sub(_v.copy(rig.offset[child]!).applyQuaternion(distRot[k]!));
+/**
+ * Gaze: neck_01, neck_02 and head share (36/34/30 %) the world-space correction that turns the head
+ * to the target orientation (root-relative yaw included); w blends from the authored neck/head to it.
+ */
+function aimHead(rig: Rig, pose: Pose, W: World, target: Quaternion, w: number) {
+  const q = pose.q, chain = [rig.neck[0]!, rig.neck[1]!, rig.index('head')], share = [0.36, 0.34, 0.30];
+  const parentW = W.rot[rig.parent[chain[0]!]!]!;
+  const orig = chain.map(i => q[i]!.clone());
+  let remaining = 1;
+  for (let k = 0; k < chain.length; k++) {
+    const worlds: Quaternion[] = [];
+    let acc = parentW.clone();
+    for (const i of chain) { acc = acc.clone().multiply(q[i]!); worlds.push(acc); }
+    const corr = target.clone().multiply(worlds[chain.length - 1]!.clone().invert());
+    const part = qPow(corr, share[k]! / remaining);
+    const jointParent = k === 0 ? parentW : worlds[k - 1]!;
+    q[chain[k]!] = jointParent.clone().invert().multiply(part).multiply(jointParent).multiply(q[chain[k]!]!);
+    remaining -= share[k]!;
   }
-  const Cstar = L.cw > 0 ? J.clone().lerp(new Vector3(...L.c), clamp(L.cw, 0, 1)) : J.clone();
-
-  // Proximal share of the limb swing, measured about the girdle's lateral axis.
-  const Ginv = G.clone().invert();
-  const rest = rig.restWorld[d.c]!.clone().sub(rig.restWorld[d.prox]!);
-  const cur = Cstar.clone().sub(P0).applyQuaternion(Ginv);
-  const dTheta = wrapPi(Math.atan2(cur.z, cur.y) - Math.atan2(rest.z, rest.y));
-  const offA = rig.offset[d.a]!;
-  const Lsum = d.L1 + d.L2, hi = 0.995 * Lsum, lo = Math.abs(d.L1 - d.L2) + 0.08 * Lsum;
-  const dist = (alpha: number) => P0.clone().add(offA.clone().applyQuaternion(G.clone().multiply(qAxis(AX, alpha)))).distanceTo(Cstar);
-  // The scapula / hip takes its share of the swing, then turns further where that keeps the
-  // elbow or knee near its rest flexion (scaled by flex); reach limits are hard constraints.
-  const aShare = L.share * dTheta + L.swing, comfort = d.restRatio * L.flex * Lsum, step = 0.5 * Math.PI / 180;
-  const cost = (a: number) => {
-    const e = dist(a), reach = e > hi ? e - hi : e < lo ? lo - e : 0;
-    return 1e4 * reach * reach / (Lsum * Lsum) + L.comfort * ((e - comfort) / Lsum) ** 2 + 0.1 * (a - aShare) ** 2;
-  };
-  let alpha = aShare, best = Infinity;
-  for (let k = -60; k <= 60; k++) { const a = aShare + k * step, c = cost(a); if (c < best) { best = c; alpha = a; } }
-  // Parabolic refinement so the girdle angle varies smoothly between frames.
-  const cm = cost(alpha - step), cp = cost(alpha + step), den = cm - 2 * best + cp;
-  if (den > 1e-12) alpha += clamp(0.5 * (cm - cp) / den, -1, 1) * step;
-  const Rprox = qAxis(AX, alpha), Wprox = G.clone().multiply(Rprox);
-  q[d.prox] = Rprox;
-  const A = P0.clone().add(offA.clone().applyQuaternion(Wprox));
-  const D = Cstar.clone().sub(A), raw = D.length();
-  // Never fold a knee flat: a swing paw that would need it simply stays a little lower.
-  const dc = clamp(raw, Math.abs(d.L1 - d.L2) + 0.06 * Lsum, Lsum * (1 - 1e-7));
-  const u = D.normalize();
-  const n = d.hinge.clone().applyQuaternion(Wprox).applyQuaternion(qAxis(u, s * L.abduct));
-  const vdir = new Vector3().crossVectors(n, u);
-  if (vdir.lengthSq() < 1e-10) vdir.set(0, 0, -1).applyQuaternion(Wprox).cross(u);
-  vdir.normalize().multiplyScalar(d.bend);
-  const cosA = clamp((d.L1 * d.L1 + dc * dc - d.L2 * d.L2) / (2 * d.L1 * dc), -1, 1), sinA = Math.sqrt(1 - cosA * cosA);
-  const B = A.clone().addScaledVector(u, d.L1 * cosA).addScaledVector(vdir, d.L1 * sinA);
-  const C = A.clone().addScaledVector(u, dc);
-  const rA = rig.restWorld[d.a]!, rB = rig.restWorld[d.b]!, rC = rig.restWorld[d.c]!;
-  const Wa = frameQuat(B.clone().sub(A), n).multiply(frameQuat(rB.clone().sub(rA), d.hinge).invert());
-  const Wb = frameQuat(C.clone().sub(B), n).multiply(frameQuat(rC.clone().sub(rB), d.hinge).invert());
-  q[d.a] = Wprox.clone().invert().multiply(Wa);
-  q[d.b] = Wa.clone().invert().multiply(Wb);
-  let parentW = Wb;
-  d.distal.forEach((bone, k) => { q[bone] = parentW.clone().invert().multiply(distRot[k]!); parentW = distRot[k]!; });
-  q[d.toe] = parentW.clone().invert().multiply(Rtoe);
-  q[d.digits[0]!] = qAxis(AY, -s * L.spread);
-  q[d.digits[1]!] = qAxis(AY, s * L.spread);
-  return { reachError: C.distanceTo(Cstar), reachRatio: raw / Lsum };
+  chain.forEach((i, k) => { q[i] = orig[k]!.clone().slerp(q[i]!, w); });
 }
 
 /** Lay the tail along a world-space curve starting at tail_01 (wraps, curls, floor contact). */
@@ -294,23 +209,11 @@ function densify(pts: V3[]): Vector3[] {
 
 /** World frame of a body part for authoring targets relative to the body (chest or pelvis). */
 export function partFrame(rig: Rig, b: Body, bone: string): { pos: Vector3; rot: Quaternion } {
-  const pose = solveTrunk(rig, b);
-  const W = fk(rig, pose), i = rig.index(bone);
+  const W = fk(rig, solveTrunk(rig, b)), i = rig.index(bone);
   return { pos: W.pos[i]!, rot: W.rot[i]! };
 }
 
-/** Trunk-only solve (no legs) for frames and gaze. */
-export function solveTrunk(rig: Rig, b: Body): Pose {
-  const pose = restPose(rig), q = pose.q, I = rig.index;
-  pose.root.set(...b.rootPos); q[0] = qAxis(AY, b.rootYaw);
-  pose.pelvis.add(new Vector3(...b.pelvisOff)); q[I('pelvis')] = qBody(...b.pelvis);
-  rig.spine.forEach((i, k) => { q[i] = qBody(...b.spine[k]!); });
-  rig.neck.forEach((i, k) => { q[i] = qBody(...b.neck[k]!); });
-  q[I('head')] = qBody(...b.head);
-  return pose;
-}
-
-/** Body-local point (relative to a bone) to world. */
+/** Body-local point (relative to a bone frame) to world. */
 export function toWorld(frame: { pos: Vector3; rot: Quaternion }, local: V3): V3 {
   const p = new Vector3(...local).applyQuaternion(frame.rot).add(frame.pos);
   return [p.x, p.y, p.z];
