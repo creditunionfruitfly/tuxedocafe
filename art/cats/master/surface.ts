@@ -6,7 +6,7 @@
 import { MeshoptSimplifier } from 'meshoptimizer';
 import { type Anatomy, type EyeFrame, eyeAngles } from './anatomy.ts';
 import { meshShape, project } from './mesher.ts';
-import { type Mesh, compact, cutLevelSet, largestComponent, removeDuplicateFaces, repairManifold, topologyOf, vertexNormals } from './mesh-ops.ts';
+import { type Mesh, compact, cutLevelSet, faceNormal, largestComponent, removeDuplicateFaces, repairManifold, topologyOf, vertexNeighbours, vertexNormals } from './mesh-ops.ts';
 import type { Field, Vec3 } from './sdf.ts';
 import { log } from './log.ts';
 
@@ -22,6 +22,7 @@ export function denseSurface(cat: Anatomy, h: number): Mesh {
   let mesh: Mesh = { positions: raw.positions, indices: largestComponent(raw.indices, raw.positions.length / 3) };
   mesh = compact(mesh).mesh;
   mesh = repairManifold(mesh, projectPoint);
+  fixFolds(mesh, field);
   const topo = topologyOf(mesh.indices, mesh.positions.length / 3);
   if (topo.boundaryEdges || topo.nonManifoldEdges || topo.nonManifoldVertices || topo.components !== 1 || topo.misoriented)
     throw new Error(`dense surface is not a closed manifold: ${JSON.stringify({ ...topo, loops: topo.loops.length })}`);
@@ -75,4 +76,47 @@ export function simplify(mesh: Mesh, targetTriangles: number, importance: Float3
   const [indices] = MeshoptSimplifier.simplifyWithAttributes(mesh.indices, positions, 3, attributes, 3, [options.weight ?? .6, options.weight ?? .6, options.weight ?? .6],
     options.lock ?? null, targetTriangles * 3, 1, flags);
   return compact({ positions: mesh.positions, indices: removeDuplicateFaces(indices) });
+}
+
+/**
+ * Untangle faces whose normal disagrees with the field gradient (folds left by projecting a grid
+ * surface into tight concave creases): relax their vertices toward the one-ring centroid and
+ * re-project, growing the region until every face agrees with the surface orientation.
+ */
+export function fixFolds(mesh: Mesh, field: Field, threshold = .25) {
+  const { positions: P, indices: I } = mesh, n = P.length / 3, nt = I.length / 3;
+  const nb = vertexNeighbours(I, n);
+  const e = 1e-5, f = [0, 0, 0];
+  const badFaces = () => {
+    const bad: number[] = [];
+    for (let t = 0; t < nt; t++) {
+      const a = I[t * 3]!, b = I[t * 3 + 1]!, c = I[t * 3 + 2]!;
+      faceNormal(P, a, b, c, f);
+      const l = Math.hypot(f[0]!, f[1]!, f[2]!);
+      if (l < 1e-20) { bad.push(t); continue; }
+      const x = (P[a * 3]! + P[b * 3]! + P[c * 3]!) / 3, y = (P[a * 3 + 1]! + P[b * 3 + 1]! + P[c * 3 + 1]!) / 3, z = (P[a * 3 + 2]! + P[b * 3 + 2]! + P[c * 3 + 2]!) / 3;
+      const gx = field(x + e, y, z) - field(x - e, y, z), gy = field(x, y + e, z) - field(x, y - e, z), gz = field(x, y, z + e) - field(x, y, z - e);
+      const gl = Math.hypot(gx, gy, gz);
+      if (gl < 1e-20) continue;
+      if ((f[0]! * gx + f[1]! * gy + f[2]! * gz) / (l * gl) < threshold) bad.push(t);
+    }
+    return bad;
+  };
+  let region = new Set<number>(), initial = -1;
+  for (let round = 0; round < 30; round++) {
+    const bad = badFaces();
+    if (initial < 0) initial = bad.length;
+    if (!bad.length) break;
+    for (const t of bad) for (let k = 0; k < 3; k++) region.add(I[t * 3 + k]!);
+    if (round % 4 === 3) { const grown = new Set(region); for (const v of region) for (let k = nb.start[v]!; k < nb.start[v + 1]!; k++) grown.add(nb.list[k]!); region = grown; }
+    for (const v of [...region].sort((a, b) => a - b)) {
+      let x = 0, y = 0, z = 0; const c = nb.start[v + 1]! - nb.start[v]!;
+      for (let k = nb.start[v]!; k < nb.start[v + 1]!; k++) { const u = nb.list[k]!; x += P[u * 3]!; y += P[u * 3 + 1]!; z += P[u * 3 + 2]!; }
+      const p = projectOnto(field, [x / c, y / c, z / c]);
+      P[v * 3] = p[0]; P[v * 3 + 1] = p[1]; P[v * 3 + 2] = p[2];
+    }
+  }
+  const left = badFaces().length;
+  log(`fold fix: ${initial} faces against the surface orientation, ${left} left`);
+  return left;
 }

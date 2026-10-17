@@ -439,7 +439,7 @@ function paw4(name: string, side: Side, front: boolean, upper: Vec3, paw: Vec3, 
   const U = (shape: Shape, k: number): Child => ({ shape, op: 'union', k });
   const Sb = (shape: Shape, k: number): Child => ({ shape, op: 'subtract', k });
   const ws = front ? 1.10 : 1.0, ls = front ? 1.08 : 1.18;
-  const pads: Shape[] = [];
+  const pads: Shape[] = [], sheaths: Shape[] = [];
   children.push(U(roundCone(`${name}.metapodial`, add(upper, [0, -.003, 0]), at(paw, -.003, 0, .0145), front ? .0100 : .0092, .0118 * ws), 0));
   children.push(U(ellipsoid(`${name}.foot`, at(paw, .0030 * ls, 0, .0115), [.0128 * ws, .0090, .0132 * ls], basisFrom(fwd, [0, 1, 0])), .006));
   // Toes II–V from medial to lateral; the middle toes reach farthest.
@@ -456,7 +456,9 @@ function paw4(name: string, side: Side, front: boolean, upper: Vec3, paw: Vec3, 
     const tip = add(c, add(scale(dir, .0066), [0, .0006, 0]));
     toeFrames.push({ center: c, dir, tip });
     // Claw pocket: the sheath opening at the dorsal tip of the toe, where the retracted claw rests.
-    children.push(Sb(ellipsoid(`${name}.sheath${i}`, add(c, add(scale(dir, .0064), [0, .0006, 0])), [.00115, .0010, .0024], basisFrom(normalize(add(dir, [0, .12, 0])), [0, 1, 0])), .0005));
+    const sheath = ellipsoid(`${name}.sheath${i}`, add(c, add(scale(dir, .0064), [0, .0006, 0])), [.00115, .0010, .0024], basisFrom(normalize(add(dir, [0, .12, 0])), [0, 1, 0]));
+    sheaths.push(sheath);
+    children.push(Sb(sheath, .0005));
   });
   // Trilobed metacarpal/metatarsal pad under the foot.
   const padC = at(paw, -.0010, 0, .0040);
@@ -477,10 +479,13 @@ function paw4(name: string, side: Side, front: boolean, upper: Vec3, paw: Vec3, 
     const dewC = add(lerp3(upper, paw, .52), [-.0098 * side, .001, .001]);
     const dewDir = normalize([-.35 * side, -.55, 1]);
     children.push(U(ellipsoid(`${name}.dewclaw`, dewC, [.0032, .0044, .0040], basisFrom(dewDir, [0, 1, 0])), .0022));
-    children.push(Sb(ellipsoid(`${name}.dewSheath`, add(dewC, scale(dewDir, .0036)), [.0012, .0010, .0022], basisFrom(dewDir, [0, 1, 0])), .0005));
+    const dewSheath = ellipsoid(`${name}.dewSheath`, add(dewC, scale(dewDir, .0036)), [.0012, .0010, .0022], basisFrom(dewDir, [0, 1, 0]));
+    sheaths.push(dewSheath);
+    children.push(Sb(dewSheath, .0005));
     dewclaw = { center: dewC, dir: dewDir, tip: add(dewC, scale(dewDir, .0040)) };
   }
   labels[`${name}.pads`] = group(`${name}.pads`, pads.map(p => U(p, .001)));
+  labels[`${name}.sheaths`] = group(`${name}.sheaths`, sheaths.map(p => U(p, 0)));
   return {
     shape: group(name, children),
     frame: { name, side, front, fwd, lat, joint: paw, toes: toeFrames, pads: [], dewclaw },
