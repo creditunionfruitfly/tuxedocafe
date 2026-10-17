@@ -79,7 +79,25 @@ test('placed props can be picked up again and carry survives settings without re
  await tapPoint(page,isMobile,2.4,0,.4);await walkedTo(page,2.4,.4);await expect(page.locator('body')).toHaveAttribute('data-carry','water-bowl');
  await tapPoint(page,isMobile,2.4,0,-.4);await page.getByRole('button',{name:'1 Place',exact:true}).click();await expect(page.locator('body')).toHaveAttribute('data-carry','');
 });
-test('lookdev loads the actual 65-bone capsule rig',async({page,isMobile},info)=>{await page.goto(`./?lookdev=cat&tier=${isMobile?'low':'desktop'}`);await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:STARTUP_TIMEOUT});await expect(page.locator('body')).toHaveAttribute('data-bones','65');await expect(page.locator('#lookdev-status')).toContainText('capsule rig diagnostic');await page.screenshot({path:info.outputPath('capsule-lookdev.png')});});
+test('cat studio plays authored clips, switches residents and scrubs the real rig',async({page,isMobile},info)=>{
+ const errors:string[]=[];page.on('pageerror',error=>errors.push(String(error)));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
+ await page.goto(`./?lookdev=cat&tier=${isMobile?'low':'desktop'}`);await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:STARTUP_TIMEOUT});await expect(page.locator('body')).toHaveAttribute('data-bones','65');
+ await expect(page.locator('body')).toHaveAttribute('data-cat-source','master');await expect(page.locator('body')).toHaveAttribute('data-stand-ins','0');await expect(page.locator('#cat-clips button')).toHaveCount(67);
+ await page.locator('[data-clip="cat.loco.walk"]').click();await expect(page.locator('body')).toHaveAttribute('data-animation-time',/0\.[1-9]/);await page.locator('#cat-play').click();
+ await page.locator('#cat-time').evaluate(input=>{(input as HTMLInputElement).value='0.5';input.dispatchEvent(new Event('input',{bubbles:true}));});await expect(page.locator('body')).toHaveAttribute('data-animation-time','0.5000');
+ await page.locator('#cat-resident').selectOption('clementine');await expect(page.locator('body')).toHaveAttribute('data-resident','clementine');await page.locator('#cat-skeleton').check();await page.locator('#cat-clay').check();await page.locator('#cat-ground').selectOption('step');await page.locator('#cat-ik').uncheck();await page.locator('#cat-look').check();
+ await page.screenshot({path:info.outputPath('cat-studio.png')});expect(errors).toEqual([]);
+});
+test('optional residents load only after the first playable café frame',async({page})=>{
+ const catRequests:string[]=[];page.on('request',request=>{if(request.url().includes('/assets/art/cats/'))catRequests.push(request.url());});
+ await page.goto('./?tier=low&flags=cats');await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:STARTUP_TIMEOUT});
+ await expect(page.locator('body')).toHaveAttribute('data-gpu-ready','true');expect(catRequests).toEqual([]);
+ await page.locator('#start').click();await page.locator('#patron-name').fill('Resident visitor');
+ await page.getByRole('button',{name:'Make yourself at home'}).click();
+ await expect(page.locator('body')).toHaveAttribute('data-phase','play');
+ await expect(page.locator('body')).toHaveAttribute('data-cats','8',{timeout:STARTUP_TIMEOUT});
+ expect(catRequests.length).toBeGreaterThan(0);
+});
 test('Settings About shows the build and feedback opens a metadata-prefilled draft',async({page})=>{
  await page.goto('./?tier=low');await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:STARTUP_TIMEOUT});await page.locator('.top-settings').click();
  const stamp=await page.locator('#build-stamp').textContent();await expect(page.locator('#about-build')).toContainText(stamp!);await expect(page.locator('#about-flags')).toContainText('Enabled flags:');

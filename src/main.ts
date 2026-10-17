@@ -14,7 +14,6 @@ import { SaveStore,browserStorage } from './core/storage.ts';
 import { TierBenchmark,chooseTier,parseTier,probeDevice } from './core/tiers.ts';
 import { createRenderer } from './render/renderer.ts';
 import { waitForGpu } from './render/warmup.ts';
-import { mountLookdev } from './scenes/lookdev.ts';
 import { createCafe } from './scenes/cafe.ts';
 import { Player } from './scenes/player.ts';
 import { ROOM } from './scenes/collision.ts';
@@ -32,7 +31,7 @@ import { freshVisit,cleanVisit } from './save/visit.ts';
 async function boot():Promise<void>{
 const body=document.body,bus=new EventBus();
 const stamp=document.querySelector<HTMLElement>('#build-stamp');if(stamp)stamp.textContent=formatStamp(buildInfo);
-body.dataset.flags=[...parseFlags(buildInfo.flags,location.search)].join(',');
+const flags=parseFlags(buildInfo.flags,location.search);body.dataset.flags=[...flags].join(',');
 const store=new SaveStore(buildInfo.channel,browserStorage(),freshVisit,{},text=>bus.emit('notice',{text}));
 await store.open();const visit=cleanVisit(await store.load('visit'));const save=():Promise<void>=>store.save('visit',visit);
 watchUpdates(buildInfo,save,reload=>{const button=document.querySelector<HTMLButtonElement>('#update');if(button){button.hidden=false;button.onclick=reload;}});
@@ -47,11 +46,26 @@ try {
   let playing=false,paused=false,benchmarkDone=false,contextReloadPending=false,previous=0,drawFrames=0,frameSum=0,tierPreference=visit.settings.tier;
   const probe=probeDevice(display.renderer.getContext() as WebGL2RenderingContext),benchmark=new TierBenchmark();
   const override=parseTier(new URLSearchParams(location.search).get('tier'));if(override){benchmarkDone=display.configure(override);contextReloadPending=!benchmarkDone;}
+  let residents: Awaited<ReturnType<typeof import('./cats/residents-scene.ts').mountResidents>> | null = null;
+  let residentsLoading=false, alive=true;
+  const beginResidents=():void=>{
+    if(!flags.has('cats')||residentsLoading||residents||!alive)return;
+    residentsLoading=true;body.dataset.catsLoading='true';
+    // The opt-in cast is substantial: first make the café playable, then stream
+    // its resident kit and maps without holding the title screen or first frame.
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      if(!alive)return;
+      void import('./cats/residents-scene.ts').then(module=>module.mountResidents(scene,parseTier(body.dataset.tier??null)??'desktop',bus)).then(cast=>{
+        if(alive)residents=cast;else cast.dispose();
+        body.dataset.catsLoading='false';
+      }).catch(error=>{residentsLoading=false;body.dataset.catsLoading='error';console.warn('Optional residents did not load',error);});
+    }));
+  };
   const forwardVector=new Vector3();
   const loop=new FixedLoop(dt=>{
     if(!playing)return;
     const k=keyboard.keys;player.step(dt,Number(k.has('d'))-Number(k.has('a')),Number(k.has('w'))-Number(k.has('s')));player.steer(dt,Number(k.has('arrowleft'))-Number(k.has('arrowright')),Number(k.has('arrowup'))-Number(k.has('arrowdown')));
-    pointer.step(dt);hand.step(dt);bus.emit('player',{x:player.x,z:player.z});body.dataset.player=`${player.x.toFixed(2)},${player.z.toFixed(2)}`;
+    pointer.step(dt);hand.step(dt);residents?.tick(dt);bus.emit('player',{x:player.x,z:player.z});body.dataset.player=`${player.x.toFixed(2)},${player.z.toFixed(2)}`;
     body.dataset.carry=holding.id??'';body.dataset.look=`${player.yaw.toFixed(3)},${player.pitch.toFixed(3)},${player.lean.toFixed(3)}`;
     for(const [id,placed] of holding.placements){
       const p=holding.id===id?holding.position:placed,model=cafe.object(id),proxy=targetMap.get(id);
@@ -62,11 +76,11 @@ try {
     camera.position.set(player.previousX+(player.x-player.previousX)*alpha,1.6,player.previousZ+(player.z-player.previousZ)*alpha);player.orientation(camera.quaternion);
     // Leaning never pushes the near plane through a wall when the patron faces it.
     forwardVector.set(0,0,-player.lean).applyQuaternion(camera.quaternion);camera.position.add(forwardVector);camera.position.x=Math.max(ROOM.minX+.1,Math.min(ROOM.maxX-.1,camera.position.x));camera.position.z=Math.max(ROOM.minZ+.1,Math.min(ROOM.maxZ-.1,camera.position.z));camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();camera.updateMatrixWorld();
-    hand.update(playing,!!holding.id,visit.settings.leftHanded);display.renderer.render(scene,camera);
+    hand.update(playing,!!holding.id,visit.settings.leftHanded);residents?.render(alpha,camera);display.renderer.render(scene,camera);
     if(benchmarkDone&&!contextReloadPending&&body.dataset.ready!=='true'){const start=document.querySelector<HTMLButtonElement>('#start')!;start.disabled=false;start.setAttribute('aria-busy','false');body.dataset.ready='true';}body.dataset.drawCalls=String(display.renderer.info.render.calls);body.dataset.triangles=String(display.renderer.info.render.triangles);body.dataset.shaderPrograms=String(display.renderer.info.programs?.length??0);
     if(++drawFrames%60===0){body.dataset.frameMs=(frameSum/60).toFixed(1);frameSum=0;}
   });
-  bus.on('session',value=>{playing=value.playing;pointer.active(playing&&!paused);keyboard.keys.clear();});
+  bus.on('session',value=>{playing=value.playing;pointer.active(playing&&!paused);keyboard.keys.clear();if(playing)beginResidents();});
   bus.on('settings',value=>{if(value.tier!==tierPreference){tierPreference=value.tier;const url=new URL(location.href);if(value.tier==='auto')url.searchParams.delete('tier');else url.searchParams.set('tier',value.tier);void save().then(()=>location.assign(url.href));}player.reducedMotion=value.reducedMotion;const tier=parseTier(value.tier)??override;if(tier){benchmarkDone=display.configure(tier);contextReloadPending=!benchmarkDone;}else benchmarkDone=false;});
   bus.on('profile',profile=>hand.customize(profile.skin,profile.sleeve));
   bus.on('player',({x,z})=>cafe.updateLighting(x,1.3,z));
@@ -91,11 +105,11 @@ try {
     if(!benchmarkDone&&!contextReloadPending){const result=benchmark.update(time);if(result!==null){benchmarkDone=display.configure(chooseTier(probe,result));contextReloadPending=!benchmarkDone;body.dataset.benchmarkMs=result.toFixed(1);}}
     const elapsed=previous?time-previous:16.7;frameSum+=elapsed;if(previous)display.adapt(elapsed);previous=time;loop.frame(time);
   });
-  window.addEventListener('pagehide',()=>{void save();});
+  window.addEventListener('pagehide',event=>{void save();if(!event.persisted){alive=false;residents?.dispose();}});
 } catch(error) {
   document.querySelector<HTMLElement>('#unsupported')?.removeAttribute('hidden');body.dataset.ready='unsupported';console.warn('Café loading failed',error);if(rendererReady)window.dispatchEvent(new Event('cafe:asset-error'));
 }
 
 }
 const lookdev=new URLSearchParams(location.search).get('lookdev');
-if(lookdev)await mountLookdev(lookdev);else await boot();
+if(lookdev)await (await import('./scenes/lookdev.ts')).mountLookdev(lookdev);else await boot();

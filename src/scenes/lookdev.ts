@@ -12,6 +12,7 @@ const ASSETS={cat:'art/cats/cat_placeholder_lod0.glb',hand:'art/hand.glb',cafe:'
 export function lookdevAsset(value:string):keyof typeof ASSETS|null{return value==='cat'||value==='hand'||value==='cafe'?value:null;}
 export async function mountLookdev(value:string):Promise<void>{
  const asset=lookdevAsset(value);if(!asset)throw new Error('Use ?lookdev=cat, hand or cafe.');
+ if(asset==='cat'){await (await import('./cat-lookdev.ts')).mountCatLookdev();return;}
  document.querySelector('#title-screen')?.setAttribute('hidden','');document.querySelector('.top-settings')?.setAttribute('hidden','');document.body.dataset.phase='lookdev';
  const display=createRenderer(document.querySelector<HTMLCanvasElement>('#view')!);display.configure(parseTier(new URLSearchParams(location.search).get('tier'))??'desktop');
  let scene:Scene,camera:PerspectiveCamera,bones=0;
@@ -24,7 +25,7 @@ export async function mountLookdev(value:string):Promise<void>{
   const bounds=new Box3().setFromObject(gltf.scene),center=bounds.getCenter(new Vector3()),size=bounds.getSize(new Vector3()),distance=Math.max(size.x,size.y,size.z)*1.9;
   camera.position.copy(center).add(new Vector3(distance*.8,distance*.45,distance));camera.lookAt(center);const controls=new OrbitControls(camera,display.renderer.domElement);controls.target.copy(center);controls.minDistance=distance*.45;controls.maxDistance=distance*4;controls.update();
  }
- const label=document.createElement('aside');label.id='lookdev-status';label.className='glass hud-card';label.style.top='100px';label.textContent=`${asset==='cat'?'65-bone capsule rig diagnostic':asset==='hand'?'Wrist-rigged hand':'Café environment'} · ${document.body.dataset.tier} · drag to inspect`;
+ const label=document.createElement('aside');label.id='lookdev-status';label.className='glass hud-card';label.style.top='100px';label.textContent=`${asset==='hand'?'Wrist-rigged hand':'Café environment'} · ${document.body.dataset.tier} · drag to inspect`;
  const links=document.createElement('p');for(const name of Object.keys(ASSETS)){const link=document.createElement('a');link.href=siteUrl(`?lookdev=${name}&tier=${document.body.dataset.tier}`);link.textContent=`${name}  `;links.append(link);}label.append(links);document.body.append(label);document.body.dataset.bones=String(bones);
  installOrientation(()=>{});display.renderer.setAnimationLoop(()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();display.renderer.render(scene,camera);document.body.dataset.ready='true';document.body.dataset.drawCalls=String(display.renderer.info.render.calls);document.body.dataset.triangles=String(display.renderer.info.render.triangles);});
 }
