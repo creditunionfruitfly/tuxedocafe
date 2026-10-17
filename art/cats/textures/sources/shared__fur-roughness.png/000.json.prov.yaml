@@ -1,0 +1,6 @@
+source: art/cats/textures/prepare.py
+tool: OpenAI built-in imagegen; deterministic UV and bitmap preparation
+date: '2026-10-17'
+license: original
+author_role: artist
+notes: Estimated linear fur roughness; resident sheen remains a runtime material parameter.
