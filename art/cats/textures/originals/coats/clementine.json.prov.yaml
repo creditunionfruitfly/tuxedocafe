@@ -1,0 +1,6 @@
+source: original OpenAI built-in imagegen output, prompt in art/cats/textures/body-prompts.json
+tool: OpenAI built-in imagegen
+date: '2026-10-17'
+license: original
+author_role: artist
+notes: Exact unmodified native PNG stored as lossless base64 source; 1254x1254; SHA256 8b52f9ee428fcae3857bebc1ca418a560daee40bbe7fcaf50d15c67495c48412

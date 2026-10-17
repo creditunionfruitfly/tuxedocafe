@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "tool": "OpenAI built-in imagegen",
+  "status": "Original generated art preserved before final mesh registration review",
+  "assets": [
+    {
+      "source": "eyes/biscuit.json",
+      "target": "art/cats/textures/generated/eyes/biscuit.png",
+      "bytes": 2429155,
+      "sha256": "041e252e8d7c516d4c4151ab06f761ba7337854cb4e5df43c7080158f162297e",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "eyes/clementine.json",
+      "target": "art/cats/textures/generated/eyes/clementine.png",
+      "bytes": 2526944,
+      "sha256": "32ca85712c31de252da42f453649fce5a9751e17b07752f9faab6402d8999132",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "eyes/duchess.json",
+      "target": "art/cats/textures/generated/eyes/duchess.png",
+      "bytes": 2552771,
+      "sha256": "838339328a185d5fc16a47faa536b7e4b4edda5c081acc0b9f713aafacf3c453",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "eyes/juniper.json",
+      "target": "art/cats/textures/generated/eyes/juniper.png",
+      "bytes": 2469094,
+      "sha256": "0cf97beb17af4b51ec14cfc0b636102f5e0305a28c75ddc4b6cc9eb1f7111e6f",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "eyes/mochi.json",
+      "target": "art/cats/textures/generated/eyes/mochi.png",
+      "bytes": 2369814,
+      "sha256": "923a4ee698ce5c0a7a7333d976b355d024dfbc423df909a037097e3bbdd9a662",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "eyes/pepper.json",
+      "target": "art/cats/textures/generated/eyes/pepper.png",
+      "bytes": 2427860,
+      "sha256": "836794e7136bcdfb66afc05e6ee101fa12df80c34f44740d7bdd010dfc4f32bc",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "eyes/pixel.json",
+      "target": "art/cats/textures/generated/eyes/pixel.png",
+      "bytes": 2438281,
+      "sha256": "cb5d21d2ace1b9c47b2ce2aa5ecb9a0a4b246bd26cb72a1076be5e3ec61b19d3",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "eyes/waffles.json",
+      "target": "art/cats/textures/generated/eyes/waffles.png",
+      "bytes": 2495438,
+      "sha256": "b2798eaddf2821fee1f9e6a180bf00ecfa7330355bb4f176bcebd0cf69df8f4e",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "coats/biscuit.json",
+      "target": "art/cats/textures/generated/coats/biscuit.png",
+      "bytes": 2082374,
+      "sha256": "5d33d94eff4ebb82bcf9be038535d9e130402e5aa2a5b623560d69310a2afe0e",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "coats/clementine.json",
+      "target": "art/cats/textures/generated/coats/clementine.png",
+      "bytes": 2081756,
+      "sha256": "8b52f9ee428fcae3857bebc1ca418a560daee40bbe7fcaf50d15c67495c48412",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "coats/duchess.json",
+      "target": "art/cats/textures/generated/coats/duchess.png",
+      "bytes": 1920424,
+      "sha256": "638045d7b57720b8edd243dd24f1889e24835d8317aa884b2ca6fc2753853af2",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "coats/juniper.json",
+      "target": "art/cats/textures/generated/coats/juniper.png",
+      "bytes": 2215892,
+      "sha256": "f726a22da8df2aa18c579b5387aa8385319cf3868787dedbb4c2814aca0281a5",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "coats/mochi.json",
+      "target": "art/cats/textures/generated/coats/mochi.png",
+      "bytes": 2040508,
+      "sha256": "0b0a8f1c596c222c843c263b17b3f513af72a13fc6ce9b3f6c71ab3257cc11ba",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "coats/pepper.json",
+      "target": "art/cats/textures/generated/coats/pepper.png",
+      "bytes": 2351103,
+      "sha256": "6bd338fa97dc309e1da2be41acc1b2bf8fa7f9db9f92f277b4a9dfb9212dda6c",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "coats/pixel.json",
+      "target": "art/cats/textures/generated/coats/pixel.png",
+      "bytes": 2136775,
+      "sha256": "8bd6f854d7676ffb3344de0096e61c83c9b26c6b1566a1b56704384db5c5f77b",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "coats/waffles.json",
+      "target": "art/cats/textures/generated/coats/waffles.png",
+      "bytes": 2047255,
+      "sha256": "ec63e65f90ebba4cfda23b2ce773a3723fb8f2a6f8c973cf876ec128840ab22c",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "source": "shared/fur-micro.json",
+      "target": "art/cats/textures/generated/shared/fur-micro.png",
+      "bytes": 3832653,
+      "sha256": "6a80b65c53862a911f18d81852442a4344564c56597dfbd971c6d43228af55f4",
+      "width": 1254,
+      "height": 1254
+    }
+  ]
+}

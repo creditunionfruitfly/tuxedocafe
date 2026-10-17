@@ -1,0 +1,6 @@
+source: art/cats/textures/body-prompts.json
+tool: OpenAI built-in imagegen; deterministic source archiving
+date: '2026-10-17'
+license: original
+author_role: artist
+notes: Eight registered coat source bitmaps; full prompts and native source hashes retained

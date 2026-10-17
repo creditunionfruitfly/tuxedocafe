@@ -1,0 +1,231 @@
+{
+  "version": 1,
+  "atlas": "../registration-v1/atlas.json",
+  "description": "Registered painted coats on the generation atlas before final facial geometry refinement. These original source bitmaps are transferred through the exact rest surface, not repainted.",
+  "maps": {
+    "biscuit": {
+      "chunks": [
+        "biscuit/000.json",
+        "biscuit/001.json",
+        "biscuit/002.json",
+        "biscuit/003.json",
+        "biscuit/004.json",
+        "biscuit/005.json",
+        "biscuit/006.json",
+        "biscuit/007.json",
+        "biscuit/008.json",
+        "biscuit/009.json",
+        "biscuit/010.json",
+        "biscuit/011.json",
+        "biscuit/012.json",
+        "biscuit/013.json",
+        "biscuit/014.json",
+        "biscuit/015.json",
+        "biscuit/016.json",
+        "biscuit/017.json",
+        "biscuit/018.json",
+        "biscuit/019.json"
+      ],
+      "bytes": 863566,
+      "sha256": "523ee05b9fe9c701a4d44428cd12b966c22228df7084b67cfb76b33787b46eeb",
+      "nativeSha256": "5d33d94eff4ebb82bcf9be038535d9e130402e5aa2a5b623560d69310a2afe0e",
+      "nativeSize": [
+        1254,
+        1254
+      ]
+    },
+    "clementine": {
+      "chunks": [
+        "clementine/000.json",
+        "clementine/001.json",
+        "clementine/002.json",
+        "clementine/003.json",
+        "clementine/004.json",
+        "clementine/005.json",
+        "clementine/006.json",
+        "clementine/007.json",
+        "clementine/008.json",
+        "clementine/009.json",
+        "clementine/010.json",
+        "clementine/011.json",
+        "clementine/012.json",
+        "clementine/013.json",
+        "clementine/014.json",
+        "clementine/015.json"
+      ],
+      "bytes": 710656,
+      "sha256": "020cee68d1ad3e195e4cb60b5365268c6accac7274ad1f8b47d8874d94d29cc8",
+      "nativeSha256": "8b52f9ee428fcae3857bebc1ca418a560daee40bbe7fcaf50d15c67495c48412",
+      "nativeSize": [
+        1254,
+        1254
+      ]
+    },
+    "duchess": {
+      "chunks": [
+        "duchess/000.json",
+        "duchess/001.json",
+        "duchess/002.json",
+        "duchess/003.json",
+        "duchess/004.json",
+        "duchess/005.json",
+        "duchess/006.json",
+        "duchess/007.json",
+        "duchess/008.json",
+        "duchess/009.json",
+        "duchess/010.json",
+        "duchess/011.json",
+        "duchess/012.json",
+        "duchess/013.json",
+        "duchess/014.json",
+        "duchess/015.json"
+      ],
+      "bytes": 684935,
+      "sha256": "9a8d7bb81ff9669ed9525c6c4e48f3880490de05fc46bbe887ba22140bbcb043",
+      "nativeSha256": "638045d7b57720b8edd243dd24f1889e24835d8317aa884b2ca6fc2753853af2",
+      "nativeSize": [
+        1254,
+        1254
+      ]
+    },
+    "juniper": {
+      "chunks": [
+        "juniper/000.json",
+        "juniper/001.json",
+        "juniper/002.json",
+        "juniper/003.json",
+        "juniper/004.json",
+        "juniper/005.json",
+        "juniper/006.json",
+        "juniper/007.json",
+        "juniper/008.json",
+        "juniper/009.json",
+        "juniper/010.json",
+        "juniper/011.json",
+        "juniper/012.json",
+        "juniper/013.json",
+        "juniper/014.json",
+        "juniper/015.json",
+        "juniper/016.json",
+        "juniper/017.json",
+        "juniper/018.json",
+        "juniper/019.json",
+        "juniper/020.json"
+      ],
+      "bytes": 909075,
+      "sha256": "9bf1103caf03ddee4e6cbf557495fe8eb4b9d8a156ab35e328818b3ab7379815",
+      "nativeSha256": "f726a22da8df2aa18c579b5387aa8385319cf3868787dedbb4c2814aca0281a5",
+      "nativeSize": [
+        1254,
+        1254
+      ]
+    },
+    "mochi": {
+      "chunks": [
+        "mochi/000.json",
+        "mochi/001.json",
+        "mochi/002.json",
+        "mochi/003.json",
+        "mochi/004.json",
+        "mochi/005.json",
+        "mochi/006.json",
+        "mochi/007.json",
+        "mochi/008.json",
+        "mochi/009.json",
+        "mochi/010.json",
+        "mochi/011.json",
+        "mochi/012.json",
+        "mochi/013.json"
+      ],
+      "bytes": 599650,
+      "sha256": "8099e10c77302b298e8be896d4100bdcbf69af5211f207426c6b7fbb41f89e76",
+      "nativeSha256": "0b0a8f1c596c222c843c263b17b3f513af72a13fc6ce9b3f6c71ab3257cc11ba",
+      "nativeSize": [
+        1254,
+        1254
+      ]
+    },
+    "pepper": {
+      "chunks": [
+        "pepper/000.json",
+        "pepper/001.json",
+        "pepper/002.json",
+        "pepper/003.json",
+        "pepper/004.json",
+        "pepper/005.json",
+        "pepper/006.json",
+        "pepper/007.json",
+        "pepper/008.json",
+        "pepper/009.json",
+        "pepper/010.json",
+        "pepper/011.json",
+        "pepper/012.json",
+        "pepper/013.json",
+        "pepper/014.json",
+        "pepper/015.json",
+        "pepper/016.json",
+        "pepper/017.json",
+        "pepper/018.json",
+        "pepper/019.json",
+        "pepper/020.json"
+      ],
+      "bytes": 905711,
+      "sha256": "eb9f33401e214c9164db63b2dc53a622bf82efd81620705c2acfda07775f1f08",
+      "nativeSha256": "6bd338fa97dc309e1da2be41acc1b2bf8fa7f9db9f92f277b4a9dfb9212dda6c",
+      "nativeSize": [
+        1254,
+        1254
+      ]
+    },
+    "pixel": {
+      "chunks": [
+        "pixel/000.json",
+        "pixel/001.json",
+        "pixel/002.json",
+        "pixel/003.json",
+        "pixel/004.json",
+        "pixel/005.json",
+        "pixel/006.json",
+        "pixel/007.json",
+        "pixel/008.json",
+        "pixel/009.json",
+        "pixel/010.json",
+        "pixel/011.json",
+        "pixel/012.json",
+        "pixel/013.json"
+      ],
+      "bytes": 612501,
+      "sha256": "c0f7c707a92d4da8f5bb4989cb2c1926b9133bc82a729020ff1fc570470e22fd",
+      "nativeSha256": "8bd6f854d7676ffb3344de0096e61c83c9b26c6b1566a1b56704384db5c5f77b",
+      "nativeSize": [
+        1254,
+        1254
+      ]
+    },
+    "waffles": {
+      "chunks": [
+        "waffles/000.json",
+        "waffles/001.json",
+        "waffles/002.json",
+        "waffles/003.json",
+        "waffles/004.json",
+        "waffles/005.json",
+        "waffles/006.json",
+        "waffles/007.json",
+        "waffles/008.json",
+        "waffles/009.json",
+        "waffles/010.json",
+        "waffles/011.json",
+        "waffles/012.json",
+        "waffles/013.json"
+      ],
+      "bytes": 606098,
+      "sha256": "3e0d361582cae3e4b0330b69ffb8fc0b9ed3ec1f878a6f8c7b4d0122bc3ebd08",
+      "nativeSha256": "ec63e65f90ebba4cfda23b2ce773a3723fb8f2a6f8c973cf876ec128840ab22c",
+      "nativeSize": [
+        1254,
+        1254
+      ]
+    }
+  }
+}

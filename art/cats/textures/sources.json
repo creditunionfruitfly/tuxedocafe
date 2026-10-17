@@ -1,0 +1,623 @@
+{
+  "version": 1,
+  "maps": {
+    "mochi/eye.png": {
+      "chunks": [
+        "sources/mochi__eye.png/000.json",
+        "sources/mochi__eye.png/001.json",
+        "sources/mochi__eye.png/002.json",
+        "sources/mochi__eye.png/003.json",
+        "sources/mochi__eye.png/004.json"
+      ],
+      "bytes": 197511,
+      "sha256": "1e9a5fcf54d472b5f05f5711c42f5838a2ec0210f9c41856b326d67ee96ff687",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/png",
+      "colorSpace": "srgb"
+    },
+    "mochi/body-2048.jpg": {
+      "chunks": [
+        "sources/mochi__body-2048.jpg/000.json",
+        "sources/mochi__body-2048.jpg/001.json",
+        "sources/mochi__body-2048.jpg/002.json",
+        "sources/mochi__body-2048.jpg/003.json",
+        "sources/mochi__body-2048.jpg/004.json",
+        "sources/mochi__body-2048.jpg/005.json",
+        "sources/mochi__body-2048.jpg/006.json",
+        "sources/mochi__body-2048.jpg/007.json",
+        "sources/mochi__body-2048.jpg/008.json",
+        "sources/mochi__body-2048.jpg/009.json",
+        "sources/mochi__body-2048.jpg/010.json",
+        "sources/mochi__body-2048.jpg/011.json",
+        "sources/mochi__body-2048.jpg/012.json",
+        "sources/mochi__body-2048.jpg/013.json"
+      ],
+      "bytes": 599650,
+      "sha256": "8099e10c77302b298e8be896d4100bdcbf69af5211f207426c6b7fbb41f89e76",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "mochi/body-1024.jpg": {
+      "chunks": [
+        "sources/mochi__body-1024.jpg/000.json",
+        "sources/mochi__body-1024.jpg/001.json",
+        "sources/mochi__body-1024.jpg/002.json",
+        "sources/mochi__body-1024.jpg/003.json",
+        "sources/mochi__body-1024.jpg/004.json"
+      ],
+      "bytes": 193449,
+      "sha256": "b6659943f580b8f0f469e8e902d5dfd1ba6d16636ac996087502987ff94e5a90",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "mochi/coat.png": {
+      "chunks": [
+        "sources/mochi__coat.png/000.json",
+        "sources/mochi__coat.png/001.json",
+        "sources/mochi__coat.png/002.json"
+      ],
+      "bytes": 123308,
+      "sha256": "54f3f019ab112785cf639bf3fa84145eb936c9ef182a15282df6b1a00fe4059e",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/png",
+      "colorSpace": "linear"
+    },
+    "waffles/eye.png": {
+      "chunks": [
+        "sources/waffles__eye.png/000.json",
+        "sources/waffles__eye.png/001.json",
+        "sources/waffles__eye.png/002.json",
+        "sources/waffles__eye.png/003.json",
+        "sources/waffles__eye.png/004.json"
+      ],
+      "bytes": 186043,
+      "sha256": "1c0de0af7c61a081d60133820ee766fe0a78f504e806a591b0f2f3d3bb2d8751",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/png",
+      "colorSpace": "srgb"
+    },
+    "waffles/body-2048.jpg": {
+      "chunks": [
+        "sources/waffles__body-2048.jpg/000.json",
+        "sources/waffles__body-2048.jpg/001.json",
+        "sources/waffles__body-2048.jpg/002.json",
+        "sources/waffles__body-2048.jpg/003.json",
+        "sources/waffles__body-2048.jpg/004.json",
+        "sources/waffles__body-2048.jpg/005.json",
+        "sources/waffles__body-2048.jpg/006.json",
+        "sources/waffles__body-2048.jpg/007.json",
+        "sources/waffles__body-2048.jpg/008.json",
+        "sources/waffles__body-2048.jpg/009.json",
+        "sources/waffles__body-2048.jpg/010.json",
+        "sources/waffles__body-2048.jpg/011.json",
+        "sources/waffles__body-2048.jpg/012.json",
+        "sources/waffles__body-2048.jpg/013.json"
+      ],
+      "bytes": 606098,
+      "sha256": "3e0d361582cae3e4b0330b69ffb8fc0b9ed3ec1f878a6f8c7b4d0122bc3ebd08",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "waffles/body-1024.jpg": {
+      "chunks": [
+        "sources/waffles__body-1024.jpg/000.json",
+        "sources/waffles__body-1024.jpg/001.json",
+        "sources/waffles__body-1024.jpg/002.json",
+        "sources/waffles__body-1024.jpg/003.json",
+        "sources/waffles__body-1024.jpg/004.json"
+      ],
+      "bytes": 198541,
+      "sha256": "d4d37d62dcf6367875f97bf24a842ad2d3fb0490e15dd2302e46e34057dcd496",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "waffles/coat.png": {
+      "chunks": [
+        "sources/waffles__coat.png/000.json",
+        "sources/waffles__coat.png/001.json",
+        "sources/waffles__coat.png/002.json",
+        "sources/waffles__coat.png/003.json"
+      ],
+      "bytes": 140450,
+      "sha256": "8aa3231e9ef482eca1a6be3a26f92d60c083c36321f5d652f25ec6c4a6d7b855",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/png",
+      "colorSpace": "linear"
+    },
+    "pepper/eye.png": {
+      "chunks": [
+        "sources/pepper__eye.png/000.json",
+        "sources/pepper__eye.png/001.json",
+        "sources/pepper__eye.png/002.json",
+        "sources/pepper__eye.png/003.json",
+        "sources/pepper__eye.png/004.json"
+      ],
+      "bytes": 186801,
+      "sha256": "0da4f0e3525f82e213b4efddaa2cd435c51e258bf9a79ab0f9e3f88f6d9f4be0",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/png",
+      "colorSpace": "srgb"
+    },
+    "pepper/body-2048.jpg": {
+      "chunks": [
+        "sources/pepper__body-2048.jpg/000.json",
+        "sources/pepper__body-2048.jpg/001.json",
+        "sources/pepper__body-2048.jpg/002.json",
+        "sources/pepper__body-2048.jpg/003.json",
+        "sources/pepper__body-2048.jpg/004.json",
+        "sources/pepper__body-2048.jpg/005.json",
+        "sources/pepper__body-2048.jpg/006.json",
+        "sources/pepper__body-2048.jpg/007.json",
+        "sources/pepper__body-2048.jpg/008.json",
+        "sources/pepper__body-2048.jpg/009.json",
+        "sources/pepper__body-2048.jpg/010.json",
+        "sources/pepper__body-2048.jpg/011.json",
+        "sources/pepper__body-2048.jpg/012.json",
+        "sources/pepper__body-2048.jpg/013.json",
+        "sources/pepper__body-2048.jpg/014.json",
+        "sources/pepper__body-2048.jpg/015.json",
+        "sources/pepper__body-2048.jpg/016.json",
+        "sources/pepper__body-2048.jpg/017.json",
+        "sources/pepper__body-2048.jpg/018.json",
+        "sources/pepper__body-2048.jpg/019.json",
+        "sources/pepper__body-2048.jpg/020.json"
+      ],
+      "bytes": 905711,
+      "sha256": "eb9f33401e214c9164db63b2dc53a622bf82efd81620705c2acfda07775f1f08",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "pepper/body-1024.jpg": {
+      "chunks": [
+        "sources/pepper__body-1024.jpg/000.json",
+        "sources/pepper__body-1024.jpg/001.json",
+        "sources/pepper__body-1024.jpg/002.json",
+        "sources/pepper__body-1024.jpg/003.json",
+        "sources/pepper__body-1024.jpg/004.json",
+        "sources/pepper__body-1024.jpg/005.json",
+        "sources/pepper__body-1024.jpg/006.json"
+      ],
+      "bytes": 305275,
+      "sha256": "1d9f95b8ba53a11244950b724b99cfbf1ba9b3f2e04fa1f7b572f1e38020dcb2",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "pepper/coat.png": {
+      "chunks": [
+        "sources/pepper__coat.png/000.json",
+        "sources/pepper__coat.png/001.json",
+        "sources/pepper__coat.png/002.json",
+        "sources/pepper__coat.png/003.json",
+        "sources/pepper__coat.png/004.json",
+        "sources/pepper__coat.png/005.json"
+      ],
+      "bytes": 244572,
+      "sha256": "a2f95c022efb26e8d1377d428e4d7d8b2796ca29af983c354f69c2c9d7ae02d0",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/png",
+      "colorSpace": "linear"
+    },
+    "biscuit/eye.png": {
+      "chunks": [
+        "sources/biscuit__eye.png/000.json",
+        "sources/biscuit__eye.png/001.json",
+        "sources/biscuit__eye.png/002.json",
+        "sources/biscuit__eye.png/003.json",
+        "sources/biscuit__eye.png/004.json"
+      ],
+      "bytes": 190412,
+      "sha256": "ae28cedcf8454fa233ce3d88a1ff654067f30eb0cab380fff25a8f477f042dfa",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/png",
+      "colorSpace": "srgb"
+    },
+    "biscuit/body-2048.jpg": {
+      "chunks": [
+        "sources/biscuit__body-2048.jpg/000.json",
+        "sources/biscuit__body-2048.jpg/001.json",
+        "sources/biscuit__body-2048.jpg/002.json",
+        "sources/biscuit__body-2048.jpg/003.json",
+        "sources/biscuit__body-2048.jpg/004.json",
+        "sources/biscuit__body-2048.jpg/005.json",
+        "sources/biscuit__body-2048.jpg/006.json",
+        "sources/biscuit__body-2048.jpg/007.json",
+        "sources/biscuit__body-2048.jpg/008.json",
+        "sources/biscuit__body-2048.jpg/009.json",
+        "sources/biscuit__body-2048.jpg/010.json",
+        "sources/biscuit__body-2048.jpg/011.json",
+        "sources/biscuit__body-2048.jpg/012.json",
+        "sources/biscuit__body-2048.jpg/013.json",
+        "sources/biscuit__body-2048.jpg/014.json",
+        "sources/biscuit__body-2048.jpg/015.json",
+        "sources/biscuit__body-2048.jpg/016.json",
+        "sources/biscuit__body-2048.jpg/017.json",
+        "sources/biscuit__body-2048.jpg/018.json",
+        "sources/biscuit__body-2048.jpg/019.json"
+      ],
+      "bytes": 863566,
+      "sha256": "523ee05b9fe9c701a4d44428cd12b966c22228df7084b67cfb76b33787b46eeb",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "biscuit/body-1024.jpg": {
+      "chunks": [
+        "sources/biscuit__body-1024.jpg/000.json",
+        "sources/biscuit__body-1024.jpg/001.json",
+        "sources/biscuit__body-1024.jpg/002.json",
+        "sources/biscuit__body-1024.jpg/003.json",
+        "sources/biscuit__body-1024.jpg/004.json",
+        "sources/biscuit__body-1024.jpg/005.json",
+        "sources/biscuit__body-1024.jpg/006.json"
+      ],
+      "bytes": 283649,
+      "sha256": "8c1624737a909e38e1e10e5f8cb5bce52b2393b59edf4f7ec40b9f13c8bb0388",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "biscuit/coat.png": {
+      "chunks": [
+        "sources/biscuit__coat.png/000.json",
+        "sources/biscuit__coat.png/001.json",
+        "sources/biscuit__coat.png/002.json",
+        "sources/biscuit__coat.png/003.json",
+        "sources/biscuit__coat.png/004.json"
+      ],
+      "bytes": 216778,
+      "sha256": "596e3e63fba95ec28a940447df11fb73ae9ae042c4545696d71f1feabde482d5",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/png",
+      "colorSpace": "linear"
+    },
+    "clementine/eye.png": {
+      "chunks": [
+        "sources/clementine__eye.png/000.json",
+        "sources/clementine__eye.png/001.json",
+        "sources/clementine__eye.png/002.json",
+        "sources/clementine__eye.png/003.json",
+        "sources/clementine__eye.png/004.json"
+      ],
+      "bytes": 192780,
+      "sha256": "3ee202c0a8bd16c8437bc1943118f3c715c944861a09103eef8a48375ee3443b",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/png",
+      "colorSpace": "srgb"
+    },
+    "clementine/body-2048.jpg": {
+      "chunks": [
+        "sources/clementine__body-2048.jpg/000.json",
+        "sources/clementine__body-2048.jpg/001.json",
+        "sources/clementine__body-2048.jpg/002.json",
+        "sources/clementine__body-2048.jpg/003.json",
+        "sources/clementine__body-2048.jpg/004.json",
+        "sources/clementine__body-2048.jpg/005.json",
+        "sources/clementine__body-2048.jpg/006.json",
+        "sources/clementine__body-2048.jpg/007.json",
+        "sources/clementine__body-2048.jpg/008.json",
+        "sources/clementine__body-2048.jpg/009.json",
+        "sources/clementine__body-2048.jpg/010.json",
+        "sources/clementine__body-2048.jpg/011.json",
+        "sources/clementine__body-2048.jpg/012.json",
+        "sources/clementine__body-2048.jpg/013.json",
+        "sources/clementine__body-2048.jpg/014.json",
+        "sources/clementine__body-2048.jpg/015.json"
+      ],
+      "bytes": 710656,
+      "sha256": "020cee68d1ad3e195e4cb60b5365268c6accac7274ad1f8b47d8874d94d29cc8",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "clementine/body-1024.jpg": {
+      "chunks": [
+        "sources/clementine__body-1024.jpg/000.json",
+        "sources/clementine__body-1024.jpg/001.json",
+        "sources/clementine__body-1024.jpg/002.json",
+        "sources/clementine__body-1024.jpg/003.json",
+        "sources/clementine__body-1024.jpg/004.json",
+        "sources/clementine__body-1024.jpg/005.json"
+      ],
+      "bytes": 233749,
+      "sha256": "4e4470ad79d358eccae5c0e1b0c317d6fa1efa72862bd0f75240f94b949e3c1b",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "clementine/coat.png": {
+      "chunks": [
+        "sources/clementine__coat.png/000.json",
+        "sources/clementine__coat.png/001.json",
+        "sources/clementine__coat.png/002.json",
+        "sources/clementine__coat.png/003.json",
+        "sources/clementine__coat.png/004.json",
+        "sources/clementine__coat.png/005.json"
+      ],
+      "bytes": 230575,
+      "sha256": "5a1b351f2eff306fbb17e22733422a4ef61f533ea1f0448401ef768ab282aebe",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/png",
+      "colorSpace": "linear"
+    },
+    "juniper/eye.png": {
+      "chunks": [
+        "sources/juniper__eye.png/000.json",
+        "sources/juniper__eye.png/001.json",
+        "sources/juniper__eye.png/002.json",
+        "sources/juniper__eye.png/003.json",
+        "sources/juniper__eye.png/004.json"
+      ],
+      "bytes": 180757,
+      "sha256": "8d48afc320169eadba3b17d46f54da55e339bba832bf557bb3ac307e651fe25e",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/png",
+      "colorSpace": "srgb"
+    },
+    "juniper/body-2048.jpg": {
+      "chunks": [
+        "sources/juniper__body-2048.jpg/000.json",
+        "sources/juniper__body-2048.jpg/001.json",
+        "sources/juniper__body-2048.jpg/002.json",
+        "sources/juniper__body-2048.jpg/003.json",
+        "sources/juniper__body-2048.jpg/004.json",
+        "sources/juniper__body-2048.jpg/005.json",
+        "sources/juniper__body-2048.jpg/006.json",
+        "sources/juniper__body-2048.jpg/007.json",
+        "sources/juniper__body-2048.jpg/008.json",
+        "sources/juniper__body-2048.jpg/009.json",
+        "sources/juniper__body-2048.jpg/010.json",
+        "sources/juniper__body-2048.jpg/011.json",
+        "sources/juniper__body-2048.jpg/012.json",
+        "sources/juniper__body-2048.jpg/013.json",
+        "sources/juniper__body-2048.jpg/014.json",
+        "sources/juniper__body-2048.jpg/015.json",
+        "sources/juniper__body-2048.jpg/016.json",
+        "sources/juniper__body-2048.jpg/017.json",
+        "sources/juniper__body-2048.jpg/018.json",
+        "sources/juniper__body-2048.jpg/019.json",
+        "sources/juniper__body-2048.jpg/020.json"
+      ],
+      "bytes": 909075,
+      "sha256": "9bf1103caf03ddee4e6cbf557495fe8eb4b9d8a156ab35e328818b3ab7379815",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "juniper/body-1024.jpg": {
+      "chunks": [
+        "sources/juniper__body-1024.jpg/000.json",
+        "sources/juniper__body-1024.jpg/001.json",
+        "sources/juniper__body-1024.jpg/002.json",
+        "sources/juniper__body-1024.jpg/003.json",
+        "sources/juniper__body-1024.jpg/004.json",
+        "sources/juniper__body-1024.jpg/005.json",
+        "sources/juniper__body-1024.jpg/006.json"
+      ],
+      "bytes": 311109,
+      "sha256": "b91d50a1aeda2f60748ac714bf90fdc50cadf6d3d4b1a395c1ae7b63d212c4c6",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "juniper/coat.png": {
+      "chunks": [
+        "sources/juniper__coat.png/000.json",
+        "sources/juniper__coat.png/001.json",
+        "sources/juniper__coat.png/002.json",
+        "sources/juniper__coat.png/003.json",
+        "sources/juniper__coat.png/004.json",
+        "sources/juniper__coat.png/005.json",
+        "sources/juniper__coat.png/006.json"
+      ],
+      "bytes": 273108,
+      "sha256": "298d3049f775c7e923c961701a6153fba3d88e990948154a1e6ddd30c4677967",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/png",
+      "colorSpace": "linear"
+    },
+    "pixel/eye.png": {
+      "chunks": [
+        "sources/pixel__eye.png/000.json",
+        "sources/pixel__eye.png/001.json",
+        "sources/pixel__eye.png/002.json",
+        "sources/pixel__eye.png/003.json",
+        "sources/pixel__eye.png/004.json"
+      ],
+      "bytes": 201836,
+      "sha256": "7bf2a643cc588a1d737ad5f12111a0944732218a6b838301659d042a9af51558",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/png",
+      "colorSpace": "srgb"
+    },
+    "pixel/body-2048.jpg": {
+      "chunks": [
+        "sources/pixel__body-2048.jpg/000.json",
+        "sources/pixel__body-2048.jpg/001.json",
+        "sources/pixel__body-2048.jpg/002.json",
+        "sources/pixel__body-2048.jpg/003.json",
+        "sources/pixel__body-2048.jpg/004.json",
+        "sources/pixel__body-2048.jpg/005.json",
+        "sources/pixel__body-2048.jpg/006.json",
+        "sources/pixel__body-2048.jpg/007.json",
+        "sources/pixel__body-2048.jpg/008.json",
+        "sources/pixel__body-2048.jpg/009.json",
+        "sources/pixel__body-2048.jpg/010.json",
+        "sources/pixel__body-2048.jpg/011.json",
+        "sources/pixel__body-2048.jpg/012.json",
+        "sources/pixel__body-2048.jpg/013.json"
+      ],
+      "bytes": 612501,
+      "sha256": "c0f7c707a92d4da8f5bb4989cb2c1926b9133bc82a729020ff1fc570470e22fd",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "pixel/body-1024.jpg": {
+      "chunks": [
+        "sources/pixel__body-1024.jpg/000.json",
+        "sources/pixel__body-1024.jpg/001.json",
+        "sources/pixel__body-1024.jpg/002.json",
+        "sources/pixel__body-1024.jpg/003.json",
+        "sources/pixel__body-1024.jpg/004.json"
+      ],
+      "bytes": 201053,
+      "sha256": "b3ba8dfe2a1f3de2cf436f4a49e144ef03e76706233d6e2d9d76e9cd608aec28",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "pixel/coat.png": {
+      "chunks": [
+        "sources/pixel__coat.png/000.json",
+        "sources/pixel__coat.png/001.json"
+      ],
+      "bytes": 66836,
+      "sha256": "1ac87147f941588efe3b26f48abffe01112762d9312eb6384155ce6bf985ec77",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/png",
+      "colorSpace": "linear"
+    },
+    "duchess/eye.png": {
+      "chunks": [
+        "sources/duchess__eye.png/000.json",
+        "sources/duchess__eye.png/001.json",
+        "sources/duchess__eye.png/002.json",
+        "sources/duchess__eye.png/003.json",
+        "sources/duchess__eye.png/004.json"
+      ],
+      "bytes": 193445,
+      "sha256": "95bf9d71d4e14fee50da5dbefa3dd96f681c62aaaf6a63839446cc736fd23730",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/png",
+      "colorSpace": "srgb"
+    },
+    "duchess/body-2048.jpg": {
+      "chunks": [
+        "sources/duchess__body-2048.jpg/000.json",
+        "sources/duchess__body-2048.jpg/001.json",
+        "sources/duchess__body-2048.jpg/002.json",
+        "sources/duchess__body-2048.jpg/003.json",
+        "sources/duchess__body-2048.jpg/004.json",
+        "sources/duchess__body-2048.jpg/005.json",
+        "sources/duchess__body-2048.jpg/006.json",
+        "sources/duchess__body-2048.jpg/007.json",
+        "sources/duchess__body-2048.jpg/008.json",
+        "sources/duchess__body-2048.jpg/009.json",
+        "sources/duchess__body-2048.jpg/010.json",
+        "sources/duchess__body-2048.jpg/011.json",
+        "sources/duchess__body-2048.jpg/012.json",
+        "sources/duchess__body-2048.jpg/013.json",
+        "sources/duchess__body-2048.jpg/014.json",
+        "sources/duchess__body-2048.jpg/015.json"
+      ],
+      "bytes": 684935,
+      "sha256": "9a8d7bb81ff9669ed9525c6c4e48f3880490de05fc46bbe887ba22140bbcb043",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "duchess/body-1024.jpg": {
+      "chunks": [
+        "sources/duchess__body-1024.jpg/000.json",
+        "sources/duchess__body-1024.jpg/001.json",
+        "sources/duchess__body-1024.jpg/002.json",
+        "sources/duchess__body-1024.jpg/003.json",
+        "sources/duchess__body-1024.jpg/004.json"
+      ],
+      "bytes": 220408,
+      "sha256": "eed2b10c097bf40bd63900026e9f8f0b74fb3aa465d4ccdae327d79afbe47eef",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/jpeg",
+      "colorSpace": "srgb"
+    },
+    "duchess/coat.png": {
+      "chunks": [
+        "sources/duchess__coat.png/000.json",
+        "sources/duchess__coat.png/001.json",
+        "sources/duchess__coat.png/002.json",
+        "sources/duchess__coat.png/003.json"
+      ],
+      "bytes": 171173,
+      "sha256": "76538e372ce8cea90c8f58d2ff79832faed4d11f552bb4030352076c4540274b",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/png",
+      "colorSpace": "linear"
+    },
+    "shared/fur-normal.png": {
+      "chunks": [
+        "sources/shared__fur-normal.png/000.json",
+        "sources/shared__fur-normal.png/001.json",
+        "sources/shared__fur-normal.png/002.json",
+        "sources/shared__fur-normal.png/003.json",
+        "sources/shared__fur-normal.png/004.json"
+      ],
+      "bytes": 217351,
+      "sha256": "0105ccdb54b18896f8e4cf33c20a156e762293ffb4c2a95db86d12f281c8d9e6",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/png",
+      "colorSpace": "linear"
+    },
+    "shared/fur-roughness.png": {
+      "chunks": [
+        "sources/shared__fur-roughness.png/000.json"
+      ],
+      "bytes": 28236,
+      "sha256": "31d908890a82192aad3e309ca3d1ce9ac09b0fc4b0f6ad7d873abdd731acdc19",
+      "width": 256,
+      "height": 256,
+      "mimeType": "image/png",
+      "colorSpace": "linear"
+    },
+    "shared/strand.png": {
+      "chunks": [
+        "sources/shared__strand.png/000.json",
+        "sources/shared__strand.png/001.json"
+      ],
+      "bytes": 52220,
+      "sha256": "4c986d16f73cf8535dbe45ddf627601ec80e4e9cb99b270d631e883480152f51",
+      "width": 256,
+      "height": 256,
+      "mimeType": "image/png",
+      "colorSpace": "linear"
+    }
+  }
+}

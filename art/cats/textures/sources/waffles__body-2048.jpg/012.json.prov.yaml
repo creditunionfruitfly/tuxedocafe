@@ -1,0 +1,6 @@
+source: art/cats/textures/prepare.py
+tool: OpenAI built-in imagegen; deterministic UV and bitmap preparation
+date: '2026-10-17'
+license: original
+author_role: artist
+notes: Original generated waffles coat; native 1254x1254; registered anatomical atlas, white non-fur surfaces, three-pixel mip bleed; technical resampling to runtime sizes.
