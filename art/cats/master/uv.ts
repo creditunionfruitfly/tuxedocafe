@@ -4,7 +4,7 @@
  * squares conformal maps per island, uniform texel density and shelf packing with gutters.
  */
 import { CHARTS, type Chart, type Labels } from './labels.ts';
-import { type Mesh, edgeTable, edgeFaceCount, splitSeams, vertexNeighbours, vertexNormals, faceAreas } from './mesh-ops.ts';
+import { type Mesh, edgeTable, edgeFaceCount, splitSeams, vertexNeighbours, vertexNormals, faceAreas, topologyOf } from './mesh-ops.ts';
 import { MeshoptSimplifier } from 'meshoptimizer';
 import { log } from './log.ts';
 
@@ -74,12 +74,39 @@ export function buildAtlas(mesh: Mesh, labels: Labels, swatchTexels = 40): UVRes
     if (d.reached < 0) throw new Error(`UV cut for ${chartName}: no path from ${cut.from} to ${cut.to}`);
     for (let v = d.reached; d.prevEdge[v]! >= 0; v = d.prev[v]!) cutEdge[d.prevEdge[v]!] = 1;
   }
-  // --- split along seams
-  const split = splitSeams(mesh.indices, n, (_a, _b, e) => {
+  // Connect every inner boundary to the outer boundary. Anatomical charts can have many
+  // holes (four limb roots, eyes, ear roots); one cylindrical cut is insufficient.
+  const seam = (_a: number, _b: number, e: number) => {
     if (cutEdge[e]) return true;
+    if (edgeFaceCount(t, e) !== 2) return false;
     const f0 = t.faces[t.faceStart[e]!]!, f1 = otherFace(e, f0);
     return labels.chart[f0] !== labels.chart[f1] || labels.surface[f0] !== labels.surface[f1];
-  });
+  };
+  const originalEdge = new Map<string, number>();
+  for (let e=0;e<t.a.length;e++) originalEdge.set(`${t.a[e]},${t.b[e]}`,e);
+  let split = splitSeams(mesh.indices,n,seam);
+  for(let pass=0;pass<64;pass++) {
+    const P = new Float64Array(split.source.length*3);
+    split.source.forEach((v,i)=>P.set(mesh.positions.subarray(v*3,v*3+3),i*3));
+    const topo=topologyOf(split.indices,split.source.length);
+    const parent=Int32Array.from({length:split.source.length},(_,i)=>i);
+    const find=(i:number):number=>{while(parent[i]!==i){parent[i]=parent[parent[i]!]!;i=parent[i]!;}return i;};
+    for(let f=0;f<split.indices.length;f+=3){const a=find(split.indices[f]!),b=find(split.indices[f+1]!),c=find(split.indices[f+2]!);parent[b]=a;parent[find(c)]=find(a);}
+    const loops=new Map<number,number[][]>();
+    for(const l of topo.loops){const k=find(l[0]!);if(!loops.has(k))loops.set(k,[]);loops.get(k)!.push(l);}
+    let changed=false;
+    const st=edgeTable(split.indices,split.source.length);
+    for(const [root,ls] of loops){if(ls.length<2)continue;ls.sort((a,b)=>b.length-a.length);
+      const walk=Uint8Array.from(parent,(_,i)=>Number(find(i)===root)),from=new Uint8Array(parent.length),to=new Uint8Array(parent.length);
+      for(const v of ls[0]!)from[v]=1;for(const v of ls[1]!)to[v]=1;
+      const d=dijkstra(parent.length,st,{positions:P,indices:split.indices},walk,from,()=>1,to);
+      if(d.reached<0)throw new Error('UV: disconnected boundary loops');
+      for(let v=d.reached;d.prev[v]!>=0;v=d.prev[v]!){const a=split.source[v]!,b=split.source[d.prev[v]!]!;cutEdge[originalEdge.get(`${Math.min(a,b)},${Math.max(a,b)}`)!]=1;changed=true;}
+    }
+    if(!changed)break;
+    split=splitSeams(mesh.indices,n,seam);
+    if(pass===63)throw new Error('UV: cut-to-disk did not converge');
+  }
   const m = split.source.length, indices = split.indices;
   const positions = new Float64Array(m * 3);
   for (let v = 0; v < m; v++) for (let k = 0; k < 3; k++) positions[v * 3 + k] = mesh.positions[split.source[v]! * 3 + k]!;
@@ -131,7 +158,7 @@ export function buildAtlas(mesh: Mesh, labels: Labels, swatchTexels = 40): UVRes
     const transpose = h > w;
     verts.forEach((v, i) => {
       const u = rotated[i]![0]! - x0, vv = rotated[i]![1]! - y0;
-      uv[v * 2] = transpose ? vv : u; uv[v * 2 + 1] = transpose ? u : vv;
+      uv[v * 2] = transpose ? vv : u; uv[v * 2 + 1] = transpose ? w - u : vv;
     });
     if (transpose) [w, h] = [h, w];
     const chart = CHARTS[labels.chart[islandFaces[0]!]!]!;
@@ -373,6 +400,11 @@ export function parameterize(pos: Float64Array, tri: Uint32Array): Float64Array 
   }
   let left = untangle(tri, n, uv);
   for (let retry = 0; retry < 4 && left; retry++) { uv = arap(pos, tri, uv, 2); left = untangle(tri, n, uv); }
+  if(left) {
+    uv=convexEmbedding(pos,tri);
+    left=untangle(tri,n,uv);
+    if(left)throw new Error(`UV: ${left} inverted triangles after convex embedding`);
+  }
   log(`  island ${n} vertices: ${((performance.now() - t0) / 1000).toFixed(1)} s, ${left} folded`);
   return uv;
 }
@@ -569,4 +601,16 @@ export function untangle(tri: Uint32Array, n: number, uv: Float64Array) {
   }
   let left = 0; for (let f = 0; f < nt; f++) if (area(f) * sign <= 0) left++;
   return left;
+}
+
+/** Positive-weight harmonic embedding with a convex arclength boundary: injective for disk charts. */
+function convexEmbedding(pos:Float64Array,tri:Uint32Array) {
+ const n=pos.length/3,topo=topologyOf(tri,n);
+ if(topo.loops.length!==1)throw new Error(`UV: expected disk, got ${topo.loops.length} boundaries`);
+ const loop=topo.loops[0]!,uv=new Float64Array(n*2),fixed=new Uint8Array(n),arc=[0];
+ for(let i=0;i<loop.length;i++){const a=loop[i]!,b=loop[(i+1)%loop.length]!;arc.push(arc[i]!+Math.hypot(pos[b*3]!-pos[a*3]!,pos[b*3+1]!-pos[a*3+1]!,pos[b*3+2]!-pos[a*3+2]!));}
+ const perimeter=arc[arc.length-1]!;
+ loop.forEach((v,i)=>{const a=-2*Math.PI*arc[i]!/perimeter;uv[v*2]=Math.cos(a)*perimeter/(2*Math.PI);uv[v*2+1]=Math.sin(a)*perimeter/(2*Math.PI);fixed[v]=1;});
+ harmonicFill(tri,n,uv,fixed,2500);
+ return uv;
 }

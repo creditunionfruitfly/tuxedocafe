@@ -1,0 +1,7 @@
+/** Tiny deterministic RGBA PNG writer for original diagnostic/placeholder textures. */
+import { deflateSync } from 'node:zlib';
+const crcTable=Uint32Array.from({length:256},(_,n)=>{for(let k=0;k<8;k++)n=n&1?0xedb88320^(n>>>1):n>>>1;return n>>>0;});
+const crc=(a:Uint8Array)=>{let c=0xffffffff;for(const b of a)c=crcTable[(c^b)&255]!^(c>>>8);return (c^0xffffffff)>>>0;};
+function chunk(type:string,data:Uint8Array){const b=Buffer.alloc(12+data.length);b.writeUInt32BE(data.length,0);b.write(type,4);b.set(data,8);b.writeUInt32BE(crc(b.subarray(4,8+data.length)),8+data.length);return b;}
+export function png(w:number,h:number,pixels:Uint8Array){const hdr=Buffer.alloc(13);hdr.writeUInt32BE(w,0);hdr.writeUInt32BE(h,4);hdr.set([8,6,0,0,0],8);const raw=Buffer.alloc(h*(w*4+1));for(let y=0;y<h;y++)raw.set(pixels.subarray(y*w*4,(y+1)*w*4),y*(w*4+1)+1);return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',hdr),chunk('IDAT',deflateSync(raw,{level:9})),chunk('IEND',new Uint8Array())]);}
+export function placeholderEye(size=512){const p=new Uint8Array(size*size*4);for(let y=0;y<size;y++)for(let x=0;x<size;x++){const u=(x+.5)/size-.5,v=.5-(y+.5)/size,r=Math.hypot(u,v),a=Math.atan2(v,u),edge=Math.min(1,Math.max(0,(.42-r)*100)),pupil=(u/.055)**2+(v/.31)**2<1,grain=.83+.12*Math.sin(a*87+r*30)+.05*Math.sin(a*151-r*61);const c=pupil?[5,10,8]:[99*grain*edge+12,141*grain*edge+10,82*grain*edge+9];p.set([...c.map(Math.round),255],(y*size+x)*4);}return png(size,size,p);}

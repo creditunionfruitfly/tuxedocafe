@@ -4,7 +4,7 @@
 //   node tools/art/review-cat.ts --deliverables <outDir>           the M2-1 screenshot set (Desktop and Low phone)
 // CHROMIUM_PATH selects the browser binary (Playwright's bundled Chromium otherwise).
 import { createServer } from 'node:http';
-import { mkdirSync, readFileSync, statSync } from 'node:fs';
+import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { chromium } from '@playwright/test';
@@ -37,6 +37,7 @@ export async function renderSheets(sheets: Sheet[]) {
       if (error) throw new Error(`${sheet.src}: ${error}`);
       mkdirSync(join(sheet.out, '..'), { recursive: true });
       await page.locator('canvas').screenshot({ path: sheet.out });
+      writeFileSync(sheet.out+'.prov.yaml',`source: ${sheet.src}\ntool: three.js neutral studio renderer; Playwright Chromium\ndate: '2026-10-17'\nlicense: original\nauthor_role: artist\nnotes: Original generated asset review capture; ${sheet.query}\n`);
       console.log(`review: ${sheet.out}`);
       await page.close();
     }
@@ -65,7 +66,7 @@ export function deliverables(outDir: string): Sheet[] {
     const q = (views: string, cols: number, extra = '') => `views=${views}&cols=${cols}&w=${s.w}&h=${s.h}${extra}`;
     sheets.push({ src: lod(s.lod), out: `${outDir}/${s.tag}-turntable.png`, query: q('front,threequarter,side,back,top,threequarterBack', 3) });
     sheets.push({ src: lod(s.lod), out: `${outDir}/${s.tag}-face.png`, query: q('face,faceThreeQuarter,faceSide,eyeClose', 2) });
-    sheets.push({ src: lod(s.lod), out: `${outDir}/${s.tag}-mouth-open.png`, query: q('mouth,mouthSide', 2, '&morphs=mouthOpen:1') });
+    sheets.push({ src: lod(s.lod), out: `${outDir}/${s.tag}-mouth-open.png`, query: q('mouth,mouthSide', 2, '&morphs=mouthOpen:1&pose=jaw:30:0:0') });
     sheets.push({ src: lod(s.lod), out: `${outDir}/${s.tag}-paws.png`, query: q('paws,pawsHind,pawSole,pawFront', 2) });
     sheets.push({ src: lod(s.lod), out: `${outDir}/${s.tag}-pose.png`, query: q('threequarter,side,front,top', 2, `&pose=${pose}`) });
     sheets.push({ src: lod(s.lod), out: `${outDir}/${s.tag}-weights.png`, query: q('threequarter,side,front,under', 2, '&mode=weights') });

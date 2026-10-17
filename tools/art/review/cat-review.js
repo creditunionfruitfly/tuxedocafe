@@ -11,6 +11,8 @@ const views = (q.get('views') ?? 'front,threequarter,side,back,top').split(',');
 const cols = Number(q.get('cols') ?? Math.min(views.length, 3)), w = Number(q.get('w') ?? 520), h = Number(q.get('h') ?? 400);
 const rows = Math.ceil(views.length / cols);
 const background = q.get('bg') ?? '#cfd8d3';
+const atlasTexture = mode === 'atlas' ? await new THREE.TextureLoader().loadAsync('/art/cats/master/notes/uv_template.png') : null;
+if (atlasTexture) { atlasTexture.flipY = false; atlasTexture.colorSpace = THREE.SRGBColorSpace; }
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(1);
@@ -49,12 +51,16 @@ function checkerTexture() {
 
 function applyMode(root) {
   const focus = q.get('bone');
+  const hidden = new Set((q.get('hide') ?? '').split(',').filter(Boolean));
   const meshes = [];
   root.traverse(o => { if (o.isMesh) meshes.push(o); });
   meshes.forEach(o => {
+    if (hidden.has(o.name)) { o.visible = false; return; }
     o.castShadow = q.get('shadows') !== '0'; o.receiveShadow = q.get('shadows') !== '0';
     const g = o.geometry;
-    if (mode === 'weights' && g.attributes.skinIndex) {
+    if (mode === 'atlas' && o.name.startsWith('cat_body')) {
+      o.material = new THREE.MeshBasicMaterial({ map: atlasTexture });
+    } else if (mode === 'weights' && g.attributes.skinIndex) {
       const si = g.attributes.skinIndex, sw = g.attributes.skinWeight, n = si.count, col = new Float32Array(n * 3), c = new THREE.Color();
       const bones = o.skeleton.bones.map(b => b.name), focusIndex = focus ? bones.indexOf(focus) : -1;
       for (let i = 0; i < n; i++) {
@@ -84,6 +90,8 @@ function applyMode(root) {
       o.material = new THREE.MeshStandardMaterial({ color: o.material.color ?? 0xcccccc, roughness: .8, transparent: o.material.transparent, opacity: o.material.opacity });
       const wire = new THREE.Mesh(o.geometry, new THREE.MeshBasicMaterial({ color: 0x1b2420, wireframe: true, transparent: true, opacity: .35 }));
       if (o.isSkinnedMesh) { const s = new THREE.SkinnedMesh(o.geometry, wire.material); s.bind(o.skeleton, o.bindMatrix); o.add(s); } else o.add(wire);
+    } else if (mode === 'clayUniform') {
+      o.material = new THREE.MeshStandardMaterial({ color: 0xb9b2a6, roughness: .7, side: THREE.DoubleSide });
     } else if (mode === 'clay' && g.attributes.color) {
       o.material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .25 });
     } else if (mode === 'clay') {
@@ -133,9 +141,17 @@ const VIEWS = {
 };
 
 const labels = document.getElementById('labels');
-new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load(src, gltf => {
+new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load(src, async gltf => {
   const root = gltf.scene;
   scene.add(root);
+  if (q.has('clip')) {
+    const animation = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(q.get('anim') ?? '/public/assets/art/cats/cat_anims.glb');
+    const clip = animation.animations.find(a => a.name === q.get('clip'));
+    if (!clip) throw new Error(`Missing animation ${q.get('clip')}`);
+    const mixer = new THREE.AnimationMixer(root);
+    mixer.clipAction(clip).play();
+    mixer.setTime(Math.min(Number(q.get('at') ?? 0), clip.duration));
+  }
   applyPose(root);
   applyMode(root);
   root.updateMatrixWorld(true);
@@ -157,3 +173,4 @@ new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load(src, gltf => {
   window.__info = info;
   window.__done = true;
 }, undefined, e => { window.__error = String(e); window.__done = true; });
+window.addEventListener('unhandledrejection', e => { window.__error = String(e.reason); window.__done = true; });

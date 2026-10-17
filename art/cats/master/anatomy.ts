@@ -279,13 +279,13 @@ export function buildCat(rig: Rig): Anatomy {
     // Whisker pads: the rounded mystacial pads either side of the philtrum.
     skull.push(U(ellipsoid(`whiskerPad${side}`, m(.0070, -.0094, .0722), [.0081, .0076, .0076], basisFrom([side * .40, -.22, 1], [0, 1, 0])), .0045));
     // Mandible from the chin back to the jaw angle.
-    skull.push(U(roundCone(`mandible${side}`, m(.0045, -.0232, .0610), m(.0200, -.0205, .0230), .0054, .0075), .008));
+    skull.push(U(roundCone(`mandible${side}`, m(.0045, -.0178, .0660), m(.0200, -.0205, .0230), .0042, .0075), .008));
   }
   // Nose bridge from the stop down to the nose leather, the maxilla behind the whisker pads.
   skull.push(U(roundCone('noseBridge', H(0, .0255, .0590), H(0, .0050, .0755), .0074, .0055), .008));
   skull.push(U(ellipsoid('maxilla', H(0, -.0030, .0640), [.0125, .0105, .0130]), .010));
-  skull.push(U(ellipsoid('chin', H(0, -.0232, .0640), [.0068, .0056, .0066]), .006));
-  skull.push(U(ellipsoid('jawFloor', H(0, -.0200, .0400), [.0155, .0085, .0250]), .010));
+  skull.push(U(ellipsoid('chin', H(0, -.0177, .0680), [.0068, .0038, .0076]), .006));
+  skull.push(U(ellipsoid('jawFloor', H(0, -.0190, .0430), [.0130, .0085, .0250]), .012));
   // Nose leather: a rounded inverted triangle at the tip of the muzzle, facing forward and down.
   const noseCenter = H(0, -.0002, .0798), noseRadii: Vec3 = [.0068, .0050, .0044];
   const noseBasis = basisFrom([0, -.55, 1], [0, 1, 0]);
@@ -311,7 +311,10 @@ export function buildCat(rig: Rig): Anatomy {
   // Periorbital fill: skin wraps the globe so the lids sit on a sphere around the eyeball.
   for (const eye of eyes) {
     const rOuter = eye.radius + eye.gap + eye.lid;
-    skull.push(U(sphere(`orbit${eye.side}`, eye.center, rOuter), .0055));
+    // The globe sits near the face surface. A broad C1 transition gives its
+    // upper brow and lower cheek a continuous contour instead of a bead-like
+    // spherical rim; the cut below still opens a real lid aperture.
+    skull.push(U(sphere(`orbit${eye.side}`, eye.center, rOuter), .014));
   }
   // Apertures: open the almond through the lid shell; the socket gives the globe its clearance.
   for (const eye of eyes) {
@@ -342,7 +345,6 @@ export function buildCat(rig: Rig): Anatomy {
 
   const headShape = group('head', skull);
   const shape = group('cat', [U(torso, 0), U(headShape, .018), U(tail, .016), ...limbs]);
-  for (const p of paws) for (const k of ['pads']) void k;
   return {
     shape, eyes, ears, mouth, paws, labels,
     nose: { center: noseCenter, radii: noseRadii, basis: noseBasis },
@@ -423,7 +425,7 @@ function makeMouth(head: Vec3, hinge: Vec3): MouthFrame {
   };
   const slitY = (x: number, z: number) => mix(yFront, yCorner, clamp((x / halfWidth) ** 2, 0, 1)) - .0012 * clamp((zFront - z) / .02, 0, 1);
   return {
-    slitY, arch, halfGap: .00072,
+    slitY, arch, halfGap: .00032,
     cavity: { center: [0, head[1] - .0172, head[2] + .0480], rp: [.0108, .0048, .0235], rn: [.0108, .0058, .0200], basis: basisFrom([0, .18, 1], [0, 1, 0]) },
     hinge, front: zFront, corner: [halfWidth, yCorner, zCorner],
   };

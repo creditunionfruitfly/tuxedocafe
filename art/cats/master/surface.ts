@@ -87,6 +87,9 @@ export function fixFolds(mesh: Mesh, field: Field, threshold = .25) {
   const { positions: P, indices: I } = mesh, n = P.length / 3, nt = I.length / 3;
   const nb = vertexNeighbours(I, n);
   const e = 1e-5, f = [0, 0, 0];
+  // Most rounds only move a small crease patch. A face whose vertices did not move has
+  // the same field gradient; retaining it avoids re-evaluating the entire dense SDF.
+  const gradient = new Float64Array(nt * 3).fill(NaN);
   const badFaces = () => {
     const bad: number[] = [];
     for (let t = 0; t < nt; t++) {
@@ -95,7 +98,13 @@ export function fixFolds(mesh: Mesh, field: Field, threshold = .25) {
       const l = Math.hypot(f[0]!, f[1]!, f[2]!);
       if (l < 1e-20) { bad.push(t); continue; }
       const x = (P[a * 3]! + P[b * 3]! + P[c * 3]!) / 3, y = (P[a * 3 + 1]! + P[b * 3 + 1]! + P[c * 3 + 1]!) / 3, z = (P[a * 3 + 2]! + P[b * 3 + 2]! + P[c * 3 + 2]!) / 3;
-      const gx = field(x + e, y, z) - field(x - e, y, z), gy = field(x, y + e, z) - field(x, y - e, z), gz = field(x, y, z + e) - field(x, y, z - e);
+      const at=t*3;
+      if(Number.isNaN(gradient[at]!)){
+        gradient[at]=field(x + e, y, z) - field(x - e, y, z);
+        gradient[at+1]=field(x, y + e, z) - field(x, y - e, z);
+        gradient[at+2]=field(x, y, z + e) - field(x, y, z - e);
+      }
+      const gx=gradient[at]!,gy=gradient[at+1]!,gz=gradient[at+2]!;
       const gl = Math.hypot(gx, gy, gz);
       if (gl < 1e-20) continue;
       if ((f[0]! * gx + f[1]! * gy + f[2]! * gz) / (l * gl) < threshold) bad.push(t);
@@ -105,6 +114,7 @@ export function fixFolds(mesh: Mesh, field: Field, threshold = .25) {
   let region = new Set<number>(), initial = -1;
   for (let round = 0; round < 30; round++) {
     const bad = badFaces();
+    log(`fold repair round ${round}: ${bad.length} faces`);
     if (initial < 0) initial = bad.length;
     if (!bad.length) break;
     for (const t of bad) for (let k = 0; k < 3; k++) region.add(I[t * 3 + k]!);
@@ -115,6 +125,7 @@ export function fixFolds(mesh: Mesh, field: Field, threshold = .25) {
       const p = projectOnto(field, [x / c, y / c, z / c]);
       P[v * 3] = p[0]; P[v * 3 + 1] = p[1]; P[v * 3 + 2] = p[2];
     }
+    for(let t=0;t<nt;t++)if(region.has(I[t*3]!)||region.has(I[t*3+1]!)||region.has(I[t*3+2]!))gradient[t*3]=NaN;
   }
   const left = badFaces().length;
   log(`fold fix: ${initial} faces against the surface orientation, ${left} left`);
