@@ -29,10 +29,12 @@ import { mountAbout } from './ui/about.ts';
 import { mountShell } from './ui/shell.ts';
 import { mountHoverMenu } from './ui/hover-menu.ts';
 import { freshVisit,cleanVisit } from './save/visit.ts';
+import { createRng } from './core/rng.ts';
+import { loadResident,type Resident } from './cats/resident.ts';
 async function boot():Promise<void>{
 const body=document.body,bus=new EventBus();
 const stamp=document.querySelector<HTMLElement>('#build-stamp');if(stamp)stamp.textContent=formatStamp(buildInfo);
-body.dataset.flags=[...parseFlags(buildInfo.flags,location.search)].join(',');
+const flags=parseFlags(buildInfo.flags,location.search);body.dataset.flags=[...flags].join(',');
 const store=new SaveStore(buildInfo.channel,browserStorage(),freshVisit,{},text=>bus.emit('notice',{text}));
 await store.open();const visit=cleanVisit(await store.load('visit'));const save=():Promise<void>=>store.save('visit',visit);
 watchUpdates(buildInfo,save,reload=>{const button=document.querySelector<HTMLButtonElement>('#update');if(button){button.hidden=false;button.onclick=reload;}});
@@ -47,8 +49,9 @@ try {
   let playing=false,paused=false,benchmarkDone=false,contextReloadPending=false,previous=0,drawFrames=0,frameSum=0,tierPreference=visit.settings.tier;
   const probe=probeDevice(display.renderer.getContext() as WebGL2RenderingContext),benchmark=new TierBenchmark();
   const override=parseTier(new URLSearchParams(location.search).get('tier'));if(override){benchmarkDone=display.configure(override);contextReloadPending=!benchmarkDone;}
-  const forwardVector=new Vector3();
+  const forwardVector=new Vector3();let mochi:Resident|undefined;
   const loop=new FixedLoop(dt=>{
+    mochi?.step(dt);
     if(!playing)return;
     const k=keyboard.keys;player.step(dt,Number(k.has('d'))-Number(k.has('a')),Number(k.has('w'))-Number(k.has('s')));player.steer(dt,Number(k.has('arrowleft'))-Number(k.has('arrowright')),Number(k.has('arrowup'))-Number(k.has('arrowdown')));
     pointer.step(dt);hand.step(dt);bus.emit('player',{x:player.x,z:player.z});body.dataset.player=`${player.x.toFixed(2)},${player.z.toFixed(2)}`;
@@ -62,7 +65,7 @@ try {
     camera.position.set(player.previousX+(player.x-player.previousX)*alpha,1.6,player.previousZ+(player.z-player.previousZ)*alpha);player.orientation(camera.quaternion);
     // Leaning never pushes the near plane through a wall when the patron faces it.
     forwardVector.set(0,0,-player.lean).applyQuaternion(camera.quaternion);camera.position.add(forwardVector);camera.position.x=Math.max(ROOM.minX+.1,Math.min(ROOM.maxX-.1,camera.position.x));camera.position.z=Math.max(ROOM.minZ+.1,Math.min(ROOM.maxZ-.1,camera.position.z));camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();camera.updateMatrixWorld();
-    hand.update(playing,!!holding.id,visit.settings.leftHanded);display.renderer.render(scene,camera);
+    hand.update(playing,!!holding.id,visit.settings.leftHanded);mochi?.render(alpha);display.renderer.render(scene,camera);
     if(benchmarkDone&&!contextReloadPending&&body.dataset.ready!=='true'){const start=document.querySelector<HTMLButtonElement>('#start')!;start.disabled=false;start.setAttribute('aria-busy','false');body.dataset.ready='true';}body.dataset.drawCalls=String(display.renderer.info.render.calls);body.dataset.triangles=String(display.renderer.info.render.triangles);body.dataset.shaderPrograms=String(display.renderer.info.programs?.length??0);
     if(++drawFrames%60===0){body.dataset.frameMs=(frameSum/60).toFixed(1);frameSum=0;}
   });
@@ -80,6 +83,8 @@ try {
   installOrientation(value=>{paused=value;loop.paused=value;loop.reset();pointer.active(playing&&!paused);});
   mountShell(bus,visit,save);mountAbout(buildInfo);
   await cafe.load();const handLoader=new GLTFLoader();handLoader.setMeshoptDecoder(MeshoptDecoder);const gltf=await handLoader.loadAsync(assetUrl('art/hand.glb'));useRoomProbe(gltf.scene);hand.setModel(gltf.scene,gltf.animations);if(visit.profile)hand.customize(visit.profile.skin,visit.profile.sleeve);
+  // M2: Mochi strolls the café behind ?flags=cats until the behavior engine lands.
+  if(flags.has('cats'))try{mochi=await loadResident('mochi',override??(probe.mobile?'phone':'desktop'),createRng('cafe').fork('cat:mochi'),{x:.6,z:-1.5});scene.add(mochi.root);mochi.render(0);body.dataset.cats=mochi.id;}catch(error){console.warn('Mochi could not load',error);}
   // The first render skips the hidden hand. Compile every scene material before
   // input starts so the first reach cannot stall hover dwell or a floor tap.
   await display.renderer.compileAsync(scene,camera);
