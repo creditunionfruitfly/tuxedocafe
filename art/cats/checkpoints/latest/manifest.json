@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "status": "DRAFT checkpoint saved before review; neutral mouth and motion quality sign-off pending, textures still on generation atlas",
+  "sourceRevisions": {
+    "mesh": "70b2dfc",
+    "animation": "1fd119d"
+  },
+  "assets": [
+    {
+      "source": "cat_master_lod0.glb.json",
+      "target": "public/assets/art/cats/cat_master_lod0.glb",
+      "bytes": 1447164,
+      "sha256": "5c8ff9d6e5b1638fed4d465dfa094ab4ef5a7b6a2f7c16c88574a69f6a50c639"
+    },
+    {
+      "source": "cat_master_lod1.glb.json",
+      "target": "public/assets/art/cats/cat_master_lod1.glb",
+      "bytes": 745684,
+      "sha256": "2fc95aa15cd714127c7fadfe58035b47697d7e7023b6f966e90c386cd4215b68"
+    },
+    {
+      "source": "cat_master_lod2.glb.json",
+      "target": "public/assets/art/cats/cat_master_lod2.glb",
+      "bytes": 422588,
+      "sha256": "91d754a118c8884d42d41bf3fafc92217ce55766b17ceb1b7a3df326e73af379"
+    },
+    {
+      "source": "cat_master_source.glb.json",
+      "target": "public/assets/art/cats/cat_master_source.glb",
+      "bytes": 2164544,
+      "sha256": "012feb8fdffe8a446d4f6d97a2565d5df5790cfdae489486515d020e88d515a4"
+    },
+    {
+      "source": "cat_master_qa.json.json",
+      "target": "public/assets/art/cats/cat_master_qa.json",
+      "bytes": 13063,
+      "sha256": "2aa19de2bf5ec10880f7e72c85592428b47f0dd77ad6ddd636ceea2cf23c00ac"
+    },
+    {
+      "source": "cat_anims.glb.json",
+      "target": "public/assets/art/cats/cat_anims.glb",
+      "bytes": 1293776,
+      "sha256": "66d6e1ec10060667a5563216d9e6de0233d1e0645fd1eb342b32699701281818"
+    },
+    {
+      "source": "cat_expressions.json.json",
+      "target": "public/assets/art/cats/cat_expressions.json",
+      "bytes": 50728,
+      "sha256": "36be5fb35843c8a6ff3ffb07f2f799c4a867100d48f296d1ece0f2b6868c1e1e"
+    },
+    {
+      "source": "atlas.json.json",
+      "target": "art/cats/master/notes/atlas.json",
+      "bytes": 1804872,
+      "sha256": "8a3776396efb036ea9efa74e57790e1af66cc278e40637f392ea38d9793afe07"
+    },
+    {
+      "source": "uv_template.png.json",
+      "target": "art/cats/master/notes/uv_template.png",
+      "bytes": 55997,
+      "sha256": "2b9b2f51f46b68473b7582440e32473f548c5f93876a06540a5a590a578d9431"
+    },
+    {
+      "source": "uv_surface.png.json",
+      "target": "art/cats/master/notes/uv_surface.png",
+      "bytes": 52012,
+      "sha256": "e15fa9ac876899f9a6e8d503203a8382bd45509552e152d3949cdc5780b1ca96"
+    },
+    {
+      "source": "uv_position.png.json",
+      "target": "art/cats/master/notes/uv_position.png",
+      "bytes": 964961,
+      "sha256": "f026ee3bd97b7102a7951d5f36e86ec4086724556c24fd5367f2b487a8212b7b"
+    },
+    {
+      "source": "uv_normal.png.json",
+      "target": "art/cats/master/notes/uv_normal.png",
+      "bytes": 3441368,
+      "sha256": "7116647109c6af43eb7540cb8e937b16bc7f3e74af58d0dde8b0def08b5af68e"
+    },
+    {
+      "source": "desktop-neutral-rest-clay.png.json",
+      "target": "art/cats/master/notes/screenshots/desktop-neutral-rest-clay.png",
+      "bytes": 280537,
+      "sha256": "68e82420a67b643bd10df6bd52209927694941bc8f6543f0a056e9c4b74eadd1"
+    },
+    {
+      "source": "desktop-neutral-rest-shaded.png.json",
+      "target": "art/cats/master/notes/screenshots/desktop-neutral-rest-shaded.png",
+      "bytes": 290711,
+      "sha256": "6b61513fe80d861c4af421b9e638fc6bb64a0b5088bdc8479ddab5c0bc78631b"
+    },
+    {
+      "source": "desktop-jaw-open-clay.png.json",
+      "target": "art/cats/master/notes/screenshots/desktop-jaw-open-clay.png",
+      "bytes": 298056,
+      "sha256": "b6b51e11c638ae8797485aa38776e3f52434c41958bcc4e0e1d3fd06be9f6d21"
+    },
+    {
+      "source": "desktop-blink-closed-clay.png.json",
+      "target": "art/cats/master/notes/screenshots/desktop-blink-closed-clay.png",
+      "bytes": 190254,
+      "sha256": "f86e0dbca3b5e3d12e2bbee03aec4ec6c148a9280e20aedf4f7d1c41f9802c1a"
+    }
+  ]
+}
