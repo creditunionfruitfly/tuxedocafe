@@ -1,0 +1,196 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Cat clip contact sheet</title>
+<style>
+  html, body { margin: 0; background: #f4efe6; font: 13px system-ui, sans-serif; }
+  #wrap { position: relative; display: inline-block; }
+  canvas { display: block; }
+  #labels { position: absolute; inset: 0; pointer-events: none; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "/three/build/three.module.js", "three/addons/": "/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div id="wrap"><canvas id="gl"></canvas><canvas id="labels"></canvas></div>
+<script type="module">
+// Development contact sheets for the cat animation library: the clip skeleton from cat_anims.glb drives a
+// shaded volumetric tuxedo-cat proxy (rigid tapered segments per bone, trunk, head, ears, tail) so poses
+// read as a cat rather than as sticks. Locomotion travels at its in-place speed so planted paws stay put.
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+const loader = new GLTFLoader();
+loader.setMeshoptDecoder(MeshoptDecoder);
+const anims = await loader.loadAsync('/anims.glb');
+const clips = new Map(anims.animations.map(c => [c.name, c]));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf4efe6);
+scene.add(new THREE.HemisphereLight(0xfff7ee, 0x7a6a58, 1.35));
+const sun = new THREE.DirectionalLight(0xffffff, 2.1);
+sun.position.set(1.2, 3.2, 1.6); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -2.5, right: 2.5, top: 2.5, bottom: -2.5, near: 0.1, far: 8 });
+sun.shadow.bias = -0.0005;
+scene.add(sun, sun.target);
+const skel = anims.scene;
+scene.add(skel);
+const bone = {};
+skel.traverse(o => { if (o !== skel && o.name) bone[o.name] = o; });
+skel.updateMatrixWorld(true);
+const wpos = n => bone[n].getWorldPosition(new THREE.Vector3());
+const k = wpos('front_L_scapula').y / 0.268;
+
+const dark = new THREE.MeshStandardMaterial({ color: 0x24222a, roughness: 0.78 });
+const white = new THREE.MeshStandardMaterial({ color: 0xf1ede4, roughness: 0.85 });
+const pink = new THREE.MeshStandardMaterial({ color: 0xc98e8e, roughness: 0.7 });
+const eyeMat = new THREE.MeshStandardMaterial({ color: 0xb8b33a, roughness: 0.3, metalness: 0.1 });
+const isWhite = n => /(_wrist|_paw|_toe|_digit|_metatarsal|_hock)$/.test(n);
+/** Radius (m at the 0.268 m reference cat) at the start and end of the segment a bone carries (bone joint to its child joint). */
+function radii(n) {
+  const m = /^spine_0([1-5])$/.exec(n);
+  if (m) { const i = Number(m[1]) - 1; return [[0.05, 0.052, 0.055, 0.056, 0.05][i], [0.052, 0.055, 0.056, 0.05, 0.045][i]]; }
+  if (n === 'neck_01') return [0.042, 0.035]; if (n === 'neck_02') return [0.035, 0.03];
+  if (/_scapula$/.test(n)) return [0.03, 0.036];
+  if (/_upper$/.test(n)) return [0.036, 0.024]; if (/_fore$/.test(n)) return [0.022, 0.014]; if (/_wrist$/.test(n)) return [0.013, 0.011];
+  if (/front_._paw$/.test(n)) return [0.011, 0.011]; if (/_toe$/.test(n)) return null;
+  if (/_hip$/.test(n)) return [0.04, 0.045];
+  if (/_thigh$/.test(n)) return [0.045, 0.034]; if (/_shin$/.test(n)) return [0.026, 0.014]; if (/_hock$/.test(n)) return [0.013, 0.012];
+  if (/_metatarsal$/.test(n)) return [0.012, 0.011]; if (/hind_._paw$/.test(n)) return [0.011, 0.011];
+  if (/^tail_/.test(n)) { const i = Number(n.slice(-2)); return [0.017 - 0.0007 * (i - 1), 0.017 - 0.0007 * i]; }
+  return null;
+}
+const segs = [];
+const unitCyl = new THREE.CylinderGeometry(1, 1, 1, 18, 1, true);
+const unitSph = new THREE.SphereGeometry(1, 20, 14);
+for (const [name, b] of Object.entries(bone)) {
+  // The segment from the parent joint to this joint belongs to (rotates with) the parent bone.
+  const p = b.parent;
+  if (!p || !p.name || p.name === 'root' || /_digit_/.test(name) || /^(eye|whisker|jaw|ear)_?/.test(name)) continue;
+  if (/_(scapula|hip)$/.test(name)) continue;
+  const r = radii(p.name);
+  if (!r) continue;
+  const mat = isWhite(p.name) ? white : dark;
+  const geo = new THREE.CylinderGeometry(r[1] * k, r[0] * k, 1, 18, 1, true);
+  const cyl = new THREE.Mesh(geo, mat), cap = new THREE.Mesh(unitSph, mat);
+  cap.scale.setScalar(r[1] * k);
+  for (const m of [cyl, cap]) { m.castShadow = true; m.receiveShadow = true; }
+  p.add(cyl); b.add(cap);
+  segs.push({ cyl, child: b });
+}
+function blob(parentName, offset, scale, mat = dark) {
+  const m = new THREE.Mesh(unitSph, mat);
+  m.position.set(...offset.map(v => v * k)); m.scale.set(...scale.map(v => v * k));
+  m.castShadow = m.receiveShadow = true;
+  bone[parentName].add(m);
+  return m;
+}
+// Trunk masses: ribcage deeper than the waist, haunches, chest bib and belly.
+blob('spine_04', [0, -0.03, 0.0], [0.058, 0.066, 0.075]);
+blob('spine_03', [0, -0.022, 0.0], [0.054, 0.058, 0.07]);
+blob('spine_02', [0, -0.012, 0.0], [0.05, 0.05, 0.06]);
+blob('pelvis', [0, -0.01, -0.005], [0.05, 0.05, 0.055]);
+for (const s of [1, -1]) blob('pelvis', [0.026 * s, -0.025, -0.01], [0.032, 0.05, 0.05]);
+blob('spine_05', [0, -0.04, 0.02], [0.04, 0.045, 0.04], white);
+blob('spine_04', [0, -0.07, 0.0], [0.035, 0.03, 0.05], white);
+// Head: skull, cheeks, white muzzle, nose, eyes; ears as cones from ear_01 toward ear_02.
+blob('head', [0, 0.012, 0.012], [0.034, 0.03, 0.034]);
+for (const s of [1, -1]) blob('head', [0.018 * s, -0.004, 0.026], [0.018, 0.016, 0.018]);
+blob('head', [0, -0.012, 0.045], [0.018, 0.013, 0.016], white);
+blob('head', [0, -0.002, 0.058], [0.006, 0.004, 0.004], pink);
+for (const s of ['L', 'R']) {
+  const e = new THREE.Mesh(unitSph, eyeMat); e.scale.setScalar(0.0085 * k); e.position.set(0, 0, 0.004 * k); bone[`eye_${s}`].add(e);
+  const tip = bone[`ear_${s}_02`].position.clone(), len = tip.length() * 1.6;
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.016 * k, len, 3), dark);
+  cone.position.copy(tip.clone().multiplyScalar(0.55)); cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tip.clone().normalize());
+  cone.castShadow = true; bone[`ear_${s}_01`].add(cone);
+}
+const groundMat = new THREE.MeshStandardMaterial({ color: 0xe9e0d0, roughness: 1 });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), groundMat);
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const grid = new THREE.GridHelper(12, 240, 0xcdbfa8, 0xddd2c0); grid.position.y = 0.0005; scene.add(grid);
+const platform = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1, 1.6), new THREE.MeshStandardMaterial({ color: 0xc9b48f, roughness: 0.9 }));
+platform.receiveShadow = true; platform.castShadow = true; platform.visible = false; scene.add(platform);
+
+function updateSegs() {
+  for (const s of segs) {
+    const v = s.child.position, len = v.length();
+    s.cyl.position.copy(v).multiplyScalar(0.5);
+    s.cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v.clone().normalize());
+    s.cyl.scale.set(1, len, 1);
+  }
+}
+
+const mixer = new THREE.AnimationMixer(skel);
+const canvas = document.getElementById('gl'), labels = document.getElementById('labels');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const rest = new Map();
+skel.traverse(o => rest.set(o, { p: o.position.clone(), q: o.quaternion.clone() }));
+
+/** In-place travel so planted paws stay fixed in the sheet: rigSpeed (or authoredSpeed) times time. */
+function travel(clip, t) {
+  const x = clip.userData ?? {};
+  if (x.layer !== 'locomotion' && x.rigSpeed === undefined) return 0;
+  const v = x.rigSpeed ?? x.authoredSpeed ?? 0;
+  // start / stop: rigSpeed is the clip average; speed ramps 0 -> 2v (start) or 2v -> 0 (stop) over 0.5 s.
+  if (x.speedProfile?.startsWith('linear 0')) return 2 * v * t * t;
+  if (x.speedProfile?.startsWith('linear walk')) return 2 * v * (t - t * t);
+  return v * t;
+}
+
+window.renderSheet = async (sheet) => {
+  const { cols, cellW, cellH, cells, title } = sheet;
+  const rows = Math.ceil(cells.length / cols), W = cols * cellW, H = rows * cellH + 30;
+  renderer.setSize(W, H, false); canvas.width = W; canvas.height = H;
+  labels.width = W; labels.height = H; labels.style.width = W + 'px'; labels.style.height = H + 'px';
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = labels.getContext('2d'); ctx.clearRect(0, 0, W, H);
+  ctx.font = 'bold 15px system-ui'; ctx.fillStyle = '#3a2a1a'; ctx.fillText(title, 8, 20);
+  renderer.setScissorTest(true);
+  renderer.setClearColor(0xf4efe6, 1); renderer.setViewport(0, 0, W, H); renderer.setScissor(0, 0, W, H); renderer.clear();
+  for (let i = 0; i < cells.length; i++) {
+    const c = cells[i], col = i % cols, row = Math.floor(i / cols);
+    const clip = clips.get(c.clip);
+    mixer.stopAllAction();
+    for (const [o, r] of rest) { o.position.copy(r.p); o.quaternion.copy(r.q); }
+    if (clip) { const a = mixer.clipAction(clip); a.reset(); a.play(); a.time = Math.min(c.t, clip.duration); mixer.update(0); }
+    skel.position.set(0, 0, clip && c.travel !== false ? travel(clip, c.t) : 0);
+    updateSegs();
+    skel.updateMatrixWorld(true);
+    if (c.platform && clip?.userData?.edgeZ !== undefined) c.platform.z = clip.userData.edgeZ;
+    platform.visible = !!c.platform;
+    if (c.platform) { platform.scale.set(1, Math.abs(c.platform.h), 1); platform.position.set(0, c.platform.h > 0 ? c.platform.h / 2 : -Math.abs(c.platform.h) / 2, c.platform.z + (c.platform.h > 0 ? 0.8 : -0.8)); ground.position.y = c.platform.h < 0 ? c.platform.h : 0; grid.position.y = ground.position.y + 0.0005; }
+    else { ground.position.y = 0; grid.position.y = 0.0005; }
+    if (c.platform && c.platform.h < 0) { platform.position.set(0, c.platform.h / 2, c.platform.z - 0.8); }
+    const sc = c.scaled === false ? 1 : k;
+    const target = new THREE.Vector3(...(c.target ?? [0, 0.15, 0])).multiplyScalar(sc);
+    if (c.follow !== false) target.z += skel.position.z;
+    if (c.followRoot) { const r = bone.root.getWorldPosition(new THREE.Vector3()); target.x += r.x; target.y += r.y; target.z += r.z - skel.position.z; }
+    const az = (c.az ?? 90) * Math.PI / 180, el = (c.el ?? 6) * Math.PI / 180, dist = (c.dist ?? 2) * sc;
+    let cam;
+    if (c.ortho) { const h = c.ortho * sc / 2, a = cellW / cellH; cam = new THREE.OrthographicCamera(-h * a, h * a, h, -h, 0.01, 30); }
+    else cam = new THREE.PerspectiveCamera(c.fov ?? 24, cellW / cellH, 0.02, 30);
+    cam.position.set(target.x + dist * Math.sin(az) * Math.cos(el), target.y + dist * Math.sin(el), target.z + dist * Math.cos(az) * Math.cos(el));
+    cam.lookAt(target);
+    sun.position.set(target.x + 1.2, target.y + 3.2, target.z + 1.6); sun.target.position.copy(target);
+    const x = col * cellW, y = H - 30 - (row + 1) * cellH;
+    renderer.setViewport(x, y, cellW, cellH); renderer.setScissor(x, y, cellW, cellH);
+    renderer.setClearColor(0xf4efe6, 1); renderer.clear();
+    renderer.render(scene, cam);
+    ctx.font = '12px system-ui'; ctx.fillStyle = '#3a2a1a';
+    ctx.fillText(c.label ?? `${c.clip.replace('cat.', '')} t=${c.t.toFixed(2)}`, x + 6, 30 + row * cellH + 15);
+    ctx.strokeStyle = '#cdbfa8'; ctx.strokeRect(x + 0.5, 30 + row * cellH + 0.5, cellW - 1, cellH - 1);
+  }
+  renderer.setScissorTest(false);
+  return true;
+};
+window.clipInfo = () => [...clips.values()].map(c => ({ name: c.name, duration: c.duration }));
+window.rigScale = k;
+window.ready = true;
+</script>
+</body>
+</html>
