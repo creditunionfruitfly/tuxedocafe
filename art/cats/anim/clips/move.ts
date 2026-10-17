@@ -32,7 +32,7 @@ export function flightLeg(ctx: Ctx, b: Body, L: Leg, id: LegId, s: number, from:
   const a = pts[seg]!, c = pts[seg + 1]!, e = smooth(u);
   L.toe = [lerp(a[0], c[0], e), lerp(a[1], c[1], e), lerp(a[2], c[2], e)];
   const d = ctx.rig.legs[id], f = Math.sin(Math.PI * s);
-  L.rel = smooth(s / 0.15) * (1 - smooth((s - 0.82) / 0.16));
+  L.rel = smooth(s / 0.15) * (1 - smooth((s - 0.62) / 0.36));
   L.carpus = d.flexScale * ((d.front ? 1.6 : 1.4) * f * (1 - reach * smooth((s - 0.5) / 0.4))) + (d.front ? -0.2 : 0.8) * (1 - f);
   L.digits = d.dRest * (1 - f) + 0.1 * f; L.curl = 0.15 * f;
 }
@@ -81,7 +81,16 @@ function jumpUp(t: number, ctx: Ctx, o: JumpUp): Body {
   for (const id of ['LF', 'RF'] as const) {
     const L = b.legs[id], off = o.tk - 0.06 - (id === 'RF' ? 0.02 : 0), land = o.tc + (id === 'RF' ? 0.02 : 0), last: V3 = [stand.legs[id].toe[0], o.H + rig.legs[id].padY, fz + D];
     if (t <= off) L.toe = [...stand.legs[id].toe];
-    else if (t < land) flightLeg(ctx, b, L, id, (t - off) / (land - off), stand.legs[id].toe, [[0.035, -0.11, 0.06], [0.04, -0.16, 0.2]], frontLand(id));
+    else if (t < land) {
+      const s = (t - off) / (land - off);
+      flightLeg(ctx, b, L, id, s, stand.legs[id].toe, [[0.035, -0.11, 0.06], [0.04, -0.16, 0.2]], frontLand(id));
+      // Reach above the rim before advancing over it; floor correction must
+      // never teleport a below-ledge paw onto the upper surface.
+      const points = [stand.legs[id].toe, airPoint(ctx, b, id, [0.035, -0.11, 0.06]),
+        [stand.legs[id].toe[0], o.H + 0.11 * k, edge - 0.02 * k] as V3, frontLand(id)];
+      const seg = Math.min(2, Math.floor(s * 3)), w = smooth(s * 3 - seg), a = points[seg]!, c = points[seg + 1]!;
+      L.toe = [lerp(a[0], c[0], w), lerp(a[1], c[1], w), lerp(a[2], c[2], w)];
+    }
     else if (o.frontLand > 0.001) {
       const t0 = T - 0.2 + (id === 'RF' ? 0.06 : 0), t1 = Math.min(T, t0 + 0.14);
       if (t < t0) L.toe = frontLand(id); else stepLeg(rig, L, id, t, t0, t1, frontLand(id), last, 0.04 * sH, 1.0);
@@ -96,7 +105,25 @@ function jumpUp(t: number, ctx: Ctx, o: JumpUp): Body {
       const y = o.H - (0.24 - 0.2 * u) * sH + 0.03 * sH * Math.abs(Math.sin(u * Math.PI * 3 + (id === 'LH' ? 0 : 1)));
       L.toe = u < 0.75 ? [land[0], y, face] : [land[0], lerp(y, land[1], smooth((u - 0.75) / 0.25)), lerp(face, land[2], smooth((u - 0.75) / 0.25))];
       L.rel = 1; L.carpus = 0.9; L.digits = 0.3; L.curl = -0.3;
-    } else if (t < tl) flightLeg(ctx, b, L, id, (t - o.tk) / (tl - o.tk), stand.legs[id].toe, [[0.05, -0.15, -0.13], [0.05, -0.13, 0.05]], land);
+    } else if (t < tl) {
+      const s = (t - o.tk) / (tl - o.tk);
+      flightLeg(ctx, b, L, id, s, stand.legs[id].toe, [[0.05, -0.15, -0.13], [0.05, -0.13, 0.05]], land);
+      if (o.scrabble) {
+        // Keep the hind paw behind and below the climbing hip. The old equal
+        // thirds path passed the toe through its own hip at mid-flight, which
+        // forced the thigh to reverse before the paw reached the ledge.
+        const tucked = airPoint(ctx, b, id, [0.05, -0.24, -0.16]);
+        const face: V3 = [land[0], o.H - 0.24 * sH, edge - 0.012 * k];
+        const catchUp = smooth((t - o.tk - 0.18) / (o.tc - o.tk - 0.18));
+        const u = smooth((t - o.tk) / 0.13), from = stand.legs[id].toe;
+        L.toe = [0, 1, 2].map(j => lerp(lerp(from[j]!, tucked[j]!, u), face[j]!, catchUp)) as V3;
+      } else {
+        const pts = [stand.legs[id].toe, airPoint(ctx, b, id, [0.05, -0.15, -0.22]),
+          [land[0], o.H + 0.04 * k, edge - 0.02 * k] as V3, land];
+        const seg = Math.min(2, Math.floor(s * 3)), w = smooth(s * 3 - seg), a = pts[seg]!, c = pts[seg + 1]!;
+        L.toe = [lerp(a[0], c[0], w), lerp(a[1], c[1], w), lerp(a[2], c[2], w)];
+      }
+    }
     else L.toe = land;
   }
   return b;
@@ -115,14 +142,17 @@ function jumpDown(t: number, ctx: Ctx, o: JumpDown): Body {
   lean.gaze = [-0.55, 0, 0, 1]; lean.tail = tailShape({ base: 0.35, lift: 0.2, tip: 0.3 });
   // Touchdown of the forepaws: the ballistic path ends here, nose down, rump still high.
   const fly = cloneBody(stand); setTrunk(rig, fly, { pelvisDrop: -0.06 * sH, chestDrop: 0.2 * sH });
-  fly.pelvisOff = [0, stand.pelvisOff[1] + o.H + 0.06 * sH, stand.pelvisOff[2] + D - 0.03 * k];
-  fly.gaze = [-0.35, 0, 0, 1]; fly.tail = tailShape({ base: 0.7, lift: 0.45, tip: 0.2 });
+  fly.pelvisOff = [0, stand.pelvisOff[1] + o.H + 0.24 * sH, stand.pelvisOff[2] + D - 0.03 * k];
+  fly.gaze = [-0.35, 0, 0, 1]; fly.tail = tailShape({ base: 1.3, lift: 0.3, tip: 0.2 });
   // Front paws first, deep absorption (deeper from high), then the hind paws.
   const absorb = cloneBody(stand); setTrunk(rig, absorb, { pelvisDrop: 0.05 * sH, chestDrop: (0.26 + 0.12 * Number(o.H < -1)) * sH });
   absorb.pelvisOff = [0, absorb.pelvisOff[1] + o.H, absorb.pelvisOff[2] + D]; absorb.gaze = [-0.2, 0, 0, 1];
-  absorb.tail = tailShape({ base: 0.15, lift: 0.0, tip: 0.35 });
+  absorb.tail = tailShape({ base: 1.35, lift: 0.2, tip: 0.35 });
   for (const id of ['LF', 'RF'] as const) { absorb.legs[id].fore = 0.35; absorb.legs[id].abduct = 0.2; }
   const done = shifted(stand, R);
+  // Keep the counterbalancing tail elevated through landing: the tip clears the rear ledge
+  // after the hind paws, so returning to its low idle carriage here would strike the edge.
+  done.tail = tailShape({ base: 1.3, lift: 0.2, tip: 0.3 });
   const b = keyedLag(t, [[0, stand], [o.push * 0.75, lean], [o.push, lean], [o.tl, fly], [o.tl + 0.12, absorb], [T, done]], { head: 0.04, tail: 0.1 });
   if (t > o.push && t < o.tl) {
     const p0 = lean.pelvisOff, p1 = fly.pelvisOff, tau = o.tl - o.push, s = t - o.push;
@@ -136,7 +166,15 @@ function jumpDown(t: number, ctx: Ctx, o: JumpDown): Body {
     const L = b.legs[id], land: V3 = [stand.legs[id].toe[0], o.H + rig.legs[id].padY, fz + D], off = id === 'LF' ? 0.35 * o.push : 0.75 * o.push;
     const tl = o.tl + (id === 'RF' ? 0.02 : 0);
     if (t <= off) continue;
-    if (t < tl) flightLeg(ctx, b, L, id, (t - off) / (tl - off), stand.legs[id].toe, [[0.035, -0.2 - o.reach, 0.1], [0.035, -0.23 - o.reach, 0.12]], land, 0.6);
+    if (t < tl) {
+      const s = (t - off) / (tl - off);
+      flightLeg(ctx, b, L, id, s, stand.legs[id].toe, [[0.035, -0.2 - o.reach, 0.1], [0.035, -0.23 - o.reach, 0.12]], land, 0.6);
+      // Carry the forepaw beyond the old edge before reaching down.
+      const pts = [stand.legs[id].toe, [stand.legs[id].toe[0], 0.035 * k, edge + 0.08 * k] as V3,
+        airPoint(ctx, b, id, [0.035, -0.23 - o.reach, 0.12]), land];
+      const seg = Math.min(2, Math.floor(s * 3)), w = smooth(s * 3 - seg), a = pts[seg]!, c = pts[seg + 1]!;
+      L.toe = [lerp(a[0], c[0], w), lerp(a[1], c[1], w), lerp(a[2], c[2], w)];
+    }
     else L.toe = land;
   }
   for (const id of ['LH', 'RH'] as const) {
@@ -261,5 +299,5 @@ export const moveClips: ClipSpec[] = [
     name: 'cat.move.land', body: land, tailSim: { wBase: 26, wTip: 11, zeta: 0.6 },
     stance: () => ({ LF: [[0, 0.5]], RF: [[0, 0.5]], LH: [[0.11, 0.5]], RH: [[0.14, 0.5]] }),
   },
-  { name: 'cat.play.pounce', body: (t, ctx) => pounce(t, ctx), tailSim: { wBase: 28, wTip: 12, zeta: 0.65 }, stance: ctx => pounceStance(ctx.T) },
+  { name: 'cat.play.pounce', body: (t, ctx) => pounce(t, ctx), tailSim: { wBase: 28, wTip: 18, zeta: 0.8 }, stance: ctx => pounceStance(ctx.T) },
 ];

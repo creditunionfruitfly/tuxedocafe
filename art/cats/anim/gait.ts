@@ -77,7 +77,7 @@ function girdleBob(style: GaitStyle, front: boolean, phase: number) {
 const liftCurveF = curve([[0, 0], [0.08, 0.3], [0.26, 0.92], [0.38, 1], [0.6, 0.72], [0.8, 0.3], [0.93, 0.06], [1, 0]]);
 const liftCurveH = curve([[0, 0], [0.1, 0.28], [0.3, 0.88], [0.45, 1], [0.68, 0.62], [0.86, 0.2], [0.95, 0.04], [1, 0]]);
 /** Swing blend from planted to free distal angles and back. */
-const relCurve = (s: number) => smooth(s / 0.14) * (1 - smooth((s - 0.8) / 0.18));
+const relCurve = (s: number) => smooth(s / 0.28) * (1 - smooth((s - 0.65) / 0.33));
 
 /** A planted paw at stance fraction s: digits flat, then the heel peels off while the pads stay down. */
 export function stanceLeg(rig: Rig, style: GaitStyle, leg: Leg, id: LegId, s: number) {
@@ -257,7 +257,7 @@ export function fitGait(rig: Rig, style: GaitStyle, samples = 24): FitReport {
   if (!res.ok) {
     let lo = 0.2, hi = 1;
     for (let it = 0; it < 10; it++) { const m = (lo + hi) / 2, r = search(m); if (r.ok) { lo = m; res = r; } else hi = m; }
-    fit = Math.floor(lo * 0.98 * 1000) / 1000;
+    fit = Math.floor(lo * 0.91 * 1000) / 1000;
     res = search(fit);
   }
   const final = evalCentres(fit, res.cF, res.cH);

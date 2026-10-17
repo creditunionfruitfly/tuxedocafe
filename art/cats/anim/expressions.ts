@@ -58,8 +58,17 @@ function expressionCurves(name: string, T: number): Record<string, (t: number) =
 }
 
 /** Curve sets for clips that list morphs (their bone motion uses the same shapes). */
-function clipCurves(name: string): Record<string, (t: number) => number> | null {
+function clipCurves(name: string, T: number): Record<string, (t: number) => number> | null {
   switch (name) {
+    case 'cat.rest.loaf': {
+      const squint = (t: number) => 0.52 + 0.045 * Math.cos(2 * Math.PI * t / T);
+      return { squint_L: squint, squint_R: (t: number) => squint(t + 0.08) };
+    }
+    case 'cat.rest.sleep_curl': return { blink_L: () => 1, blink_R: () => 1 };
+    case 'cat.rest.wake_stretch': {
+      const opening = (t: number) => 1 - smooth((t - 0.08) / 0.37);
+      return { blink_L: opening, blink_R: (t: number) => opening(t - 0.025) };
+    }
     case 'cat.rest.yawn': {
       const squint = curve([[0, 0], [0.3, 0.2], [0.5, 0.9], [1.0, 1], [1.18, 0.3], [1.35, 0], [1.6, 0]]);
       return { mouthOpen: (t: number) => yawnOpen(t) + 0.6 * yawnLick(t), squint_L: squint, squint_R: (t: number) => squint(t - 0.02) };
@@ -91,7 +100,7 @@ export function makeExpressions(catalog: Catalog) {
   }).filter(x => x !== null);
   const clips: Record<string, { durationS: number; loop: boolean; morphs: string[]; curves: Record<string, Curve> }> = {};
   for (const c of catalog.clips.filter(c => c.morphs?.length)) {
-    const fns = clipCurves(c.name);
+    const fns = clipCurves(c.name, c.durationS);
     if (!fns) { problems.push(`no morph curves for clip ${c.name}`); continue; }
     for (const m of c.morphs!) if (!fns[m]) problems.push(`clip ${c.name} lacks morph ${m}`);
     for (const m of Object.keys(fns)) if (!c.morphs!.includes(m) || !known.has(m)) problems.push(`clip ${c.name} drives uncatalogued morph ${m}`);

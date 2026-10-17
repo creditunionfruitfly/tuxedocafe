@@ -73,7 +73,7 @@ function wakeStretch(t: number, ctx: Ctx): Body {
   for (const id of ['LH', 'RH'] as const) { dog.legs[id].spread = 0.15; dog.legs[id].meta = rig.legs[id].stanceMeta + 0.12; }
   dog.gaze = [0.12, 0, 0, 1]; dog.earL = [0.3, 0.15, -0.05]; dog.earR = [0.3, 0.15, -0.05];
   dog.tail = tailShape({ base: 0.05, lift: 0.2, tip: 0.55 });
-  const deep = cloneBody(dog); setTrunk(rig, deep, { pelvisDrop: -0.04 * sH, chestDrop: 0.45 * sH, arch: -0.36 });
+  const deep = cloneBody(dog); setTrunk(rig, deep, { pelvisDrop: -0.04 * sH, chestDrop: 0.40 * sH, arch: -0.36 });
   deep.legs = dog.legs;
   // Forward shift onto the forelegs, then the hind-leg stretch.
   const fwd = cloneBody(stand);
@@ -86,11 +86,17 @@ function wakeStretch(t: number, ctx: Ctx): Body {
     const L = b.legs[id], D = dog.legs[id], S = stand.legs[id];
     if (t < a0) continue;
     if (t <= a1) {
-      const s = smooth((t - a0) / (a1 - a0));
+      const s = smooth((t - a0) / (a1 - a0)), d = rig.legs[id], k = M.legScale;
       Object.assign(L, D);
-      L.toe = [D.toe[0], D.toe[1] + 0.05 * sH * Math.sin(Math.PI * s), loaf.legs[id].c[2] + (D.toe[2] - loaf.legs[id].c[2]) * s];
-      L.cw = loaf.legs[id].cw * (1 - smooth(s * 1.8)); L.c = [...loaf.legs[id].c];
-      L.rel = 1 - smooth((s - 0.6) / 0.4); L.carpus = 2.4 * (1 - s) - 0.3 * s; L.digits = 0.4 * (1 - s) - 0.7 * s;
+      const h = d.side * D.out, reachC: V3 = [
+        D.toe[0] - Math.sin(h) * (d.Lm * Math.cos(D.meta) + d.Ld * Math.cos(D.dig)),
+        D.toe[1] + d.Lm * Math.sin(D.meta) + d.Ld * Math.sin(D.dig),
+        D.toe[2] - Math.cos(h) * (d.Lm * Math.cos(D.meta) + d.Ld * Math.cos(D.dig)),
+      ];
+      const from = loaf.legs[id].c;
+      L.c = [from[0] + (reachC[0] - from[0]) * s, from[1] + (reachC[1] - from[1]) * s + 0.025 * k * Math.sin(Math.PI * s), from[2] + (reachC[2] - from[2]) * s];
+      L.cw = 1; L.rel = 1 - s;
+      L.carpus = loaf.legs[id].carpus * (1 - s); L.digits = loaf.legs[id].digits * (1 - s) + d.dRest * s;
     } else if (t < b0) Object.assign(L, D);
     else if (t <= b1) { Object.assign(L, S); stepLeg(rig, L, id, t, b0, b1, D.toe, S.toe, 0.05 * sH, 1.1); }
     else Object.assign(L, S);
@@ -99,7 +105,7 @@ function wakeStretch(t: number, ctx: Ctx): Body {
   for (const [id, t0, t1] of [['LH', 0.15, 0.45], ['RH', 0.25, 0.55]] as const) {
     const L = b.legs[id];
     if (t <= t0) continue;
-    Object.assign(L, stand.legs[id]);
+    Object.assign(L, mixBody(loaf, stand, smooth((t - t0) / (t1 - t0))).legs[id]);
     if (t <= t1) stepLeg(rig, L, id, t, t0, t1, loaf.legs[id].toe, stand.legs[id].toe, 0.035 * sH, 1.0);
   }
   // The hind-leg stretch: left hind extends far back, toes spread, held, then returns.
@@ -108,7 +114,7 @@ function wakeStretch(t: number, ctx: Ctx): Body {
     if (t > 1.78 && t < 2.68) {
       if (t < 2.05) { stepLeg(rig, L, 'LH', t, 1.78, 2.05, home, out, 0.03 * sH, 0.6); L.rel = Math.max(L.rel, smooth((t - 1.78) / 0.15)); L.carpus = -0.1; L.digits = -0.4; L.spread = 0.3 * smooth((t - 1.78) / 0.27); }
       else if (t < 2.38) { L.toe = [out[0], out[1] + 0.006 * k * Math.sin((t - 2.05) * 20), out[2]]; L.rel = 1; L.carpus = -0.1; L.digits = -0.4; L.spread = 0.3; L.curl = -0.25; }
-      else { stepLeg(rig, L, 'LH', t, 2.38, 2.68, out, home, 0.03 * sH, 0.8); L.spread = 0.3 * (1 - smooth((t - 2.38) / 0.3)); }
+      else { stepLeg(rig, L, 'LH', t, 2.38, 2.68, out, home, 0.03 * sH, 0.8); const s = smooth((t - 2.38) / 0.3); L.rel = Math.max(L.rel, 1 - s); L.carpus = -0.1 * (1 - s) + 0.8 * s; L.digits = -0.4 * (1 - s) + rig.legs.LH.dRest * s; L.spread = 0.3 * (1 - smooth((t - 2.38) / 0.3)); }
     }
   }
   return b;

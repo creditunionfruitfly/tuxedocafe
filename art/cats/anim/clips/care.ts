@@ -49,8 +49,8 @@ function faceWash(rig: Rig, b: Body, ctx: Ctx, u: number, side: 1 | -1) {
   b.jaw += 0.14 * lickN;
   b.spine = b.spine.map(s => [s[0] - 0.02 * up, s[1] + side * 0.02 * up, s[2] - side * 0.025 * up] as V3);
   const lickPt = headPoint(rig, b, [side * 0.012, -0.075, 0.03]);
-  const stroke = ((u - 0.6) / 0.27 % 1 + 1) % 1, sw = smooth(stroke);
-  const cheek = headPoint(rig, b, [side * 0.05, -0.05 + 0.08 * sw, 0.035 - 0.07 * sw]);
+  const sw = Math.sin(Math.PI * clamp((u - 0.6) / 0.54, 0, 1)) ** 2;
+  const cheek = headPoint(rig, b, [side * 0.05, -0.05 + 0.08 * sw, 0.08 - 0.035 * sw]);
   const target: V3 = wipe > 0.01 ? [lerp(lickPt[0], cheek[0], wipe), lerp(lickPt[1], cheek[1], wipe), lerp(lickPt[2], cheek[2], wipe)] : lickPt;
   pawTo(L, target, up, 1.75, 0.5);
   L.abduct = -0.1 * up; L.share = lerp(L.share, 0.5, up); L.fore = lerp(L.fore, 1.0, up); L.foreK = lerp(L.foreK, 0, up);

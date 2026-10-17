@@ -3,14 +3,14 @@
 // at the tip, so body motion travels down the tail as a lagging wave. Loops
 // run to a periodic steady state and close exactly.
 import type { Body } from './body.ts';
-import { solveTrunk } from './body.ts';
+import { solveTrunk, TAIL_DIRECTION } from './body.ts';
 import type { TailSim } from './catalog.ts';
 import { fk, type Rig } from './rig.ts';
 
 export function simulateTail(rig: Rig, bodies: Body[], dt: number, loop: boolean, opts: TailSim) {
   const n = bodies.length, joints = rig.tail.length;
   // Base angles: heading and elevation of the tail root's rest direction in world.
-  const restDir = rig.offset[rig.tail[1]!]!.clone().normalize();
+  const restDir = TAIL_DIRECTION;
   const base = bodies.map(b => {
     const W = fk(rig, solveTrunk(rig, b));
     const d = restDir.clone().applyQuaternion(W.rot[rig.parent[rig.tail[0]!]!]!);

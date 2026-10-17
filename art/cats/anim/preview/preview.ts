@@ -3,19 +3,22 @@
 // Renders cat_anims.glb (PREVIEW_GLB, default the built library) on a volumetric proxy cat with Playwright and
 // writes PNGs to PREVIEW_OUT (default: the OS temp dir). CHROMIUM_PATH selects a local Chromium.
 import { createServer } from 'node:http';
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { extname, join, resolve } from 'node:path';
+import { dirname, extname, join, resolve } from 'node:path';
+import { loadCatalog } from '../catalog.ts';
 import { chromium } from '@playwright/test';
 
 interface Cell {
   clip: string; t: number; az?: number; el?: number; dist?: number; target?: [number, number, number]; label?: string; fov?: number;
   ortho?: number; travel?: boolean; follow?: boolean; followRoot?: boolean; platform?: { h: number; z: number }; scaled?: boolean;
 }
-interface Sheet { title: string; cols: number; cellW: number; cellH: number; cells: Cell[] }
+interface Sheet { motion?: boolean; title: string; cols: number; cellW: number; cellH: number; cells: Cell[] }
 
 const OUT = process.env.PREVIEW_OUT ?? join(tmpdir(), 'cat-anim-preview');
 const GLB = process.env.PREVIEW_GLB ?? 'public/assets/art/cats/cat_anims.glb';
+const MESH = process.env.PREVIEW_MESH; // optional production skinned GLB, same bind rig
 const side: Partial<Cell> = { az: 90, el: 2, dist: 3, ortho: 0.62, target: [0, 0.15, 0.02] };
 const threeQ: Partial<Cell> = { az: 52, el: 16, dist: 2.2, fov: 20, target: [0, 0.13, 0] };
 const front: Partial<Cell> = { az: 8, el: 8, dist: 2.2, fov: 20, target: [0, 0.14, 0] };
@@ -41,6 +44,9 @@ export const SHEETS: Record<string, Sheet> = {
   loaf: { title: 'cat.rest.loaf and cat.rest.sleep_curl', cols: 3, cellW: 420, cellH: 300,
     cells: [...at('cat.rest.loaf', [0], side), ...at('cat.rest.loaf', [1.5], threeQ, ' 3/4'), ...at('cat.rest.loaf', [3], front, ' front'),
       ...at('cat.rest.sleep_curl', [0], threeQ, ' 3/4'), ...at('cat.rest.sleep_curl', [2], top, ' top'), ...at('cat.rest.sleep_curl', [4], side)] },
+  curl: { title: 'cat.rest.sleep_curl: production skin, side and top at a full breath', cols: 3, cellW: 440, cellH: 310,
+    cells: [...at('cat.rest.sleep_curl', [0, 3.75, 7.5], threeQ), ...at('cat.rest.sleep_curl', [7.5], side),
+      ...at('cat.rest.sleep_curl', [7.5], front), ...at('cat.rest.sleep_curl', [7.5], top)] },
   lying: { title: 'cat.rest.lie_side and cat.rest.sprawl', cols: 4, cellW: 360, cellH: 260,
     cells: [...at('cat.rest.lie_side', [0], threeQ, ' 3/4'), ...at('cat.rest.lie_side', [1], top, ' top'), ...at('cat.rest.sprawl', [0], threeQ, ' 3/4'), ...at('cat.rest.sprawl', [1], top, ' top')] },
   wake: { title: 'cat.rest.wake_stretch: loaf, downward-dog stretch (0.8), hind-leg stretch (2.0), stand', cols: 4, cellW: 380, cellH: 270,
@@ -77,13 +83,39 @@ export const SHEETS: Record<string, Sheet> = {
       ...at('cat.perk.harness_flop', [1.5], threeQ), ...at('cat.perk.harness_sniff', [0.8], side)] },
 };
 
+// Every catalogued clip gets three samples: anticipation, strongest action and recovery.
+const catalog = loadCatalog();
+for (let i = 0; i < catalog.clips.length; i += 8) {
+  const chunk = catalog.clips.slice(i, i + 8);
+  SHEETS[`catalog${i / 8 + 1}`] = { title: `Catalog review ${i + 1}–${i + chunk.length} / ${catalog.clips.length}`, cols: 3, cellW: 400, cellH: 270,
+    cells: chunk.flatMap(c => {
+      const view: Partial<Cell> = { ...threeQ, followRoot: true };
+      if (c.heightM !== undefined) { view.platform = { h: c.heightM, z: 0 }; view.ortho = 1.0; }
+      if (c.name === 'cat.care.scratch_post') { view.target = [0, 0.3, 0]; view.ortho = 0.85; }
+      if (c.name === 'cat.perk.feather_leap') { view.target = [0, 0.4, 0]; view.ortho = 1.15; }
+      return at(c.name, [0.18, 0.5, 0.82].map(f => c.durationS * f), view);
+    }) };
+}
+
+// Review the three adjacent exported frames around each audit peak on the actual skin.
+if (process.env.PREVIEW_AUDIT) {
+  const audit = JSON.parse(readFileSync(process.env.PREVIEW_AUDIT, 'utf8')) as { results: { clip: string; t: number; degreesPerFrame: number; bone: string }[] };
+  for (const [i, peak] of audit.results.filter(r => r.degreesPerFrame > 35).entries()) {
+    const clip = catalog.clips.find(c => c.name === peak.clip)!;
+    const times = [peak.t - 2 / 30, peak.t - 1 / 30, peak.t, peak.t + 1 / 30].map(t => Math.max(0, Math.min(clip.durationS - 0.00001, t)));
+    SHEETS[`audit${i + 1}`] = { title: `${peak.clip}: ${peak.bone}, ${peak.degreesPerFrame.toFixed(1)} degrees per frame`, cols: 4, cellW: 360, cellH: 280,
+      cells: [...at(peak.clip, times, { ...side, followRoot: true }), ...at(peak.clip, times, { ...threeQ, followRoot: true })] };
+  }
+}
+
 const MIME: Record<string, string> = { '.html': 'text/html', '.js': 'text/javascript', '.glb': 'model/gltf-binary', '.wasm': 'application/wasm' };
 function serve() {
   const root = resolve('.');
   const server = createServer((req, res) => {
     const url = decodeURIComponent((req.url ?? '/').split('?')[0]!);
-    const file = url === '/' ? join(root, 'art/cats/anim/preview/preview.html')
+    const file = url === '/mesh.glb' && MESH ? resolve(MESH) : url === '/' ? join(root, 'art/cats/anim/preview/preview.html')
       : url === '/anims.glb' ? resolve(GLB)
+      : url === '/expressions.json' ? resolve(dirname(GLB), 'cat_expressions.json')
       : url.startsWith('/three/') ? join(root, 'node_modules/three', url.slice(7)) : '';
     if (url === '/favicon.ico') { res.writeHead(204); res.end(); return; }
     if (!file || !existsSync(file)) { res.writeHead(404); res.end(); return; }
@@ -97,7 +129,7 @@ function serve() {
 }
 
 const wanted = process.argv.slice(2);
-const names = wanted.length ? wanted : Object.keys(SHEETS);
+const names = wanted.length ? wanted : process.env.PREVIEW_MOTION ? [] : Object.keys(SHEETS);
 const { port, close } = await serve();
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 try {
@@ -105,7 +137,7 @@ try {
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(String(e)));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
-  await page.goto(`http://127.0.0.1:${port}/`);
+  await page.goto(`http://127.0.0.1:${port}/${MESH ? '?mesh=1' : ''}`);
   await page.waitForFunction(() => (window as unknown as { ready?: boolean }).ready === true, null, { timeout: 60000 });
   mkdirSync(OUT, { recursive: true });
   const prefix = process.env.PREVIEW_PREFIX ?? '';
@@ -115,6 +147,23 @@ try {
     await page.evaluate(s => (window as unknown as { renderSheet: (s: unknown) => Promise<boolean> }).renderSheet(s), sheet);
     await page.locator('#wrap').screenshot({ path: `${OUT}/${prefix}${name}.png` });
     console.log(`${OUT}/${prefix}${name}.png (${sheet.cells.length} cells)`);
+  }
+  // Optional deterministic 30 fps motion review. ffmpeg only encodes captured rendered frames.
+  for (const name of (process.env.PREVIEW_MOTION ?? '').split(',').filter(Boolean)) {
+    const clip = catalog.clips.find(c => c.name === name);
+    if (!clip) throw new Error(`unknown motion clip ${name}`);
+    const framesDir = join(OUT, name); mkdirSync(framesDir, { recursive: true });
+    const seconds = clip.loop ? Math.max(3, 3 * clip.durationS) : clip.durationS + 0.5;
+    for (let f = 0; f < Math.ceil(seconds * 30); f++) {
+      const t = clip.loop ? f / 30 % clip.durationS : Math.min(f / 30, clip.durationS - 0.00001);
+      const sheet: Sheet = { title: `${name} — 30 fps`, motion: true, cols: 1, cellW: 960, cellH: 600,
+        cells: [{ clip: name, t, ...threeQ, followRoot: true }] };
+      await page.evaluate(s => (window as unknown as { renderSheet: (s: unknown) => Promise<boolean> }).renderSheet(s), sheet);
+      await page.locator('#wrap').screenshot({ path: join(framesDir, `${String(f).padStart(4, '0')}.png`) });
+    }
+    const encoded = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-framerate', '30', '-i', join(framesDir, '%04d.png'), '-c:v', 'libx264', '-crf', '18', '-pix_fmt', 'yuv420p', join(OUT, `${name}.mp4`)], { encoding: 'utf8' });
+    if (encoded.status !== 0) throw new Error(`ffmpeg: ${encoded.stderr}`);
+    console.log(join(OUT, `${name}.mp4`));
   }
   if (errors.length) throw new Error(`preview page errors:\n${errors.join('\n')}`);
 } finally {

@@ -97,8 +97,8 @@ function crouchPlan(ctx: Ctx, key: string, style: (ctx: Ctx) => GaitStyle) {
   if (!p) { const s = style(ctx), f = fitGait(ctx.rig, s); m.set(key, p = planGait(ctx.rig, s, f.fit, f.centreF, f.centreH)); }
   return p;
 }
-const STALK = crouchGait({ T: 2.0, speed: 0.12, duty: 0.8, drop: 0.32, head: -0.02, lift: 0.06 });
-const SLINK = crouchGait({ T: 1.0, speed: 0.3, duty: 0.72, drop: 0.36, head: -0.12, lift: 0.07 });
+const STALK = crouchGait({ T: 2.0, speed: 0.12, duty: 0.8, drop: 0.26, head: -0.02, lift: 0.06 });
+const SLINK = crouchGait({ T: 1.0, speed: 0.3, duty: 0.72, drop: 0.26, head: -0.12, lift: 0.07 });
 function crouchClip(name: string, key: string, style: (ctx: Ctx) => GaitStyle, decorate: (b: Body, t: number, ctx: Ctx) => Body): ClipSpec {
   return {
     name,
@@ -199,7 +199,7 @@ function featherLeap(t: number, ctx: Ctx): Body {
     const s = (t - t0) / (t1 - t0);
     if (d.front) {
       // Both forepaws reach up high and together toward the feather.
-      flightLeg(ctx, b, L, id, s, home, [[0.03, -0.02, 0.12], [0.015, 0.08, 0.14], [0.03, -0.08, 0.1]], home, 0.2);
+      flightLeg(ctx, b, L, id, s, home, [[0.03, -0.02, 0.22], [0.015, 0.08, 0.25], [0.03, -0.08, 0.2]], home, 0.2);
       L.carpus = lerp(L.carpus, -0.2, bump(s, 0.25, 0.4, 0.6, 0.75)); L.spread = 0.25 * bump(s, 0.3, 0.4, 0.6, 0.7);
     } else flightLeg(ctx, b, L, id, s, home, [[0.05, -0.15, -0.05], [0.05, -0.14, 0.0]], home);
   }
@@ -277,7 +277,7 @@ export const perkClips: ClipSpec[] = [
   }),
   { name: 'cat.perk.laser_butt_wiggle', body: buttWiggle, stance: ctx => stanceFromAir(ctx.T, Object.fromEntries((['LH', 'RH'] as const).map(id => [id, TREAD.filter(x => x[0] === id).map(([, t0]) => [t0, t0 + 0.08] as [number, number])]))) },
   {
-    name: 'cat.perk.laser_pounce', body: laserPounce, tailSim: { wBase: 28, wTip: 12, zeta: 0.65 },
+    name: 'cat.perk.laser_pounce', body: laserPounce, tailSim: { wBase: 28, wTip: 18, zeta: 0.8 },
     stance: ctx => pounceStance(ctx.T, LASER),
   },
   { name: 'cat.perk.toy_catch', body: toyCatch, stance: ctx => stanceFromAir(ctx.T, { LF: [[0.1, 0.36], [0.6, 1.2]], RF: [[0.13, 0.38], [0.6, 1.2]] }), tailSim: { wBase: 26, wTip: 12, zeta: 0.7 } },

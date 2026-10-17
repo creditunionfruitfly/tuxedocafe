@@ -4,7 +4,7 @@
 // hard-coded joint position. Offsets scale with M.legScale (0.30 m adult).
 import { Vector3 } from 'three';
 import { type Body, type Leg, cloneBody, mixBody, partFrame, restBody, solveTrunk, toWorld } from './body.ts';
-import { type V3, clamp, curve, lerp, smooth, smoother, wrapPi } from './math.ts';
+import { type V3, clamp, curve, lerp, smooth, smoother } from './math.ts';
 import { LEGS, type LegId, type Rig, fk } from './rig.ts';
 
 export const STANCE_WIDTH = 0.85;
@@ -17,7 +17,9 @@ export function setTrunk(rig: Rig, b: Body, o: { pelvisDrop?: number; chestDrop?
   b.pelvisOff = [o.lateral ?? 0, -ph, o.surge ?? 0];
   b.pelvis = [pitch, o.yaw ?? 0, o.roll ?? 0];
   const w = [0.24, 0.24, 0.2, 0.18, 0.14];
-  b.spine = b.spine.map((s, k) => [s[0] - arch * w[k]!, s[1], s[2]] as V3);
+  // This is an absolute placement command: calling it on a copied pose must not
+  // accumulate its previous arch (which can invert the chest on a lunge).
+  b.spine = b.spine.map((s, k) => [-arch * w[k]!, s[1], s[2]] as V3);
   return b;
 }
 
@@ -248,45 +250,17 @@ export function lieSideBody(rig: Rig, roll = 80 * DEG, stretch = 0): Body {
   return b;
 }
 
-/** Tight sleeping ring: half on the side, spine bent round to bring the nose to the hind paws, tail wrapped over the nose. */
+/** Side-lying sleeping curl: a modest C through the spine, paws gathered under the muzzle. */
 export function curlBody(rig: Rig): Body {
-  const M = rig.M, b = loafBody(rig), k = M.legScale;
-  const rest = rig.offset[rig.index('pelvis')]!;
-  b.pelvisOff = [0.03 * k, M.depth * 0.72 - rest.y, 0.03 * k];
-  b.pelvis = [0.02, 0.5, 0.22];
-  b.spine = [[-0.03, 0.5, 0.02], [-0.04, 0.52, 0.02], [-0.04, 0.52, 0.0], [-0.05, 0.5, 0], [-0.04, 0.46, -0.02]];
-  b.neck = [[-0.22, 0.8, -0.12], [-0.28, 0.62, -0.1]];
-  b.head = [-0.22, 0.48, -0.25];
+  const b = loafBody(rig);
+  b.pelvis[1] = 0.18; b.pelvis[2] = 0.08;
+  b.spine = [[0.04, 0.16, 0.02], [-0.01, 0.18, 0.02], [-0.04, 0.18, 0], [-0.04, 0.16, 0], [0, 0.12, -0.02]];
+  b.neck = [[-0.16, 0.18, -0.08], [0.01, 0.16, -0.08]];
+  b.head = [-0.13, 0.12, -0.08];
   b.gaze = [0, 0, 0, 0];
-  const chest = partFrame(rig, b, 'spine_04'), pelv = partFrame(rig, b, 'pelvis');
-  for (const id of ['LF', 'RF'] as const) {
-    const L = b.legs[id], d = rig.legs[id];
-    const c = toWorld(chest, [d.side * 0.025 * k, -M.depth * 0.8, 0.06 * k]);
-    L.c = [c[0], Math.max(c[1], 0.014 * k), c[2]]; L.cw = 1; L.rel = 1; L.carpus = 140 * DEG; L.digits = 0.5; L.abduct = 0.1;
-  }
-  for (const id of ['LH', 'RH'] as const) {
-    const L = b.legs[id], d = rig.legs[id];
-    const t = toWorld(pelv, [d.side * 0.045 * k, -M.depth * 0.9, 0.15 * k]);
-    L.toe = [t[0], Math.max(t[1], d.padY + 0.004 * k), t[2]];
-    L.rel = 1; L.carpus = 115 * DEG; L.digits = 0.3; L.abduct = 0.2;
-  }
   b.earL = [0.3, 0.2, -0.05]; b.earR = [0.3, 0.2, -0.05];
-  // Tail: off the rump, round the outside of the ring past the hind paws, ending over the nose.
-  const W = fk(rig, solveTrunk(rig, b));
-  const P = (n: string) => W.pos[rig.index(n)]!;
-  const base = W.pos[rig.tail[0]!]!, head = P('head');
-  const nose = head.clone().add(new Vector3(0, 0, 0.05 * k).applyQuaternion(W.rot[rig.index('head')]!));
-  const C = [P('pelvis'), P('spine_02'), P('spine_04'), P('neck_02'), head].reduce((a, v) => a.add(v), new Vector3()).multiplyScalar(0.2);
-  const ang = (v: Vector3) => Math.atan2(v.x - C.x, v.z - C.z);
-  const a0 = ang(base), a1 = ang(nose);
-  const sweep = wrapPi(a1 - a0);
-  const r0 = Math.hypot(base.x - C.x, base.z - C.z) + 0.03 * k, r1 = Math.hypot(nose.x - C.x, nose.z - C.z) + 0.01 * k;
-  const y = 0.02 * k, pts: V3[] = [[base.x, lerp(base.y, y, 0.4), base.z]];
-  for (let i = 1; i <= 5; i++) {
-    const u = i / 5, a = a0 + sweep * u, r = lerp(r0, r1, u) + 0.025 * k * Math.sin(Math.PI * u);
-    pts.push([C.x + r * Math.sin(a), y + (i === 5 ? 0.012 * k : 0), C.z + r * Math.cos(a)]);
-  }
-  b.tailCurve = { w: 1, pts };
+  // Follow the outer haunch around to the tucked forepaws without cutting through the trunk.
+  b.tailCurve = { w: 1, pts: wrapCurve(rig, b, -1, 0.9) };
   return b;
 }
 
@@ -330,11 +304,14 @@ export function stepLeg(rig: Rig, L: Leg, id: LegId, t: number, t0: number, t1: 
   L.toe = st.pos;
   if (st.air) {
     const d = rig.legs[id];
-    L.rel = smooth(st.s / 0.15) * (1 - smooth((st.s - 0.8) / 0.18));
+    // Blend into the free distal frame over the whole paw lift. On short
+    // treads, a late 18%-of-swing landing blend takes less than a rendered
+    // frame and makes the wrist/hock snap when the pad touches down.
+    L.rel = Math.max(0, Math.min(1, ((t1 - t0) - 0.1) / 0.1)) * smooth(st.s / 0.25) * (1 - smooth((st.s - 0.4) / 0.55));
     L.carpus = flex * d.flexScale * Math.sin(Math.PI * Math.min(1, st.s * 1.15)) ** 0.8 + (d.front ? -0.25 : 0.9) * (1 - Math.sin(Math.PI * st.s));
     L.digits = d.dRest * (1 - Math.sin(Math.PI * st.s)) + 0.15 * Math.sin(Math.PI * st.s);
     L.curl = 0.2 * Math.sin(Math.PI * st.s);
-    L.meta = d.stanceMeta + (d.front ? 0.5 : 0.3) * Math.sin(Math.PI * st.s);
+    L.meta += (d.front ? 0.5 : 0.3) * Math.sin(Math.PI * st.s);
   }
   return st;
 }

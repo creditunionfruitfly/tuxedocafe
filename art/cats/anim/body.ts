@@ -89,6 +89,31 @@ export function mirrorBody(b: Body): Body {
 
 export const qTail = (t: V3) => qAxis(AY, t[1]).multiply(qAxis(AX, t[0])).multiply(qAxis(AZ, t[2]));
 
+/**
+ * Author bends in a common anatomical tail frame, independent of the modelled rest curve.
+ * A local rest offset is not a joint axis: each curved rest segment needs its own basis.
+ * Accumulate the authored bends first, then convert desired absolute orientations back to locals.
+ */
+export const TAIL_DIRECTION = new Vector3(0, -Math.sin(10 * Math.PI / 180), -Math.cos(10 * Math.PI / 180));
+const tailBases = new WeakMap<Rig, Quaternion[]>();
+export function tailRotations(rig: Rig, shape: V3[]): Quaternion[] {
+  let bases = tailBases.get(rig);
+  if (!bases) {
+    bases = rig.tail.map((_, k) => new Quaternion().setFromUnitVectors(
+      rig.offset[rig.tail[Math.min(k + 1, rig.tail.length - 1)]!]!.clone().normalize(), TAIL_DIRECTION));
+    tailBases.set(rig, bases);
+  }
+  const authored = new Quaternion();
+  let parent = new Quaternion();
+  return shape.map((bend, k) => {
+    authored.multiply(qTail(bend));
+    const absolute = authored.clone().multiply(bases[k]!);
+    const local = parent.clone().invert().multiply(absolute).normalize();
+    parent = absolute;
+    return local;
+  });
+}
+
 /** Trunk, head, ears, eyes and tail rotations plus translations (no legs). */
 export function solveTrunk(rig: Rig, b: Body): Pose {
   const pose = restPose(rig), q = pose.q, I = rig.index;
@@ -107,7 +132,7 @@ export function solveTrunk(rig: Rig, b: Body): Pose {
 }
 
 /** Solve a body description to local rotations plus root, pelvis and scapula translations. */
-export function solve(rig: Rig, b: Body, info?: Partial<Record<LegId, LegInfo>>): Pose {
+export function solve(rig: Rig, b: Body, info?: Partial<Record<LegId, LegInfo>>, prior?: Pose): Pose {
   const pose = solveTrunk(rig, b), q = pose.q, I = rig.index;
   q[I('jaw')] = qAxis(AX, b.jaw);
   for (const [s, ear, tip] of [[1, b.earL, b.tipL], [-1, b.earR, b.tipR]] as const) {
@@ -118,7 +143,8 @@ export function solve(rig: Rig, b: Body, info?: Partial<Record<LegId, LegInfo>>)
   }
   q[I('eye_L')] = qAxis(AY, b.eyes[0]).multiply(qAxis(AX, -b.eyes[1]));
   q[I('eye_R')] = qAxis(AY, b.eyes[2]).multiply(qAxis(AX, -b.eyes[3]));
-  rig.tail.forEach((i, k) => { q[i] = qTail(b.tail[k]!); });
+  const tail = tailRotations(rig, b.tail);
+  rig.tail.forEach((i, k) => { q[i] = tail[k]!; });
 
   let W = fk(rig, pose);
   if (b.gaze[3] > 0) aimHead(rig, pose, W, qAxis(AY, b.rootYaw).multiply(qBody(b.gaze[0], b.gaze[1], b.gaze[2])), clamp(b.gaze[3], 0, 1));
@@ -129,7 +155,7 @@ export function solve(rig: Rig, b: Body, info?: Partial<Record<LegId, LegInfo>>)
   }
   W = fk(rig, pose);
   for (const id of LEGS) {
-    const r = solveLeg(rig, pose, W, rig.legs[id], b.legs[id]);
+    const r = solveLeg(rig, pose, W, rig.legs[id], b.legs[id], prior);
     if (info) info[id] = r;
   }
   return pose;

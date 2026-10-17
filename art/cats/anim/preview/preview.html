@@ -27,6 +27,7 @@ const loader = new GLTFLoader();
 loader.setMeshoptDecoder(MeshoptDecoder);
 const anims = await loader.loadAsync('/anims.glb');
 const clips = new Map(anims.animations.map(c => [c.name, c]));
+const expressions = await fetch('/expressions.json').then(r => r.ok ? r.json() : null);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xf4efe6);
 scene.add(new THREE.HemisphereLight(0xfff7ee, 0x7a6a58, 1.35));
@@ -36,7 +37,9 @@ sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -2.5, right: 2.5, top: 2.5, bottom: -2.5, near: 0.1, far: 8 });
 sun.shadow.bias = -0.0005;
 scene.add(sun, sun.target);
-const skel = anims.scene;
+const actualMesh = new URLSearchParams(location.search).has('mesh');
+const model = actualMesh ? await loader.loadAsync('/mesh.glb') : null;
+const skel = model ? model.scene : anims.scene;
 scene.add(skel);
 const bone = {};
 skel.traverse(o => { if (o !== skel && o.name) bone[o.name] = o; });
@@ -64,6 +67,7 @@ function radii(n) {
   return null;
 }
 const segs = [];
+if (!actualMesh) {
 const unitCyl = new THREE.CylinderGeometry(1, 1, 1, 18, 1, true);
 const unitSph = new THREE.SphereGeometry(1, 20, 14);
 for (const [name, b] of Object.entries(bone)) {
@@ -108,6 +112,9 @@ for (const s of ['L', 'R']) {
   cone.position.copy(tip.clone().multiplyScalar(0.55)); cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tip.clone().normalize());
   cone.castShadow = true; bone[`ear_${s}_01`].add(cone);
 }
+} else {
+  skel.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+}
 const groundMat = new THREE.MeshStandardMaterial({ color: 0xe9e0d0, roughness: 1 });
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), groundMat);
 ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
@@ -144,6 +151,7 @@ function travel(clip, t) {
 
 window.renderSheet = async (sheet) => {
   const { cols, cellW, cellH, cells, title } = sheet;
+  grid.visible = !sheet.motion;
   const rows = Math.ceil(cells.length / cols), W = cols * cellW, H = rows * cellH + 30;
   renderer.setSize(W, H, false); canvas.width = W; canvas.height = H;
   labels.width = W; labels.height = H; labels.style.width = W + 'px'; labels.style.height = H + 'px';
@@ -155,9 +163,26 @@ window.renderSheet = async (sheet) => {
   for (let i = 0; i < cells.length; i++) {
     const c = cells[i], col = i % cols, row = Math.floor(i / cols);
     const clip = clips.get(c.clip);
+    if (!clip) throw new Error(`missing preview clip ${c.clip}`);
     mixer.stopAllAction();
     for (const [o, r] of rest) { o.position.copy(r.p); o.quaternion.copy(r.q); }
     if (clip) { const a = mixer.clipAction(clip); a.reset(); a.play(); a.time = Math.min(c.t, clip.duration); mixer.update(0); }
+    // Production expression curves run beside the bone clip, just as in the runtime.
+    const curves = expressions?.clips?.[c.clip]?.curves ?? {};
+    const weightAt = keys => {
+      if (c.t <= keys[0][0]) return keys[0][1];
+      for (let j = 1; j < keys.length; j++) if (c.t <= keys[j][0]) {
+        const a = keys[j - 1], b = keys[j], w = (c.t - a[0]) / (b[0] - a[0]);
+        return a[1] + (b[1] - a[1]) * w;
+      }
+      return keys[keys.length - 1][1];
+    };
+    skel.traverse(o => { if (o.morphTargetInfluences) {
+      o.morphTargetInfluences.fill(0);
+      for (const [m, keys] of Object.entries(curves)) {
+        const j = o.morphTargetDictionary[m]; if (j !== undefined) o.morphTargetInfluences[j] = weightAt(keys);
+      }
+    } });
     skel.position.set(0, 0, clip && c.travel !== false ? travel(clip, c.t) : 0);
     updateSegs();
     skel.updateMatrixWorld(true);

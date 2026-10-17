@@ -74,7 +74,7 @@ export const walkStyle = (ctx: Ctx): GaitStyle => ({
 
 export const trotStyle = (ctx: Ctx): GaitStyle => ({
   ...walkStyle(ctx), speed: ctx.clip.authoredSpeed ?? 1.6, contacts: contacts(ctx), duty: ctx.clip.dutyFactor ?? 0.45,
-  dropF: 0.04, dropH: 0.03, liftF: 0.16, liftH: 0.13, carpusF: 1.95, carpusH: 1.75, curlF: 0.25, curlH: 0.15,
+  dropF: 0.04, dropH: 0.03, liftF: 0.16, liftH: 0.13, carpusF: 1.4, carpusH: 1.75, curlF: 0.25, curlH: 0.15,
   metaF: [-6 * DEG, -2 * DEG, 50 * DEG], metaH: [-6 * DEG, -2 * DEG, 30 * DEG], heelOffF: 0.5, heelOffH: 0.62, matchTd: 0.45,
   register: 0.03, frontBias: 0, hindBias: -0.1, bob: 0.02, roll: 0.03, yaw: 0.045, blade: 0.035, glide: 0.06,
   headPitch: -0.1, headBob: 0.1, neck: -0.6, skewF: 0.8, skewH: 0.9, ears: [0.05, 0, 0.06],
@@ -89,7 +89,7 @@ const gallopRise = loopCurve([[0, -0.01], [0.2, -0.03], [0.4, 0.02], [0.55, -0.0
 const gallopSurge = loopCurve([[0, 0.06], [0.25, 0.03], [0.45, -0.02], [0.65, -0.03], [0.85, 0.04]]);
 export const gallopStyle = (ctx: Ctx): GaitStyle => ({
   ...walkStyle(ctx), speed: ctx.clip.authoredSpeed ?? 3.5, contacts: contacts(ctx), duty: ctx.clip.dutyFactor ?? 0.3,
-  dropF: 0.06, dropH: 0.05, liftF: 0.22, liftH: 0.19, carpusF: 2.1, carpusH: 1.85, curlF: 0.3, curlH: 0.2,
+  dropF: 0.06, dropH: 0.05, liftF: 0.22, liftH: 0.19, carpusF: 1.35, carpusH: 1.45, curlF: 0.3, curlH: 0.2,
   metaF: [-10 * DEG, -6 * DEG, 52 * DEG], metaH: [-10 * DEG, -6 * DEG, 34 * DEG], heelOffF: 0.4, heelOffH: 0.5, matchTd: 0.35,
   register: -0.06, frontBias: 0.05, hindBias: 0.05, width: 0.75, bob: 0.0, roll: 0.025, yaw: 0.025, blade: 0.04, glide: 0.08,
   headPitch: -0.12, headBob: 0.0, neck: -0.8, skewF: 0.75, skewH: 0.8, ears: [0.55, 0.3, -0.05],

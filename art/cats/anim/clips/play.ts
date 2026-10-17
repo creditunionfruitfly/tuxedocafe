@@ -46,11 +46,11 @@ function backBody(ctx: Ctx): Body {
   b.neck = [[0.18, 0, -0.08], [0.12, 0, -0.08]]; b.head = [0.1, 0, -0.22];
   for (const id of ['LF', 'RF'] as const) {
     const d = rig.legs[id];
-    freeLeg(b.legs[id], bodyPoint(rig, b, 'spine_04', [d.side * 0.05, -0.12, 0.07]), 1.3, 0.5, { curl: 0.3, fore: 1.2, foreK: 0, share: 0.3 });
+    freeLeg(b.legs[id], bodyPoint(rig, b, 'spine_04', [d.side * 0.035, -0.12, 0.07]), 1.3, 0.5, { curl: 0.3, fore: 1.2, foreK: 0, share: 0.3 });
   }
   for (const id of ['LH', 'RH'] as const) {
     const d = rig.legs[id];
-    freeLeg(b.legs[id], bodyPoint(rig, b, 'pelvis', [d.side * 0.12, -0.14, 0.05]), 1.0, 0.3, { abduct: 0.4 });
+    freeLeg(b.legs[id], bodyPoint(rig, b, 'pelvis', [d.side * 0.055, -0.18, 0.05]), 1.0, 0.3, { abduct: 0.4 });
   }
   b.tail = tailShape({ base: -0.1, side: 0.6, tipSide: 0.4 });
   return b;
@@ -155,7 +155,7 @@ export const playClips: ClipSpec[] = [
   },
   { name: 'cat.social.head_rub', body: headRub, tailSim: { wBase: 26, wTip: 18, zeta: 0.75 }, stance: allPlanted },
   {
-    name: 'cat.social.tail_up_greeting', body: greeting, tailSim: { wBase: 26, wTip: 12, zeta: 0.65 },
+    name: 'cat.social.tail_up_greeting', body: greeting, tailSim: { wBase: 26, wTip: 18, zeta: 0.85 },
     stance: ctx => stanceFromAir(ctx.T, { LF: [[0.28, 0.46]], RF: [[0.58, 0.76]] }),
   },
   {

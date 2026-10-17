@@ -89,7 +89,7 @@ const rotAbout = (v: Vector3, axis: Vector3, angle: number) => v.clone().applyQu
  * Solve one leg into pose.q given world joint frames W of the trunk (legs not yet posed).
  * Returns diagnostics; writes local rotations for prox, chain, metapodials, paw, toe and digits.
  */
-export function solveLeg(rig: Rig, pose: Pose, W: World, d: LegDef, L: Leg): LegInfo {
+export function solveLeg(rig: Rig, pose: Pose, W: World, d: LegDef, L: Leg, prior?: Pose): LegInfo {
   const q = pose.q;
   const G = W.rot[d.girdle]!, P0 = W.pos[d.prox]!;
   const nG = AXIS_X.clone().applyQuaternion(G), upG = UP.clone().applyQuaternion(G), fwdG = new Vector3(0, 0, 1).applyQuaternion(G);
@@ -109,6 +109,22 @@ export function solveLeg(rig: Rig, pose: Pose, W: World, d: LegDef, L: Leg): Leg
   const restSwing = Math.atan2(restC.z - restP0.z, -(restC.y - restP0.y));
   const Ginv = G.clone().invert();
   const restA = rig.restWorld[d.a]!, restB = rig.restWorld[d.b]!;
+  // The scapula/hip gives this chain a redundant degree of freedom. Track the
+  // previous anatomical branch, rather than letting equally reachable minima
+  // exchange places and turn the upper limb through half a revolution.
+  const priorAlpha = prior ? 2 * Math.atan2(prior.q[d.prox]!.x, prior.q[d.prox]!.w) : null;
+  const priorUpper = prior ? restB.clone().sub(restA).normalize()
+    .applyQuaternion(prior.q[d.prox]!.clone().multiply(prior.q[d.a]!)).applyQuaternion(G) : null;
+  const priorFore = prior ? restC.clone().sub(restB).normalize()
+    .applyQuaternion(prior.q[d.prox]!.clone().multiply(prior.q[d.a]!).multiply(prior.q[d.b]!)).applyQuaternion(G) : null;
+  const candidate = (a: number) => {
+    const step = L.rel > 0.01 || L.cw > 0.01 ? 0.11 : 0.24;
+    return clampProx(priorAlpha === null ? a : Math.max(priorAlpha - step, Math.min(priorAlpha + step, a)));
+  };
+  const continuity = (a: number) => {
+    if (priorAlpha === null || !priorUpper) return 0;
+    return 8 * wrapPi(a - priorAlpha) ** 2 + 120 * B.clone().sub(A).normalize().angleTo(priorUpper) ** 2;
+  };
 
   const A = new Vector3(), B = new Vector3(), Cr = new Vector3(), u = new Vector3(), nP = new Vector3(), v = new Vector3(), tmp = new Vector3();
   const qa = new Quaternion();
@@ -156,18 +172,18 @@ export function solveLeg(rig: Rig, pose: Pose, W: World, d: LegDef, L: Leg): Leg
     const n = hingeFor(C);
     // Preferred prox angle: a share of the limb's protraction about the girdle's lateral axis.
     const cur = C.clone().sub(P0).applyQuaternion(Ginv);
-    const theta = Math.atan2(cur.z, -cur.y) - restSwing;
+    const theta = wrapPi(Math.atan2(cur.z, -cur.y) - restSwing);
     const pref = L.share * theta + L.swing, foreWant = L.fore + L.foreK * theta;
     const cost = (a: number) => {
       const r = place(a, C, n);
       const over = Math.max(0, Math.abs(a) - PROX_MAX);
-      return 4e4 * (r.viol / Lsum) ** 2 + L.foreW * (r.fore - foreWant) ** 2 + (a - pref) ** 2 + 3000 * over * over;
+      return 4e4 * (r.viol / Lsum) ** 2 + L.foreW * wrapPi(r.fore - foreWant) ** 2 + (a - pref) ** 2 + continuity(a) + 3000 * over * over;
     };
     // Coarse scan, then golden-section refinement: continuous in the inputs, so frames vary smoothly.
-    const center = warm ?? pref, span = warm === null ? 0.9 : 0.25, step = span / 45;
+    const center = warm ?? pref, span = warm === null ? 1.5 : 0.35, step = span / 45;
     let best = center, bestC = Infinity;
-    for (let k = -45; k <= 45; k++) { const a = clampProx(center + k * step), c = cost(a); if (c < bestC) { bestC = c; best = a; } }
-    let lo2 = clampProx(best - step), hi2 = clampProx(best + step);
+    for (let k = -45; k <= 45; k++) { const a = candidate(center + k * step), c = cost(a); if (c < bestC) { bestC = c; best = a; } }
+    let lo2 = candidate(best - step), hi2 = candidate(best + step);
     const gr = (Math.sqrt(5) - 1) / 2;
     let x1 = hi2 - gr * (hi2 - lo2), x2 = lo2 + gr * (hi2 - lo2), f1 = cost(x1), f2 = cost(x2);
     for (let k = 0; k < 40; k++) {
@@ -176,43 +192,105 @@ export function solveLeg(rig: Rig, pose: Pose, W: World, d: LegDef, L: Leg): Leg
     }
     const alpha = (lo2 + hi2) / 2;
     place(alpha, C, n);
-    return { C, n, alpha, Rm, Rd, fore: Cr.clone().sub(B).normalize(), hinge: nP.clone() };
+    return { C, n, alpha, Rm, Rd, fore: Cr.clone().sub(B).normalize(), hinge: nP.clone(), finish: () => place(alpha, C, n) };
   };
 
-  let sol = evaluate(null, nG, null);
-  if (L.rel > 1e-6 && L.cw < 1 - 1e-6) {
-    // Free distal angles depend on the forearm, which depends on where the wrist lands: solve
-    // g(phi) = phi'(phi) - phi for the forearm angle phi in the hinge plane by the secant method.
-    const plane = (hingeAxis: Vector3) => {
-      const down = upG.clone().negate().addScaledVector(hingeAxis, upG.dot(hingeAxis)).normalize();
-      const ahead = new Vector3().crossVectors(hingeAxis, down).negate(); // forward in the plane
-      return { down, ahead };
+  // With a fully free foot, the forearm and its fixed flexion angles form one
+  // effective segment from elbow to toe. Solve that segment in 3D directly; a
+  // scalar projected-angle root can otherwise report convergence while the
+  // actual foot misses its target or exchanges branches.
+  const free = () => {
+    const c = cs * L.carpus, digit = c + L.digits;
+    const ex = d.L2 + d.Lm * Math.cos(c) + d.Ld * Math.cos(digit);
+    const ey = d.Lm * Math.sin(c) + d.Ld * Math.sin(digit);
+    const effective = Math.hypot(ex, ey), delta = Math.atan2(ey, ex), n = hingeFor(T);
+    const cur = T.clone().sub(P0).applyQuaternion(Ginv);
+    const theta = wrapPi(Math.atan2(cur.z, -cur.y) - restSwing);
+    const pref = L.share * theta + L.swing, foreWant = L.fore + L.foreK * theta;
+    const put = (alpha: number) => {
+      qa.setFromAxisAngle(AXIS_X, alpha).premultiply(G);
+      A.copy(offA).applyQuaternion(qa).add(P0);
+      u.subVectors(T, A); const dist = u.length(); u.divideScalar(dist || 1);
+      nP.copy(n).addScaledVector(u, -n.dot(u));
+      if (nP.lengthSq() < 1e-10) nP.copy(upG).addScaledVector(u, -upG.dot(u));
+      nP.normalize();
+      v.crossVectors(nP, u).multiplyScalar(d.bendSign);
+      // The effective segment includes a bent foot: its triangle must leave
+      // enough interior angle for the REAL elbow/stifle after undoing delta.
+      const minEffective = Math.max(MID_MIN, MID_MIN + d.bendSign * delta);
+      const minReach = Math.sqrt(d.L1 * d.L1 + effective * effective - 2 * d.L1 * effective * Math.cos(minEffective));
+      if (priorUpper && priorFore && dist < minReach) {
+        const guide = priorUpper.clone().multiplyScalar(d.L1)
+          .addScaledVector(rotAbout(priorFore, nG, delta), effective).normalize();
+        const x = Math.min(1, (minReach - dist) / (0.45 * minReach));
+        const w = x * x * (3 - 2 * x);
+        u.lerp(guide, w).normalize();
+        nP.copy(n).addScaledVector(u, -n.dot(u));
+        if (nP.lengthSq() < 1e-10) nP.copy(upG).addScaledVector(u, -upG.dot(u));
+        nP.normalize();
+        v.crossVectors(nP, u).multiplyScalar(d.bendSign);
+      }
+      const dc = Math.max(minReach, Math.min(0.996 * (d.L1 + effective), dist));
+      const ca = Math.min(1, Math.max(-1, (d.L1 * d.L1 + dc * dc - effective * effective) / (2 * d.L1 * dc)));
+      B.copy(A).addScaledVector(u, d.L1 * ca).addScaledVector(v, d.L1 * Math.sqrt(1 - ca * ca));
+      const f = rotAbout(A.clone().addScaledVector(u, dc).sub(B).normalize(), nP, -delta);
+      Cr.copy(B).addScaledVector(f, d.L2);
+      const upper = B.clone().sub(A).normalize();
+      return { viol: Math.abs(dist - dc), fore: Math.atan2(f.dot(fwdG), -f.dot(upG)), f,
+        mid: Math.PI - upper.angleTo(f), side: -new Vector3().crossVectors(upper, f).dot(nP) * d.bendSign };
     };
-    const angleOf = (f: Vector3, hingeAxis: Vector3) => { const p = plane(hingeAxis); return Math.atan2(f.dot(p.ahead), f.dot(p.down)); };
-    const dirOf = (phi: number, hingeAxis: Vector3) => { const p = plane(hingeAxis); return p.down.multiplyScalar(Math.cos(phi)).addScaledVector(p.ahead, Math.sin(phi)); };
-    let hingeAxis = sol.hinge;
-    const g = (phi: number) => {
-      const r = evaluate(dirOf(phi, hingeAxis), hingeAxis, sol.alpha);
-      return { r, val: wrapPi(angleOf(r.fore, hingeAxis) - phi) };
+    const cost = (a: number) => {
+      const r = put(a), over = Math.max(0, Math.abs(a) - PROX_MAX), fold = Math.max(0, MID_MIN - r.mid);
+      return 4e4 * (r.viol / Lsum) ** 2 + L.foreW * wrapPi(r.fore - foreWant) ** 2 + (a - pref) ** 2 + continuity(a)
+        + 3000 * over * over + 1e4 * fold * fold + 1e4 * Math.min(0, r.side) ** 2;
     };
-    let x0 = angleOf(sol.fore, hingeAxis), e0 = g(x0);
-    let x1 = x0 + 0.5 * e0.val, e1 = g(x1);
-    let bestR = Math.abs(e0.val) < Math.abs(e1.val) ? e0 : e1;
-    for (let it = 0; it < 24 && Math.abs(e1.val) > 1e-9; it++) {
-      const den = e1.val - e0.val;
-      let x2 = Math.abs(den) > 1e-12 ? x1 - e1.val * (x1 - x0) / den : x1 + 0.5 * e1.val;
-      if (!Number.isFinite(x2) || Math.abs(x2 - x1) > 0.6) x2 = x1 + Math.sign(x2 - x1 || 1) * 0.6;
-      x0 = x1; e0 = e1; x1 = x2; e1 = g(x1);
-      hingeAxis = e1.r.hinge;
-      if (Math.abs(e1.val) < Math.abs(bestR.val)) bestR = e1;
+    const center = priorAlpha ?? pref, step = 1.5 / 90;
+    let best = center, bestCost = Infinity;
+    for (let k = -90; k <= 90; k++) { const a = candidate(center + k * step), c = cost(a); if (c < bestCost) { bestCost = c; best = a; } }
+    let low = candidate(best - step), high = candidate(best + step);
+    for (let k = 0; k < 38; k++) { const a = low + (high - low) / 3, b = high - (high - low) / 3; if (cost(a) < cost(b)) high = b; else low = a; }
+    const alpha = (low + high) / 2, r = put(alpha), hinge = nP.clone(), fd = distal(r.f, hinge);
+    return { C: Cr.clone(), n, alpha, ...fd, fore: r.f, hinge, finish: () => put(alpha) };
+  };
+  let sol = L.rel >= 1 - 1e-6 && L.cw < 1e-6 ? free() : evaluate(L.rel > 1e-6 ? priorFore : null, nG, priorAlpha);
+  if (L.rel > 1e-6 && L.rel < 1 - 1e-6 && L.cw < 1 - 1e-6) {
+    // Match both tangent components of the forearm direction in 3D. A scalar
+    // projected angle can be zero while the forearm leaves that plane.
+    const alphaHint = sol.alpha, hingeHint = sol.hinge;
+    const match = (f: Vector3) => {
+      let h = hingeHint, r = evaluate(f, h, alphaHint);
+      for (let k = 0; k < 3; k++) { h = r.hinge; r = evaluate(f, h, alphaHint); }
+      return r;
+    };
+    let direction = (priorFore ?? sol.fore).clone().normalize(), current = match(direction);
+    let best = current, bestError = direction.angleTo(current.fore);
+    for (let it = 0; it < 12 && bestError > 1e-6; it++) {
+      const e1 = new Vector3().crossVectors(direction, Math.abs(direction.y) < 0.8 ? UP : AXIS_X).normalize();
+      const e2 = new Vector3().crossVectors(direction, e1).normalize();
+      const residual = (r: typeof current, f: Vector3) => [r.fore.clone().sub(f).dot(e1), r.fore.clone().sub(f).dot(e2)];
+      const g = residual(current, direction), epsilon = 0.001;
+      const fx = direction.clone().addScaledVector(e1, epsilon).normalize(), fy = direction.clone().addScaledVector(e2, epsilon).normalize();
+      const gx = residual(match(fx), fx), gy = residual(match(fy), fy);
+      const a = (gx[0]! - g[0]!) / epsilon, b = (gy[0]! - g[0]!) / epsilon;
+      const c = (gx[1]! - g[1]!) / epsilon, d = (gy[1]! - g[1]!) / epsilon, den = a * d - b * c;
+      let dx = Math.abs(den) > 1e-8 ? (-d * g[0]! + b * g[1]!) / den : g[0]! * 0.5;
+      let dy = Math.abs(den) > 1e-8 ? (c * g[0]! - a * g[1]!) / den : g[1]! * 0.5;
+      const length = Math.hypot(dx, dy); if (length > 0.18) { dx *= 0.18 / length; dy *= 0.18 / length; }
+      const oldError = direction.angleTo(current.fore);
+      let accepted = false;
+      for (const step of [1, 0.5, 0.25, 0.125]) {
+        const f = direction.clone().addScaledVector(e1, dx * step).addScaledVector(e2, dy * step).normalize(), r = match(f), error = f.angleTo(r.fore);
+        if (error < oldError) { direction = f; current = r; accepted = true; if (error < bestError) { best = r; bestError = error; } break; }
+      }
+      if (!accepted) break;
     }
-    sol = bestR.r;
+    sol = best;
   }
-  const { C, n, alpha } = sol;
+  const { C, alpha } = sol;
   let { Rm, Rd } = sol;
 
   // Final placement and bone rotations.
-  const info = place(alpha, C, n);
+  const info = sol.finish();
   const Aw = A.clone(), Bw = B.clone(), Cw = Cr.clone(), hinge = nP.clone();
   const Wprox = G.clone().multiply(new Quaternion().setFromAxisAngle(AXIS_X, alpha));
   const Wa = segmentRot(restB.clone().sub(restA), Bw.clone().sub(Aw), hinge);

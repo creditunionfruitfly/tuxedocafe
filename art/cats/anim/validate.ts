@@ -32,7 +32,11 @@ export const ANATOMY = {
   digits: [-115, 85] as const, prox: 75, slideFrac: 0.15,
 };
 
-export interface Summary { maxSlip: number; maxSlipClip: string; maxSeam: number; clips: number; frames: number; maxTailKink: number; minSwingLift: number }
+export interface Summary {
+  maxQuaternionError: number; minMiddleDeg: number; maxMiddleDeg: number;
+  carpusDeg: [number, number]; hockDeg: [number, number]; maxTailDeg: number;
+  maxProxDeg: number; maxScapulaSlideM: number;
+  maxSlip: number; maxSlipClip: string; maxSeam: number; clips: number; frames: number; maxTailKink: number; minSwingLift: number }
 
 const AX = new Vector3(1, 0, 0);
 
@@ -55,7 +59,7 @@ export function validate(rig: Rig, catalog: Catalog, built: (Built & { seam: { r
   for (const c of catalog.clips) if (!names.has(c.name)) fail(c.name, 'missing from the library');
   if (names.size !== built.length) problems.push('duplicate clip names');
   const limits = rig.names.map(n => JOINT_MAX.find(([re]) => re.test(n))?.[1] ?? 180);
-  const summary: Summary = { maxSlip: 0, maxSlipClip: '', maxSeam: 0, clips: built.length, frames: 0, maxTailKink: 0, minSwingLift: Infinity };
+  const summary: Summary = { maxQuaternionError: 0, minMiddleDeg: Infinity, maxMiddleDeg: -Infinity, carpusDeg: [Infinity, -Infinity], hockDeg: [Infinity, -Infinity], maxTailDeg: 0, maxProxDeg: 0, maxScapulaSlideM: 0, maxSlip: 0, maxSlipClip: '', maxSeam: 0, clips: built.length, frames: 0, maxTailKink: 0, minSwingLift: Infinity };
   const I = rig.index;
   const legBones = new Set(LEGS.flatMap(id => { const d = rig.legs[id]; return [d.prox, d.a, d.b, d.c, d.paw]; }));
 
@@ -96,6 +100,7 @@ export function validate(rig: Rig, catalog: Catalog, built: (Built & { seam: { r
     const terrain = b.spec.terrain?.(b.ctx) ?? (() => 0);
     const worlds = b.frames.map((p, f) => {
       p.q.forEach((q, i) => {
+        summary.maxQuaternionError = Math.max(summary.maxQuaternionError, Math.abs(q.length() - 1));
         if (!q.toArray().every(Number.isFinite) || Math.abs(q.length() - 1) > 1e-4) fail(name, `frame ${f} ${rig.names[i]} quaternion not finite/unit`);
       });
       for (let i = 0; i < rig.names.length; i++) if (!localT(rig, p, i).toArray().every(Number.isFinite)) fail(name, `frame ${f} ${rig.names[i]} translation not finite`);
@@ -117,6 +122,7 @@ export function validate(rig: Rig, catalog: Catalog, built: (Built & { seam: { r
       p.q.forEach((q, i) => {
         if (i === 0 || i === I('pelvis') || legBones.has(i)) return;
         const a = qAngle(q) / DEG;
+        if (rig.names[i]!.startsWith('tail_')) summary.maxTailDeg = Math.max(summary.maxTailDeg, a);
         if (a > limits[i]!) fail(name, `frame ${f} ${rig.names[i]} rotates ${a.toFixed(0)}° (limit ${limits[i]}°)`);
       });
       const jaw = p.q[I('jaw')]!;
@@ -124,6 +130,10 @@ export function validate(rig: Rig, catalog: Catalog, built: (Built & { seam: { r
       for (const id of LEGS) {
         const d = rig.legs[id], g = legAngles(d, W);
         const tag = `frame ${f} ${id}`;
+        summary.minMiddleDeg = Math.min(summary.minMiddleDeg, g.mid / DEG);
+        summary.maxMiddleDeg = Math.max(summary.maxMiddleDeg, g.mid / DEG);
+        const distal = d.front ? summary.carpusDeg : summary.hockDeg;
+        distal[0] = Math.min(distal[0], g.carpus / DEG); distal[1] = Math.max(distal[1], g.carpus / DEG);
         if (g.mid < ANATOMY.midMin * DEG || g.mid > ANATOMY.midMax * DEG) fail(name, `${tag} ${rig.names[d.b]} at ${(g.mid / DEG).toFixed(0)}°`);
         if (g.mid < ANATOMY.midMax * DEG - 2 * DEG && g.bendSide !== d.bendSign) fail(name, `${tag} ${rig.names[d.b]} bends to the wrong side (${d.front ? 'elbow must point back' : 'knee / heel side inverted'})`);
         // A rig whose hind chain bends backward at the shank joint (heel there, as on the diagnostic rig) has its
@@ -132,8 +142,10 @@ export function validate(rig: Rig, catalog: Catalog, built: (Built & { seam: { r
         if (g.carpus < lo * DEG || g.carpus > hi * DEG) fail(name, `${tag} ${d.front ? 'carpus' : 'hock'} flexion ${(g.carpus / DEG).toFixed(0)}° outside ${lo}..${hi}°`);
         if (g.digits < ANATOMY.digits[0] * DEG || g.digits > ANATOMY.digits[1] * DEG) fail(name, `${tag} digits ${(g.digits / DEG).toFixed(0)}°`);
         const prox = qAngle(p.q[d.prox]!) / DEG;
+        summary.maxProxDeg = Math.max(summary.maxProxDeg, prox);
         if (prox > ANATOMY.prox) fail(name, `${tag} ${rig.names[d.prox]} rotates ${prox.toFixed(0)}°`);
         const slide = localT(rig, p, d.prox).distanceTo(rig.offset[d.prox]!);
+        summary.maxScapulaSlideM = Math.max(summary.maxScapulaSlideM, slide);
         if (slide > ANATOMY.slideFrac * rig.M.shoulderH) fail(name, `${tag} ${rig.names[d.prox]} slides ${(slide * 1000).toFixed(0)} mm`);
         if (!new Quaternion().copy(p.q[d.meta[1] ?? d.meta[0]!]!).toArray().every(Number.isFinite)) fail(name, `${tag} metapodial not finite`);
       }

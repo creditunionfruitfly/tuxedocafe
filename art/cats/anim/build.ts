@@ -51,10 +51,26 @@ export function buildClip(rig: Rig, catalog: Catalog, clip: CatalogClip, spec: C
     extras.additiveEncoding = 'absolute keys = reference pose x offset; subtract the reference frame (AnimationUtils.makeClipAdditive on the named clip at the named time, in seconds) to get the layer';
   } else {
     if (!spec.body) throw new Error(`${clip.name}: no body`);
-    bodies = times.map(t => spec.body!(t, ctx));
-    if (spec.tailSim) simulateTail(rig, bodies, ctx.dt, clip.loop, spec.tailSim);
+    const substeps = 8;
+    const dense = Array.from({ length: ctx.n * substeps + 1 }, (_, f) => spec.body!(f * ctx.dt / substeps, ctx));
+    if (spec.tailSim) simulateTail(rig, dense, ctx.dt / substeps, clip.loop, spec.tailSim);
+    bodies = dense.filter((_, f) => f % substeps === 0);
     const terrain = spec.terrain?.(ctx) ?? (() => 0);
-    frames = bodies.map(b => clearFloor(rig, b, terrain));
+    frames = [];
+    // Solve in time order so redundant limb chains keep the same pole/shoulder
+    // branch. Loops are warmed around the boundary before their final sample.
+    for (let pass = 0; pass < (clip.loop ? 12 : 1); pass++) {
+      let previous = clip.loop ? frames[Math.max(0, ctx.n * substeps - 1)] : undefined;
+      frames = dense.map(b => { const p = clearFloor(rig, b, terrain, previous); previous = p; return p; });
+      if (clip.loop) {
+        // Floor corrections belong to the periodic body too; do not let two
+        // identical boundary bodies retain different correction histories.
+        dense[dense.length - 1] = structuredClone(dense[0]!);
+        const seam = poseDistance(rig, frames[0]!, frames[frames.length - 1]!);
+        if (pass > 0 && seam.rot < 0.001 && seam.pos < 0.0001) break;
+      }
+    }
+    frames = frames.filter((_, f) => f % substeps === 0);
     bones = rig.names.map((_, i) => i).filter(i => i !== 0 || clip.rootRotationDeg !== undefined);
     translated = [...new Set(frames.flatMap(p => [...p.t.keys()]))].sort((a, b) => a - b);
   }
@@ -81,8 +97,18 @@ const round = (x: number) => Math.round(x * 10000) / 10000;
  * Solve a body, then lift any unplanted paw whose wrist / hock, metapodial, knuckle or digits would dip below the
  * floor (terrain), re-solving until clear. Planted paws are exact and never moved.
  */
-function clearFloor(rig: Rig, b: Body, terrain: (x: number, z: number) => number): Pose {
-  let pose = solve(rig, b);
+function clearFloor(rig: Rig, b: Body, terrain: (x: number, z: number) => number, prior?: Pose): Pose {
+  const liftBody = (dy: number) => {
+    b.pelvisOff[1] += dy;
+    // Lift body-relative airborne targets with the trunk correction. Leaving
+    // them behind collapses a rolling cat's wrists against its shoulders.
+    for (const id of LEGS) {
+      const L = b.legs[id], d = rig.legs[id];
+      const planted = L.rel < 0.01 && L.cw < 0.01 && Math.abs(L.toe[1] - terrain(L.toe[0], L.toe[2]) - d.padY) < 1e-4;
+      if (!planted) { L.toe[1] += dy; if (L.cw > 0) L.c[1] += dy; }
+    }
+  };
+  let pose = solve(rig, b, undefined, prior);
   // Trunk, head and ears rest on the floor rather than through it (lying, rolling): lift the body by the deficit.
   const clearance = trunkClearance(rig);
   for (let it = 0; it < 6; it++) {
@@ -90,11 +116,19 @@ function clearFloor(rig: Rig, b: Body, terrain: (x: number, z: number) => number
     let deficit = 0;
     clearance.forEach((r, i) => { if (r >= 0) { const p = W.pos[i]!; deficit = Math.max(deficit, terrain(p.x, p.z) + r - p.y); } });
     if (deficit < 1e-5) break;
-    b.pelvisOff[1] += deficit;
-    pose = solve(rig, b);
+    liftBody(deficit);
+    pose = solve(rig, b, undefined, prior);
   }
-  for (let it = 0; it < 5; it++) {
+  for (let it = 0; it < 20; it++) {
     const W = fk(rig, pose);
+    // Moving a lifted wrist can lower its elbow. Resolve that by raising the
+    // trunk, rather than raising the paw again and folding through the floor.
+    let elbowDeficit = 0;
+    for (const d of Object.values(rig.legs)) {
+      const p = W.pos[d.b]!;
+      elbowDeficit = Math.max(elbowDeficit, terrain(p.x, p.z) + 0.006 * rig.M.legScale - p.y);
+    }
+    if (elbowDeficit > 1e-5) { liftBody(elbowDeficit); pose = solve(rig, b, undefined, prior); continue; }
     let moved = false;
     for (const id of LEGS) {
       const d = rig.legs[id], L = b.legs[id];
@@ -109,7 +143,7 @@ function clearFloor(rig: Rig, b: Body, terrain: (x: number, z: number) => number
       if (deficit > 1e-5) { L.toe[1] += deficit * 1.2; if (L.cw > 0) L.c[1] += deficit * 1.2; moved = true; }
     }
     if (!moved) break;
-    pose = solve(rig, b);
+    pose = solve(rig, b, undefined, prior);
   }
   return tailFloor(rig, pose, terrain);
 }
@@ -122,6 +156,7 @@ function trunkClearance(rig: Rig): number[] {
   const hw = rig.M.halfWidth, limb = new Set<number>();
   for (const d of Object.values(rig.legs)) for (const j of [d.b, d.c, ...d.meta, d.paw, d.toe, ...d.digits]) limb.add(j);
   c = rig.names.map((n, i) => {
+    if (Object.values(rig.legs).some(d => d.b === i)) return 0.008 * rig.M.legScale;
     if (i === 0 || limb.has(i) || n.startsWith('tail_')) return -1;
     if (n === 'pelvis' || n.startsWith('spine_')) return 0.8 * hw;
     if (n.startsWith('neck_')) return 0.55 * hw;
@@ -134,8 +169,8 @@ function trunkClearance(rig: Rig): number[] {
 
 /** Tail joints rest on the floor rather than through it: the joints above a sinking one share the lift (no kinks). */
 function tailFloor(rig: Rig, pose: Pose, terrain: (x: number, z: number) => number): Pose {
-  const r = 0.009 * rig.M.legScale, shares = [0.45, 0.33, 0.22];
-  for (let pass = 0; pass < 8; pass++) {
+  const r = 0.009 * rig.M.legScale, shares = [0.28, 0.24, 0.20, 0.14, 0.09, 0.05];
+  for (let pass = 0; pass < 32; pass++) {
     const W = fk(rig, pose);
     let worst = -1, worstDeficit = 1e-5;
     for (let k = 1; k < rig.tail.length; k++) {
@@ -151,7 +186,7 @@ function tailFloor(rig: Rig, pose: Pose, terrain: (x: number, z: number) => numb
       const horiz = Math.hypot(lever.x, lever.z);
       if (horiz < 1e-4) return;
       const axisW = new Vector3(0, 1, 0).cross(lever).normalize();
-      const angle = Math.min(0.35, (share * worstDeficit * 1.1) / horiz);
+      const angle = Math.min(0.1, (share * worstDeficit * 1.1) / horiz);
       const axisL = axisW.applyQuaternion(W.rot[rig.parent[i]!]!.clone().invert());
       pose.q[i] = new Quaternion().setFromAxisAngle(axisL, -angle).multiply(pose.q[i]!);
     });
