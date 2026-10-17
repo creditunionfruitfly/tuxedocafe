@@ -51,6 +51,8 @@ export interface LegInfo {
 }
 
 const AXIS_X = new Vector3(1, 0, 0), UP = new Vector3(0, 1, 0);
+/** Scapula / hip rotation beyond this (rad) is strongly resisted. */
+const PROX_MAX = 62 * Math.PI / 180;
 const tmpM = new Matrix4();
 
 /** Rotation whose X/Y/Z columns are the frame built from a direction (e1) and a lateral axis (e2). */
@@ -155,7 +157,8 @@ export function solveLeg(rig: Rig, pose: Pose, W: World, d: LegDef, L: Leg): Leg
     const pref = L.share * theta + L.swing, foreWant = L.fore + L.foreK * theta;
     const cost = (a: number) => {
       const r = place(a, C, n);
-      return 4e4 * (r.viol / Lsum) ** 2 + L.foreW * (r.fore - foreWant) ** 2 + (a - pref) ** 2;
+      const over = Math.max(0, Math.abs(a) - PROX_MAX);
+      return 4e4 * (r.viol / Lsum) ** 2 + L.foreW * (r.fore - foreWant) ** 2 + (a - pref) ** 2 + 400 * over * over;
     };
     // Coarse scan, then golden-section refinement: continuous in the inputs, so frames vary smoothly.
     const center = warm ?? pref, span = warm === null ? 0.9 : 0.25, step = span / 45;
@@ -225,7 +228,11 @@ export function solveLeg(rig: Rig, pose: Pose, W: World, d: LegDef, L: Leg): Leg
   q[d.meta[0]!] = Wb.clone().invert().multiply(Rm);
   for (const extra of d.meta.slice(1)) q[extra] = new Quaternion();
   q[d.paw] = Rm.clone().invert().multiply(Rd);
-  q[d.toe] = new Quaternion().setFromAxisAngle(AXIS_X, L.curl);
+  // Toe bone: planted digits keep the toe pads flat on the floor while the knuckle lifts (heel-off); free digits curl.
+  const curlQ = new Quaternion().setFromAxisAngle(AXIS_X, L.curl);
+  const toeFlatW = segmentRot(rd, dirPitch(d.digRestPitch), lat).multiply(curlQ);
+  const toeW = toeFlatW.slerp(Rd.clone().multiply(curlQ), Math.min(1, L.rel));
+  q[d.toe] = Rd.clone().invert().multiply(toeW);
   q[d.digits[0]] = new Quaternion().setFromAxisAngle(UP, -d.side * L.spread);
   q[d.digits[1]] = new Quaternion().setFromAxisAngle(UP, d.side * L.spread);
 

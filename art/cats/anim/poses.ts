@@ -1,26 +1,19 @@
 // Pose library and authoring helpers. Every pose is computed from the rig's
-// measured proportions (shoulder height, trunk, limb chains) so it adapts to
-// corrected rest poses; nothing here is a hard-coded joint position.
+// measured proportions (shoulder height, girdles, limb chains, stance
+// pitches) so it adapts to corrected rest poses; nothing here is a
+// hard-coded joint position. Offsets scale with M.legScale (0.30 m adult).
 import { Vector3 } from 'three';
-import { type Body, type Leg, cloneBody, mixBody, partFrame, restBody, toWorld } from './body.ts';
-import { type V3, DEG, TAU, clamp, curve, lerp, smooth, smoother } from './math.ts';
+import { type Body, type Leg, cloneBody, mixBody, partFrame, restBody, solveTrunk, toWorld } from './body.ts';
+import { type V3, clamp, curve, lerp, smooth, smoother } from './math.ts';
 import { LEGS, type LegId, type Rig, fk } from './rig.ts';
-import { solveTrunk } from './body.ts';
 
-export const STANCE_WIDTH = 0.8;
+export const STANCE_WIDTH = 0.85;
+const DEG = Math.PI / 180;
 
-/** Metatarsus / metacarpus angle below horizontal in the rest pose (rad). */
-export function metaAngle(rig: Rig, id: LegId) {
-  const d = rig.legs[id], m = rig.restWorld[d.distal[d.distal.length - 1]!]!.clone().sub(rig.restWorld[d.c]!);
-  return Math.atan2(-m.y, Math.hypot(m.x, m.z));
-}
-/** Heel angle that lays the metatarsus flat on the floor (sitting, loafing). */
-export const flatHeel = (rig: Rig, id: LegId) => -metaAngle(rig, id) + 0.06;
-
-/** Trunk placement: drops (m) of pelvis and chest, plus spine arch (+ humps the back), surge (m forward). */
+/** Trunk placement: drops (m) of pelvis and chest, spine arch (+ humps the back), surge (m forward). */
 export function setTrunk(rig: Rig, b: Body, o: { pelvisDrop?: number; chestDrop?: number; arch?: number; surge?: number; yaw?: number; roll?: number; lateral?: number; pitch?: number }) {
   const M = rig.M, ph = o.pelvisDrop ?? 0, ch = o.chestDrop ?? 0, arch = o.arch ?? 0;
-  const pitch = Math.asin(clamp((ph - ch) / M.trunk, -1, 1)) + arch * 0.5 + (o.pitch ?? 0);
+  const pitch = Math.asin(clamp((ph - ch) / M.girdle, -1, 1)) + arch * 0.5 + (o.pitch ?? 0);
   b.pelvisOff = [o.lateral ?? 0, -ph, o.surge ?? 0];
   b.pelvis = [pitch, o.yaw ?? 0, o.roll ?? 0];
   const w = [0.24, 0.24, 0.2, 0.18, 0.14];
@@ -46,16 +39,33 @@ export function tailShape(o: { base?: number; lift?: number; tip?: number; side?
   });
 }
 
-export const standTail = () => tailShape({ base: -0.45, lift: -0.55, tip: 0.55 });
+/** Relaxed standing tail: base angled down, a soft S with the tip lifting. */
+export const standTail = () => tailShape({ base: -0.42, lift: -0.45, tip: 0.6 });
+
+const worldOf = (rig: Rig, b: Body, bone: string) => fk(rig, solveTrunk(rig, b)).pos[rig.index(bone)]!;
+
+/** Standing toe placement: forepaw under a vertical forearm, hind paw just ahead of the hip joint. */
+export function standToe(rig: Rig, id: LegId): V3 {
+  const d = rig.legs[id], A = rig.restWorld[d.a]!;
+  const z = d.front
+    ? A.z - d.L1 * Math.sin(25 * DEG) + d.Lm * Math.cos(d.stanceMeta) + d.Ld * Math.cos(d.digRestPitch)
+    : A.z + 0.1 * (d.L1 + d.L2);
+  return [d.restToe.x * STANCE_WIDTH, d.padY, z];
+}
+
+/** Planted stance leg with the rig's digitigrade pitches. */
+export function plantLeg(rig: Rig, L: Leg, id: LegId, toe: V3) {
+  const d = rig.legs[id];
+  L.toe = [...toe]; L.meta = d.stanceMeta; L.dig = d.digRestPitch; L.rel = 0; L.cw = 0;
+  L.out = d.front ? 0.05 : 0.08;
+  if (d.front) { L.fore = 0.03; L.foreK = 0.5; L.foreW = 1.2; L.share = 0.38; }
+  return L;
+}
 
 export function standBody(rig: Rig): Body {
   const b = restBody(rig), M = rig.M;
-  for (const id of LEGS) {
-    const d = rig.legs[id], L = b.legs[id];
-    L.toe = [d.restToe.x * STANCE_WIDTH, d.padY, d.restToe.z];
-    L.heel = d.stanceHeel; L.out = 0.06; L.flex = 0.96;
-  }
-  setTrunk(rig, b, { pelvisDrop: 0.035 * M.shoulderH, chestDrop: 0.05 * M.shoulderH });
+  for (const id of LEGS) plantLeg(rig, b.legs[id], id, standToe(rig, id));
+  setTrunk(rig, b, { pelvisDrop: 0.02 * M.shoulderH, chestDrop: 0.03 * M.shoulderH });
   b.gaze = [-0.06, 0, 0, 0.9];
   b.earL = [0.05, 0.02, 0.06]; b.earR = [0.05, 0.02, 0.06];
   b.tail = standTail();
@@ -72,29 +82,43 @@ export function solve1d(f: (x: number) => number, target: number, lo: number, hi
   return (lo + hi) / 2;
 }
 
-const worldOf = (rig: Rig, b: Body, bone: string) => fk(rig, solveTrunk(rig, b)).pos[rig.index(bone)]!;
+/** Metapodial lying on the floor (hock or wrist resting down): pitch that puts the joint a skin's depth up. */
+export const flatMeta = (rig: Rig, id: LegId) => {
+  const d = rig.legs[id];
+  const pawY = d.padY + d.Ld * Math.sin(d.digRestPitch);
+  return Math.asin(clamp((0.012 * rig.M.legScale + 0.004 - pawY) / d.Lm, -0.3, 0.6));
+};
 
-/** Upright sit: rump on the floor behind the planted hind paws, metatarsi flat, front legs vertical. */
+/** Folded hind leg of a sitting / crouching cat: metatarsus on the floor, knee forward and a little out. */
+export function foldHind(rig: Rig, L: Leg, id: LegId) {
+  L.meta = flatMeta(rig, id); L.dig = rig.legs[id].digRestPitch; L.rel = 0;
+  L.abduct = 0.22; L.out = 0.14; L.share = 0.2; L.foreW = 0.3;
+  return L;
+}
+
+/** Upright sit: rump on the floor just behind the hocks, metatarsi flat, front legs vertical. */
 export function sitBody(rig: Rig, from?: Body): Body {
   const M = rig.M, b = from ? cloneBody(from) : standBody(rig), k = M.legScale;
-  const hindZ = b.legs.LH.toe[2];
-  const pelvisY = 0.27 * M.shoulderH, pelvisZ = hindZ - 0.055 * k;
+  for (const id of ['LH', 'RH'] as const) {
+    const d = rig.legs[id], L = b.legs[id];
+    foldHind(rig, L, id);
+    // Paws a metatarsus length ahead of the hock, which sits under the hip.
+    L.toe = [d.restToe.x * STANCE_WIDTH * 1.05, d.padY, rig.restWorld[d.a]!.z + d.Lm * 0.95 + d.Ld * 0.8 + 0.01 * k];
+  }
   const rest = rig.offset[rig.index('pelvis')]!;
-  b.pelvisOff = [0, pelvisY - rest.y, pelvisZ - rest.z];
-  b.spine = [[-0.16, 0, 0], [-0.12, 0, 0], [-0.08, 0, 0], [-0.03, 0, 0], [0.02, 0, 0]];
-  // Tilt the pelvis until the shoulder joint sits at the height of a straight, vertical foreleg.
+  const hipZ = rig.restWorld[rig.legs.LH.a]!.z;
+  const pelvisY = Math.max(0.24 * M.shoulderH, M.halfWidth * 0.9);
+  b.pelvisOff = [0, pelvisY - rest.y, (hipZ - 0.02 * k) - rig.restWorld[rig.legs.LH.a]!.z];
+  b.spine = [[-0.12, 0, 0], [-0.1, 0, 0], [-0.07, 0, 0], [-0.03, 0, 0], [0.02, 0, 0]];
+  // Tilt the pelvis until the shoulder joint sits at the height of a near-straight, vertical foreleg.
   const d = rig.legs.LF;
-  const legH = rig.restWorld[d.a]!.y - 0.015 * M.shoulderH;
-  const shoulderAt = (p: number) => { b.pelvis = [p, 0, 0]; return worldOf(rig, b, 'front_L_upper').y; };
+  const legH = d.padY + d.Ld * Math.sin(d.digRestPitch) + d.Lm * Math.sin(d.stanceMeta) + 0.97 * (d.L1 + d.L2);
+  const shoulderAt = (p: number) => { b.pelvis = [p, 0, 0]; return worldOf(rig, b, rig.names[d.a]!).y; };
   b.pelvis = [solve1d(shoulderAt, legH, 0.2, 1.45), 0, 0];
   for (const id of ['LF', 'RF'] as const) {
-    const A = worldOf(rig, b, rig.names[rig.legs[id].a]!), dd = rig.legs[id];
-    b.legs[id].toe = [dd.restToe.x * STANCE_WIDTH * 0.92, dd.padY, A.z + (dd.restToe.z - rig.restWorld[dd.a]!.z) * 0.85];
-    b.legs[id].flex = 1; b.legs[id].share = 0.3;
-  }
-  for (const id of ['LH', 'RH'] as const) {
-    const L = b.legs[id];
-    L.heel = flatHeel(rig, id); L.flex = 0.6; L.comfort = 0.3; L.share = 0.2; L.abduct = 0.25; L.out = 0.12;
+    const dd = rig.legs[id], A = worldOf(rig, b, rig.names[dd.a]!), L = b.legs[id];
+    plantLeg(rig, L, id, [dd.restToe.x * STANCE_WIDTH * 0.9, dd.padY, A.z + dd.Lm * Math.cos(dd.stanceMeta) + dd.Ld * Math.cos(dd.digRestPitch) - 0.005 * k]);
+    L.fore = 0; L.foreK = 0.3; L.share = 0.3;
   }
   b.gaze = [-0.04, 0, 0, 1];
   b.earL = [0.05, 0.02, 0.05]; b.earR = [0.05, 0.02, 0.05];
@@ -107,43 +131,45 @@ export function wrapCurve(rig: Rig, b: Body, side: number, reach = 1): V3[] {
   const M = rig.M, k = M.legScale;
   const base = worldOf(rig, b, 'tail_01');
   const fz = (b.legs.LF.toe[2] + b.legs.RF.toe[2]) / 2, fx = side * Math.abs(b.legs.LF.toe[0]);
-  const y = 0.022 * k, r = 0.07 * k;
-  // Down off the rump, a wide arc round the haunch, then forward along the floor to the paws.
+  const y = 0.02 * k, r = 0.07 * k, hx = side * (Math.abs(b.legs.LH.toe[0]) + 0.03 * k);
+  // Down off the rump, round the haunch, then forward along the floor to the paws.
   return [
-    [base.x, lerp(base.y, y, 0.5), base.z - 0.045 * k],
-    [side * 0.015 * k, y + 0.01 * k, base.z - 0.085 * k],
-    [side * 0.065 * k, y, base.z - 0.1 * k],
-    [side * (0.065 * k + r * 0.7), y, base.z - 0.065 * k],
-    [side * (0.065 * k + r), y, base.z],
-    [side * (0.065 * k + r * 0.95), y, lerp(base.z, fz, 0.45)],
-    [fx + side * 0.055 * k, y, lerp(base.z, fz, 0.85 * reach)],
-    [fx * 0.55, y, fz + 0.035 * k * reach],
+    [base.x, lerp(base.y, y, 0.55), base.z - 0.04 * k],
+    [side * 0.012 * k, y + 0.006 * k, base.z - 0.08 * k],
+    [hx * 0.8, y, base.z - 0.095 * k],
+    [hx + side * r * 0.55, y, base.z - 0.055 * k],
+    [hx + side * r * 0.75, y, base.z + 0.01 * k],
+    [hx + side * r * 0.65, y, lerp(base.z, fz, 0.5)],
+    [fx + side * 0.045 * k, y, lerp(base.z, fz, 0.88 * reach)],
+    [fx * 0.4, y, fz + 0.03 * k * reach],
   ];
 }
 
-/** Bread-loaf: chest on folded forelegs, hind legs tucked, compact. */
+/** Bread-loaf: chest resting on folded forelegs (paws tucked), hind legs folded under, compact and round. */
 export function loafBody(rig: Rig): Body {
   const M = rig.M, b = standBody(rig), k = M.legScale;
   const rest = rig.offset[rig.index('pelvis')]!;
-  const pelvisY = M.depth * 0.95, chestY = M.depth * 1.12;
-  b.pelvisOff = [0, pelvisY - rest.y, 0.01 * k];
-  b.pelvis = [Math.asin(clamp((chestY - pelvisY) / M.trunk, -1, 1)) + 0.06, 0, 0];
-  b.spine = [[0.02, 0, 0], [-0.02, 0, 0], [-0.04, 0, 0], [-0.03, 0, 0], [0, 0, 0]];
-  const chest = worldOf(rig, b, 'spine_04');
+  const pelvisY = M.depth * 1.0, chestY = M.depth * 1.08;
+  b.pelvisOff = [0, pelvisY - rest.y, 0.015 * k];
+  b.pelvis = [Math.asin(clamp((chestY - pelvisY) / M.girdle, -1, 1)) + 0.05, 0, 0];
+  b.spine = [[0.04, 0, 0], [-0.01, 0, 0], [-0.04, 0, 0], [-0.04, 0, 0], [0, 0, 0]];
+  const chest = partFrame(rig, b, 'spine_04');
   for (const id of ['LF', 'RF'] as const) {
     const d = rig.legs[id], L = b.legs[id];
-    L.c = [d.side * 0.035 * k, 0.03 * k, chest.z + 0.06 * k]; L.cw = 1;
-    L.heel = 1.95; L.toeP = 2.35; L.curl = 0.3; L.share = 0.2; L.flex = 0.6; L.comfort = 0.2;
-    L.toe = [L.c[0], d.padY, L.c[2] - 0.04 * k];
+    // Wrist on the floor under the chest, forearm along the floor, paw folded back under it.
+    L.c = [d.side * 0.028 * k, 0.014 * k, chest.pos.z + 0.035 * k]; L.cw = 1;
+    L.rel = 1; L.carpus = 150 * DEG; L.digits = 0.5; L.curl = 0.25;
+    L.share = 0.25; L.fore = 1.35; L.foreK = 0; L.foreW = 2; L.abduct = 0.35;
   }
   for (const id of ['LH', 'RH'] as const) {
     const d = rig.legs[id], L = b.legs[id];
-    L.toe = [d.side * 0.05 * k, d.padY + 0.005 * k, b.pelvisOff[2] + rest.z + 0.17 * k];
-    L.heel = flatHeel(rig, id); L.toeP = 0.1; L.flex = 0.55; L.comfort = 0.3; L.share = 0.25; L.abduct = 0.35; L.out = 0.2;
+    foldHind(rig, L, id);
+    L.toe = [d.side * (Math.abs(d.restToe.x) * 0.9 + 0.012 * k), d.padY, rig.restWorld[d.a]!.z + b.pelvisOff[2] + d.Lm * 1.05 + d.Ld];
+    L.abduct = 0.35; L.out = 0.2;
   }
   b.gaze = [-0.08, 0, 0, 1];
   b.neck = [[-0.12, 0, 0], [0.05, 0, 0]];
-  b.earL = [0.15, 0.08, 0]; b.earR = [0.15, 0.08, 0];
+  b.earL = [0.12, 0.08, 0]; b.earR = [0.12, 0.08, 0];
   b.tailCurve = { pts: hugCurve(rig, b, -1), w: 1 };
   return b;
 }
@@ -151,15 +177,15 @@ export function loafBody(rig: Rig): Body {
 /** Tail laid tight along one side of a lying body. */
 export function hugCurve(rig: Rig, b: Body, side: number): V3[] {
   const k = rig.M.legScale, base = worldOf(rig, b, 'tail_01'), chest = worldOf(rig, b, 'spine_04');
-  const y = 0.022 * k, x = side * (rig.M.halfWidth + 0.03 * k);
+  const y = 0.02 * k, x = side * (rig.M.halfWidth + 0.025 * k);
   return [
-    [base.x, lerp(base.y, y, 0.45), base.z - 0.05 * k],
-    [side * 0.012 * k, lerp(base.y, y, 0.85), base.z - 0.095 * k],
-    [x * 0.55, y, base.z - 0.11 * k],
-    [x * 0.95, y, base.z - 0.07 * k],
-    [x * 1.1, y, base.z + 0.01 * k],
-    [x * 1.1, y, lerp(base.z, chest.z, 0.45)],
-    [x * 1.0, y, lerp(base.z, chest.z, 0.85)],
+    [base.x, lerp(base.y, y, 0.45), base.z - 0.045 * k],
+    [side * 0.012 * k, lerp(base.y, y, 0.85), base.z - 0.09 * k],
+    [x * 0.55, y, base.z - 0.105 * k],
+    [x * 0.95, y, base.z - 0.065 * k],
+    [x * 1.08, y, base.z + 0.01 * k],
+    [x * 1.08, y, lerp(base.z, chest.z, 0.45)],
+    [x * 0.98, y, lerp(base.z, chest.z, 0.85)],
   ];
 }
 
@@ -170,31 +196,36 @@ export function bodyPoint(rig: Rig, b: Body, bone: string, local: V3, floor = 0.
   return p;
 }
 
-/** Lying on the right side (roll + lifts the left side), legs relaxed. */
+/** Free (off-ground) leg: joint angles relative to the limb, toe aimed at a body-relative point. */
+export function freeLeg(L: Leg, toe: V3, carpus: number, digits: number, o: Partial<Leg> = {}) {
+  L.toe = [...toe]; L.rel = 1; L.cw = 0; L.carpus = carpus; L.digits = digits;
+  Object.assign(L, o);
+  return L;
+}
+
+/** Lying on the right side (roll + lifts the left side), legs relaxed; stretch 0..1 lengthens everything. */
 export function lieSideBody(rig: Rig, roll = 80 * DEG, stretch = 0): Body {
   const M = rig.M, b = standBody(rig), k = M.legScale;
   const rest = rig.offset[rig.index('pelvis')]!;
-  b.pelvisOff = [-M.halfWidth * 0.3, M.halfWidth * 1.05 + 0.01 * k - rest.y, 0];
+  b.pelvisOff = [-M.halfWidth * 0.35, M.halfWidth * 1.05 + 0.008 * k - rest.y, 0];
   b.pelvis = [0.02, 0, roll];
-  b.spine = [[0, 0.02, 0.02], [0.01, 0.02, 0], [0.02, 0.01, 0], [0.02, 0, -0.02], [0.02, 0, -0.03]];
+  b.spine = [[0.01, 0.02, 0.02], [0.02 - 0.03 * stretch, 0.02, 0], [0.02 - 0.03 * stretch, 0.01, 0], [0.02, 0, -0.02], [0.02, 0, -0.03]];
   b.gaze = [0, 0, 0, 0];
-  b.neck = [[0.05, -0.1, -0.25], [0.05, -0.1, -0.3]];
-  b.head = [0.05, -0.05, -0.35];
+  b.neck = [[0.06 + 0.1 * stretch, -0.1, -0.22], [0.05, -0.1, -0.28]];
+  b.head = [0.05, -0.05, -0.32];
   const front = (id: LegId, fwd: number, down: number, out: number) => {
     const L = b.legs[id], d = rig.legs[id];
-    L.toe = bodyPoint(rig, b, 'spine_04', [d.side * out, -down, fwd]);
-    L.heel = 0.9 - stretch * 0.8; L.toeP = 1.1 - stretch * 1.0; L.curl = 0.25; L.share = 0.3; L.flex = 0.85 + stretch * 0.1; L.comfort = 0.5;
-    L.yaw = 0; L.roll = 0;
+    freeLeg(L, bodyPoint(rig, b, 'spine_04', [d.side * out, -down, fwd]), (0.7 - 0.6 * stretch), 0.2 - 0.3 * stretch,
+      { share: 0.3, fore: 0.6 + 0.6 * stretch, foreK: 0, foreW: 0.6, curl: 0.2, yaw: 0, out: 0 });
   };
   const hind = (id: LegId, fwd: number, down: number, out: number) => {
     const L = b.legs[id], d = rig.legs[id];
-    L.toe = bodyPoint(rig, b, 'pelvis', [d.side * out, -down, fwd]);
-    L.heel = 0.5 - stretch * 0.6; L.toeP = 0.7 - stretch * 0.7; L.curl = 0.15; L.share = 0.35; L.flex = 0.8 + stretch * 0.15; L.comfort = 0.5;
+    freeLeg(L, bodyPoint(rig, b, 'pelvis', [d.side * out, -down, fwd]), (0.9 - 0.7 * stretch), 0.1 - 0.2 * stretch,
+      { share: 0.3, foreW: 0.3, curl: 0.12, yaw: 0, out: 0 });
   };
-  front('RF', 0.1 + stretch * 0.12, 0.22, 0.02); front('LF', 0.16 + stretch * 0.1, 0.2, 0.09);
-  hind('RH', 0.05 - stretch * 0.15, 0.22, 0.03); hind('LH', 0.09 - stretch * 0.1, 0.19, 0.11);
-  for (const id of LEGS) { const L = b.legs[id]; L.yaw = 0; L.out = 0; }
-  b.earL = [0.25, 0.1, -0.05]; b.earR = [0.25, 0.1, -0.05];
+  front('RF', 0.1 + stretch * 0.12, 0.2, 0.02); front('LF', 0.15 + stretch * 0.1, 0.18, 0.09);
+  hind('RH', 0.05 - stretch * 0.14, 0.2, 0.03); hind('LH', 0.09 - stretch * 0.1, 0.17, 0.11);
+  b.earL = [0.22, 0.1, -0.05]; b.earR = [0.22, 0.1, -0.05];
   b.tailCurve = null;
   b.tail = tailShape({ base: -0.25, lift: 0.1, side: 0.35, tipSide: 0.4 });
   return b;
@@ -214,12 +245,13 @@ export function curlBody(rig: Rig): Body {
   for (const id of ['LF', 'RF'] as const) {
     const L = b.legs[id], d = rig.legs[id];
     const c = toWorld(chest, [d.side * 0.03 * k, -M.depth * 0.95, 0.05 * k]);
-    L.c = [c[0], Math.max(c[1], 0.03 * k), c[2]]; L.cw = 1; L.heel = 2.0; L.toeP = 2.4;
+    L.c = [c[0], Math.max(c[1], 0.014 * k), c[2]]; L.cw = 1; L.rel = 1; L.carpus = 140 * DEG; L.digits = 0.5;
   }
   for (const id of ['LH', 'RH'] as const) {
     const L = b.legs[id], d = rig.legs[id];
     const t = toWorld(pelv, [d.side * 0.05 * k, -M.depth * 0.95, 0.16 * k]);
     L.toe = [t[0], Math.max(t[1], d.padY), t[2]];
+    L.rel = 1; L.carpus = 120 * DEG; L.digits = 0.3;
   }
   b.earL = [0.3, 0.2, -0.05]; b.earR = [0.3, 0.2, -0.05];
   b.tailCurve = null;
@@ -249,21 +281,28 @@ export function keyedLag(t: number, keys: readonly Key[], lag: { head?: number; 
   return b;
 }
 
-/** Paw step from one floor point to another between t0 and t1: lift sharply, travel low, set down softly. */
+/** Paw path from one floor point to another between t0 and t1: lift sharply, travel low, set down softly. */
 export function step(t: number, t0: number, t1: number, from: V3, to: V3, lift: number): { pos: V3; s: number; air: boolean } {
   const s = clamp((t - t0) / (t1 - t0), 0, 1);
-  const prog = curve([[0, 0], [0.18, 0.06], [0.5, 0.5], [0.82, 0.95], [1, 1]])(s);
-  const h = curve([[0, 0], [0.15, 0.55], [0.4, 1], [0.75, 0.55], [0.92, 0.12], [1, 0]])(s);
+  const prog = curve([[0, 0], [0.16, 0.05], [0.5, 0.52], [0.84, 0.96], [1, 1]])(s);
+  const h = curve([[0, 0], [0.14, 0.55], [0.38, 1], [0.72, 0.6], [0.92, 0.12], [1, 0]])(s);
   return { pos: [lerp(from[0], to[0], prog), lerp(from[1], to[1], prog) + lift * h, lerp(from[2], to[2], prog)], s, air: s > 0 && s < 1 };
 }
 
-/** Apply a step to a leg with matching heel / digit flexion. */
-export function stepLeg(L: Leg, t: number, t0: number, t1: number, from: V3, to: V3, lift: number, flex: number, h0: number) {
+/**
+ * A stepping paw: planted at both ends, free in the air with the carpus / hock folding (peak flexion `flex`, rad) and
+ * the digits curling, so a lifted forepaw folds back instead of dangling stiff.
+ */
+export function stepLeg(rig: Rig, L: Leg, id: LegId, t: number, t0: number, t1: number, from: V3, to: V3, lift: number, flex = 1.2) {
   const st = step(t, t0, t1, from, to, lift);
   L.toe = st.pos;
   if (st.air) {
-    const f = Math.sin(Math.PI * st.s) ** 0.8;
-    L.heel = h0 + flex * f; L.toeP = (flex + 0.25) * f; L.curl = 0.15 * f;
+    const d = rig.legs[id];
+    L.rel = smooth(st.s / 0.15) * (1 - smooth((st.s - 0.8) / 0.18));
+    L.carpus = flex * d.flexScale * Math.sin(Math.PI * Math.min(1, st.s * 1.15)) ** 0.8 + (d.front ? -0.25 : 0.9) * (1 - Math.sin(Math.PI * st.s));
+    L.digits = d.dRest * (1 - Math.sin(Math.PI * st.s)) + 0.15 * Math.sin(Math.PI * st.s);
+    L.curl = 0.2 * Math.sin(Math.PI * st.s);
+    L.meta = d.stanceMeta + (d.front ? 0.5 : 0.3) * Math.sin(Math.PI * st.s);
   }
   return st;
 }
@@ -312,5 +351,4 @@ export function chew(t: number, period: number, n: number, open = 0.35) {
   return p < open ? smooth(p / open) : 1 - smooth((p - open) / (1 - open));
 }
 
-export const tau = TAU;
 export const vec3 = (v: V3) => new Vector3(...v);

@@ -85,6 +85,7 @@ export async function writeAnimations(rig: Rig, clips: Built[], path: string) {
     }
     if (clip.rootTranslation) add(0, 'translation', clip.frames.map(p => p.root.toArray()));
     if (clip.pelvisTranslation) add(pelvis, 'translation', clip.frames.map(p => p.pelvis.toArray()));
+    for (const bone of clip.translated) add(bone, 'translation', clip.frames.map(p => (p.t.get(bone) ?? rig.offset[bone]!).toArray()));
   }
   await MeshoptEncoder.ready;
   if (process.env.ART_UNCOMPRESSED !== '1') {

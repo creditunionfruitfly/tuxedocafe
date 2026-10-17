@@ -71,8 +71,8 @@ export interface ClipSpec {
 export interface Built {
   spec: ClipSpec; clip: CatalogClip; ctx: Ctx;
   frames: Pose[];
-  /** Bones that get rotation tracks. */
-  bones: number[];
+  /** Bones that get rotation tracks, and bones (besides root and pelvis) that get translation tracks (scapula slide). */
+  bones: number[]; translated: number[];
   rootTranslation: boolean; rootRotation: boolean; pelvisTranslation: boolean;
   extras: Record<string, unknown>;
   stance: Stance;
