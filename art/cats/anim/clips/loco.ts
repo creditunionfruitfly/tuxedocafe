@@ -72,7 +72,7 @@ export const walkStyle = (ctx: Ctx): GaitStyle => ({
   headPitch: -0.07, headBob: 0.25, skewF: 0.85, skewH: 1, foreK: 0.5, ears: [0, 0, 0.04], tail: walkTail, seed: ctx.seed,
 });
 
-const trotStyle = (ctx: Ctx): GaitStyle => ({
+export const trotStyle = (ctx: Ctx): GaitStyle => ({
   ...walkStyle(ctx), speed: ctx.clip.authoredSpeed ?? 1.6, contacts: contacts(ctx), duty: ctx.clip.dutyFactor ?? 0.45,
   dropF: 0.04, dropH: 0.03, liftF: 0.16, liftH: 0.13, carpusF: 1.95, carpusH: 1.75, curlF: 0.25, curlH: 0.15,
   metaF: [-6 * DEG, -2 * DEG, 50 * DEG], metaH: [-6 * DEG, -2 * DEG, 30 * DEG], heelOffF: 0.5, heelOffH: 0.62, matchTd: 0.45,
@@ -83,21 +83,23 @@ const trotStyle = (ctx: Ctx): GaitStyle => ({
 });
 
 // Gallop: spine flexion is the engine of the stride; gathered (+) around hind touchdown, extended (-) around front touchdown.
-const gallopFlex = loopCurve([[0, 0.5], [0.12, 0.3], [0.28, -0.12], [0.42, -0.42], [0.52, -0.3], [0.66, 0.06], [0.8, 0.42], [0.92, 0.56]]);
+const gallopFlex = loopCurve([[0, 0.82], [0.12, 0.5], [0.28, -0.15], [0.42, -0.5], [0.52, -0.38], [0.66, 0.12], [0.8, 0.7], [0.92, 0.95]]);
 const gallopPitch = loopCurve([[0, 0.03], [0.2, 0.1], [0.38, 0.05], [0.52, -0.06], [0.7, -0.09], [0.88, -0.02]]);
-const gallopRise = loopCurve([[0, -0.01], [0.2, -0.03], [0.42, 0.045], [0.6, -0.02], [0.76, -0.035], [0.93, 0.035]]);
-const gallopSurge = loopCurve([[0, 0.07], [0.25, 0.02], [0.45, -0.07], [0.65, -0.03], [0.85, 0.05]]);
-const gallopStyle = (ctx: Ctx): GaitStyle => ({
+const gallopRise = loopCurve([[0, -0.01], [0.2, -0.03], [0.4, 0.02], [0.55, -0.03], [0.76, -0.04], [0.93, 0.03]]);
+const gallopSurge = loopCurve([[0, 0.06], [0.25, 0.03], [0.45, -0.02], [0.65, -0.03], [0.85, 0.04]]);
+export const gallopStyle = (ctx: Ctx): GaitStyle => ({
   ...walkStyle(ctx), speed: ctx.clip.authoredSpeed ?? 3.5, contacts: contacts(ctx), duty: ctx.clip.dutyFactor ?? 0.3,
   dropF: 0.06, dropH: 0.05, liftF: 0.22, liftH: 0.19, carpusF: 2.1, carpusH: 1.85, curlF: 0.3, curlH: 0.2,
   metaF: [-10 * DEG, -6 * DEG, 52 * DEG], metaH: [-10 * DEG, -6 * DEG, 34 * DEG], heelOffF: 0.4, heelOffH: 0.5, matchTd: 0.35,
   register: -0.06, frontBias: 0.05, hindBias: 0.05, width: 0.75, bob: 0.0, roll: 0.025, yaw: 0.025, blade: 0.04, glide: 0.08,
   headPitch: -0.1, headBob: 0.0, skewF: 0.75, skewH: 0.8, ears: [0.55, 0.3, -0.05],
-  trunk: p => { const f = gallopFlex(p); return [f * 0.45 + gallopPitch(p), f, gallopRise(p), gallopSurge(p)]; },
-  tail: (i, phase) => [i === 0 ? -0.08 : i < 6 ? -0.02 : 0.012, 0.025 * Math.sin(2 * Math.PI * (phase - i * 0.05)) * (i / 11), 0],
+  trunk: p => { const f = gallopFlex(p); return [f * 0.5 + gallopPitch(p), f, gallopRise(p), gallopSurge(p)]; },
+  // The tail streams out low: its base counters the pelvis rocking so it does not whip into the floor.
+  tail: (i, phase) => [i === 0 ? -0.08 + 0.6 * (gallopFlex(phase) * 0.5 + gallopPitch(phase)) : i < 6 ? -0.02 : 0.012,
+    0.025 * Math.sin(2 * Math.PI * (phase - i * 0.05)) * (i / 11), 0],
 });
 
-const walkAwayStyle = (ctx: Ctx): GaitStyle => ({
+export const walkAwayStyle = (ctx: Ctx): GaitStyle => ({
   ...walkStyle(ctx), speed: ctx.clip.authoredSpeed ?? 0.85, contacts: contacts(ctx), duty: ctx.clip.dutyFactor ?? 0.6,
   dropF: 0.02, dropH: 0.015, liftF: 0.1, liftH: 0.08, carpusF: 1.4, carpusH: 1.3, matchTd: 0.6,
   bob: 0.016, roll: 0.025, yaw: 0.04, blade: 0.025, headPitch: -0.03, headBob: 0.08, skewF: 0.9, ears: [0.75, 0.35, -0.08],

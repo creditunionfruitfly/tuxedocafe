@@ -53,6 +53,8 @@ export interface LegInfo {
 const AXIS_X = new Vector3(1, 0, 0), UP = new Vector3(0, 1, 0);
 /** Scapula / hip rotation beyond this (rad) is strongly resisted. */
 const PROX_MAX = 62 * Math.PI / 180;
+/** Tightest elbow / knee fold the solver allows (rad). */
+const MID_MIN = 24 * Math.PI / 180;
 const tmpM = new Matrix4();
 
 /** Rotation whose X/Y/Z columns are the frame built from a direction (e1) and a lateral axis (e2). */
@@ -76,7 +78,7 @@ export function defaultLeg(d: LegDef): Leg {
     toe: [t.x, t.y, t.z], c: [0, 0, 0], cw: 0,
     meta: d.stanceMeta, dig: d.digRestPitch, rel: 0,
     carpus: 0, digits: d.dRest, curl: 0, spread: 0, yaw: 0, out: 0, roll: 0,
-    share: 0.35, swing: 0, fore: d.foreRest, foreK: 0.5, foreW: 1, abduct: 0, slide: 0, glide: 0,
+    share: 0.35, swing: 0, fore: d.foreRest, foreK: 0.5, foreW: d.front ? 1 : 0.3, abduct: 0, slide: 0, glide: 0,
   };
 }
 
@@ -91,7 +93,7 @@ export function solveLeg(rig: Rig, pose: Pose, W: World, d: LegDef, L: Leg): Leg
   const G = W.rot[d.girdle]!, P0 = W.pos[d.prox]!;
   const nG = AXIS_X.clone().applyQuaternion(G), upG = UP.clone().applyQuaternion(G), fwdG = new Vector3(0, 0, 1).applyQuaternion(G);
   const offA = rig.offset[d.a]!;
-  const Lsum = d.L1 + d.L2, hi = 0.996 * Lsum, lo = Math.abs(d.L1 - d.L2) + 0.12 * Lsum;
+  const Lsum = d.L1 + d.L2, hi = 0.996 * Lsum, lo = Math.sqrt(d.L1 * d.L1 + d.L2 * d.L2 - 2 * d.L1 * d.L2 * Math.cos(MID_MIN));
   const cs = d.front ? 1 : -1;
 
   // Paw frame for planted mode.
@@ -158,7 +160,7 @@ export function solveLeg(rig: Rig, pose: Pose, W: World, d: LegDef, L: Leg): Leg
     const cost = (a: number) => {
       const r = place(a, C, n);
       const over = Math.max(0, Math.abs(a) - PROX_MAX);
-      return 4e4 * (r.viol / Lsum) ** 2 + L.foreW * (r.fore - foreWant) ** 2 + (a - pref) ** 2 + 400 * over * over;
+      return 4e4 * (r.viol / Lsum) ** 2 + L.foreW * (r.fore - foreWant) ** 2 + (a - pref) ** 2 + 3000 * over * over;
     };
     // Coarse scan, then golden-section refinement: continuous in the inputs, so frames vary smoothly.
     const center = warm ?? pref, span = warm === null ? 0.9 : 0.25, step = span / 45;

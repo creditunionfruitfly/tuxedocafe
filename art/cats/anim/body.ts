@@ -192,7 +192,19 @@ function followCurve(rig: Rig, W: World, pts: V3[]): Quaternion[] {
 }
 
 function densify(pts: V3[]): Vector3[] {
-  const P = pts.map(p => new Vector3(...p)), out: Vector3[] = [];
+  // Chaikin corner cutting (keeping the end points) so authored control polygons give a smooth tail.
+  let P = pts.map(p => new Vector3(...p));
+  for (let it = 0; it < 2; it++) {
+    const Q: Vector3[] = [P[0]!];
+    for (let i = 0; i < P.length - 1; i++) {
+      const a = P[i]!, b = P[i + 1]!;
+      if (i > 0) Q.push(a.clone().lerp(b, 0.25));
+      if (i < P.length - 2) Q.push(a.clone().lerp(b, 0.75));
+    }
+    Q.push(P[P.length - 1]!);
+    P = Q;
+  }
+  const out: Vector3[] = [];
   for (let i = 0; i < P.length - 1; i++) {
     const p0 = P[Math.max(0, i - 1)]!, p1 = P[i]!, p2 = P[i + 1]!, p3 = P[Math.min(P.length - 1, i + 2)]!;
     for (let s = 0; s < 12; s++) {

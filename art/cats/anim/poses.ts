@@ -4,7 +4,7 @@
 // hard-coded joint position. Offsets scale with M.legScale (0.30 m adult).
 import { Vector3 } from 'three';
 import { type Body, type Leg, cloneBody, mixBody, partFrame, restBody, solveTrunk, toWorld } from './body.ts';
-import { type V3, clamp, curve, lerp, smooth, smoother } from './math.ts';
+import { type V3, clamp, curve, lerp, smooth, smoother, wrapPi } from './math.ts';
 import { LEGS, type LegId, type Rig, fk } from './rig.ts';
 
 export const STANCE_WIDTH = 0.85;
@@ -96,29 +96,40 @@ export function foldHind(rig: Rig, L: Leg, id: LegId) {
   return L;
 }
 
-/** Upright sit: rump on the floor just behind the hocks, metatarsi flat, front legs vertical. */
+/** Upright sit: hind paws stay where they stood, hocks fold to the floor, rump down behind them, forelegs vertical. */
 export function sitBody(rig: Rig, from?: Body): Body {
   const M = rig.M, b = from ? cloneBody(from) : standBody(rig), k = M.legScale;
+  const dH = rig.legs.LH;
   for (const id of ['LH', 'RH'] as const) {
-    const d = rig.legs[id], L = b.legs[id];
+    const L = b.legs[id];
     foldHind(rig, L, id);
-    // Paws a metatarsus length ahead of the hock, which sits under the hip.
-    L.toe = [d.restToe.x * STANCE_WIDTH * 1.05, d.padY, rig.restWorld[d.a]!.z + d.Lm * 0.95 + d.Ld * 0.8 + 0.01 * k];
+    L.toe = [L.toe[0] * 1.05, rig.legs[id].padY, L.toe[2]];
   }
-  const rest = rig.offset[rig.index('pelvis')]!;
-  const hipZ = rig.restWorld[rig.legs.LH.a]!.z;
-  const pelvisY = Math.max(0.24 * M.shoulderH, M.halfWidth * 0.9);
-  b.pelvisOff = [0, pelvisY - rest.y, (hipZ - 0.02 * k) - rig.restWorld[rig.legs.LH.a]!.z];
-  b.spine = [[-0.12, 0, 0], [-0.1, 0, 0], [-0.07, 0, 0], [-0.03, 0, 0], [0.02, 0, 0]];
-  // Tilt the pelvis until the shoulder joint sits at the height of a near-straight, vertical foreleg.
+  // Hock on the floor a metatarsus behind the toes; the hip joint sits just behind and above it.
+  const meta = flatMeta(rig, 'LH');
+  const hockZ = b.legs.LH.toe[2] - dH.Ld * Math.cos(dH.digRestPitch) - dH.Lm * Math.cos(meta);
+  const hockY = dH.padY + dH.Ld * Math.sin(dH.digRestPitch) + dH.Lm * Math.sin(meta);
+  // The lumbar spine curls up out of the tilted pelvis so the chest stands tall over the haunches.
+  b.spine = [[0.24, 0, 0], [0.2, 0, 0], [0.1, 0, 0], [0.0, 0, 0], [-0.08, 0, 0]];
   const d = rig.legs.LF;
-  const legH = d.padY + d.Ld * Math.sin(d.digRestPitch) + d.Lm * Math.sin(d.stanceMeta) + 0.97 * (d.L1 + d.L2);
-  const shoulderAt = (p: number) => { b.pelvis = [p, 0, 0]; return worldOf(rig, b, rig.names[d.a]!).y; };
-  b.pelvis = [solve1d(shoulderAt, legH, 0.2, 1.45), 0, 0];
+  const legH = d.padY + d.Ld * Math.sin(d.digRestPitch) + d.Lm * Math.sin(d.stanceMeta) + 0.975 * (d.L1 + d.L2);
+  // Sitting tall: the shoulder blades ride up.
+  for (const id of ['LF', 'RF'] as const) b.legs[id].slide = 0.025 * M.shoulderH;
+  // Hip joint over and just behind the hock, the knee folded tight (about 28 degrees): the haunch sits low.
+  const fold = Math.sqrt(dH.L1 * dH.L1 + dH.L2 * dH.L2 - 2 * dH.L1 * dH.L2 * Math.cos(25 * DEG));
+  const hipWant = { y: hockY + 0.84 * fold, z: hockZ - 0.54 * fold };
+  b.pelvisOff = [0, 0, 0];
+  for (let it = 0; it < 6; it++) {
+    const shoulderAt = (p: number) => { b.pelvis = [p, 0, 0]; return worldOf(rig, b, rig.names[d.a]!).y; };
+    b.pelvis = [solve1d(shoulderAt, legH, -0.2, 1.45), 0, 0];
+    const hip = worldOf(rig, b, rig.names[dH.a]!);
+    b.pelvisOff = [0, b.pelvisOff[1] + hipWant.y - hip.y, b.pelvisOff[2] + hipWant.z - hip.z];
+  }
+  void k;
   for (const id of ['LF', 'RF'] as const) {
     const dd = rig.legs[id], A = worldOf(rig, b, rig.names[dd.a]!), L = b.legs[id];
-    plantLeg(rig, L, id, [dd.restToe.x * STANCE_WIDTH * 0.9, dd.padY, A.z + dd.Lm * Math.cos(dd.stanceMeta) + dd.Ld * Math.cos(dd.digRestPitch) - 0.005 * k]);
-    L.fore = 0; L.foreK = 0.3; L.share = 0.3;
+    plantLeg(rig, L, id, [dd.restToe.x * STANCE_WIDTH * 0.9, dd.padY, A.z - 0.25 * dd.L1 + dd.Lm * Math.cos(dd.stanceMeta) + dd.Ld * Math.cos(dd.digRestPitch)]);
+    L.fore = 0.02; L.foreK = 0.3; L.share = 0.3;
   }
   b.gaze = [-0.04, 0, 0, 1];
   b.earL = [0.05, 0.02, 0.05]; b.earR = [0.05, 0.02, 0.05];
@@ -159,13 +170,13 @@ export function loafBody(rig: Rig): Body {
     // Wrist on the floor under the chest, forearm along the floor, paw folded back under it.
     L.c = [d.side * 0.028 * k, 0.014 * k, chest.pos.z + 0.035 * k]; L.cw = 1;
     L.rel = 1; L.carpus = 150 * DEG; L.digits = 0.5; L.curl = 0.25;
-    L.share = 0.25; L.fore = 1.35; L.foreK = 0; L.foreW = 2; L.abduct = 0.35;
+    L.share = 0.25; L.fore = 1.35; L.foreK = 0; L.foreW = 2; L.abduct = 0.12;
   }
   for (const id of ['LH', 'RH'] as const) {
     const d = rig.legs[id], L = b.legs[id];
     foldHind(rig, L, id);
-    L.toe = [d.side * (Math.abs(d.restToe.x) * 0.9 + 0.012 * k), d.padY, rig.restWorld[d.a]!.z + b.pelvisOff[2] + d.Lm * 1.05 + d.Ld];
-    L.abduct = 0.35; L.out = 0.2;
+    L.toe = [d.side * (Math.abs(d.restToe.x) * 0.9 + 0.006 * k), d.padY, rig.restWorld[d.a]!.z + b.pelvisOff[2] + d.Lm * 1.05 + d.Ld];
+    L.abduct = 0.2; L.out = 0.12;
   }
   b.gaze = [-0.08, 0, 0, 1];
   b.neck = [[-0.12, 0, 0], [0.05, 0, 0]];
@@ -179,13 +190,13 @@ export function hugCurve(rig: Rig, b: Body, side: number): V3[] {
   const k = rig.M.legScale, base = worldOf(rig, b, 'tail_01'), chest = worldOf(rig, b, 'spine_04');
   const y = 0.02 * k, x = side * (rig.M.halfWidth + 0.025 * k);
   return [
-    [base.x, lerp(base.y, y, 0.45), base.z - 0.045 * k],
-    [side * 0.012 * k, lerp(base.y, y, 0.85), base.z - 0.09 * k],
-    [x * 0.55, y, base.z - 0.105 * k],
-    [x * 0.95, y, base.z - 0.065 * k],
-    [x * 1.08, y, base.z + 0.01 * k],
-    [x * 1.08, y, lerp(base.z, chest.z, 0.45)],
-    [x * 0.98, y, lerp(base.z, chest.z, 0.85)],
+    [base.x, lerp(base.y, y, 0.5), base.z - 0.035 * k],
+    [side * 0.015 * k, lerp(base.y, y, 0.9), base.z - 0.065 * k],
+    [x * 0.65, y, base.z - 0.07 * k],
+    [x * 1.0, y, base.z - 0.03 * k],
+    [x * 1.06, y, base.z + 0.03 * k],
+    [x * 1.06, y, lerp(base.z, chest.z, 0.5)],
+    [x * 0.98, y, lerp(base.z, chest.z, 0.9)],
   ];
 }
 
@@ -231,30 +242,45 @@ export function lieSideBody(rig: Rig, roll = 80 * DEG, stretch = 0): Body {
   return b;
 }
 
-/** Tight sleeping ring: nearly sternal, spine bent round to bring the nose to the hind paws, tail over the nose. */
+/** Tight sleeping ring: half on the side, spine bent round to bring the nose to the hind paws, tail wrapped over the nose. */
 export function curlBody(rig: Rig): Body {
   const M = rig.M, b = loafBody(rig), k = M.legScale;
   const rest = rig.offset[rig.index('pelvis')]!;
-  b.pelvisOff = [0.02 * k, M.depth * 0.62 - rest.y, 0.02 * k];
-  b.pelvis = [0.04, 0.35, 0.42];
-  b.spine = [[-0.05, 0.2, 0.03], [-0.06, 0.24, 0.03], [-0.06, 0.26, 0.02], [-0.07, 0.26, 0], [-0.06, 0.24, -0.02]];
-  b.neck = [[-0.32, 0.6, -0.18], [-0.38, 0.55, -0.15]];
-  b.head = [-0.2, 0.42, -0.25];
+  b.pelvisOff = [0.03 * k, M.depth * 0.72 - rest.y, 0.03 * k];
+  b.pelvis = [0.02, 0.5, 0.22];
+  b.spine = [[-0.03, 0.5, 0.02], [-0.04, 0.52, 0.02], [-0.04, 0.52, 0.0], [-0.05, 0.5, 0], [-0.04, 0.46, -0.02]];
+  b.neck = [[-0.22, 0.8, -0.12], [-0.28, 0.62, -0.1]];
+  b.head = [-0.22, 0.48, -0.25];
   b.gaze = [0, 0, 0, 0];
   const chest = partFrame(rig, b, 'spine_04'), pelv = partFrame(rig, b, 'pelvis');
   for (const id of ['LF', 'RF'] as const) {
     const L = b.legs[id], d = rig.legs[id];
-    const c = toWorld(chest, [d.side * 0.03 * k, -M.depth * 0.95, 0.05 * k]);
-    L.c = [c[0], Math.max(c[1], 0.014 * k), c[2]]; L.cw = 1; L.rel = 1; L.carpus = 140 * DEG; L.digits = 0.5;
+    const c = toWorld(chest, [d.side * 0.025 * k, -M.depth * 0.8, 0.06 * k]);
+    L.c = [c[0], Math.max(c[1], 0.014 * k), c[2]]; L.cw = 1; L.rel = 1; L.carpus = 140 * DEG; L.digits = 0.5; L.abduct = 0.1;
   }
   for (const id of ['LH', 'RH'] as const) {
     const L = b.legs[id], d = rig.legs[id];
-    const t = toWorld(pelv, [d.side * 0.05 * k, -M.depth * 0.95, 0.16 * k]);
-    L.toe = [t[0], Math.max(t[1], d.padY), t[2]];
-    L.rel = 1; L.carpus = 120 * DEG; L.digits = 0.3;
+    const t = toWorld(pelv, [d.side * 0.045 * k, -M.depth * 0.9, 0.15 * k]);
+    L.toe = [t[0], Math.max(t[1], d.padY + 0.004 * k), t[2]];
+    L.rel = 1; L.carpus = 115 * DEG; L.digits = 0.3; L.abduct = 0.2;
   }
   b.earL = [0.3, 0.2, -0.05]; b.earR = [0.3, 0.2, -0.05];
-  b.tailCurve = null;
+  // Tail: off the rump, round the outside of the ring past the hind paws, ending over the nose.
+  const W = fk(rig, solveTrunk(rig, b));
+  const P = (n: string) => W.pos[rig.index(n)]!;
+  const base = W.pos[rig.tail[0]!]!, head = P('head');
+  const nose = head.clone().add(new Vector3(0, 0, 0.05 * k).applyQuaternion(W.rot[rig.index('head')]!));
+  const C = [P('pelvis'), P('spine_02'), P('spine_04'), P('neck_02'), head].reduce((a, v) => a.add(v), new Vector3()).multiplyScalar(0.2);
+  const ang = (v: Vector3) => Math.atan2(v.x - C.x, v.z - C.z);
+  const a0 = ang(base), a1 = ang(nose);
+  const sweep = wrapPi(a1 - a0);
+  const r0 = Math.hypot(base.x - C.x, base.z - C.z) + 0.03 * k, r1 = Math.hypot(nose.x - C.x, nose.z - C.z) + 0.01 * k;
+  const y = 0.02 * k, pts: V3[] = [[base.x, lerp(base.y, y, 0.4), base.z]];
+  for (let i = 1; i <= 5; i++) {
+    const u = i / 5, a = a0 + sweep * u, r = lerp(r0, r1, u) + 0.025 * k * Math.sin(Math.PI * u);
+    pts.push([C.x + r * Math.sin(a), y + (i === 5 ? 0.012 * k : 0), C.z + r * Math.cos(a)]);
+  }
+  b.tailCurve = { w: 1, pts };
   return b;
 }
 

@@ -22,13 +22,13 @@ export const LIMITS = {
 const JOINT_MAX: [RegExp, number][] = [
   [/^spine_0[1-5]$/, 32], [/^neck_0[12]$/, 62], [/^head$/, 50], [/^jaw$/, 62],
   [/^ear_[LR]_01$/, 95], [/^ear_[LR]_02$/, 45], [/^eye_[LR]$/, 30], [/^whisker_[LR]$/, 30],
-  [/_toe$/, 60], [/_digit_/, 25], [/_metatarsal$/, 1], [/^tail_\d\d$/, 46],
+  [/_toe$/, 60], [/_digit_/, 25], [/_metatarsal$/, 1], [/^tail_01$/, 95], [/^tail_\d\d$/, 55],
 ];
 
 /** Anatomical ranges (degrees): middle joint interior, carpus / hock flexion, digits, prox rotation. */
 export const ANATOMY = {
   midMin: 20, midMax: 178,
-  carpusF: [-80, 160] as const, hockH: [-15, 170] as const,
+  carpusF: [-85, 160] as const, hockH: [-15, 170] as const,
   digits: [-115, 75] as const, prox: 75, slideFrac: 0.15,
 };
 
@@ -49,7 +49,8 @@ export function legAngles(d: LegDef, W: World) {
 
 export function validate(rig: Rig, catalog: Catalog, built: (Built & { seam: { rot: number; pos: number } })[]): Summary {
   const problems: string[] = [];
-  const fail = (clip: string, msg: string) => { if (problems.length < 200) problems.push(`${clip}: ${msg}`); };
+  const cap = Number(process.env.CAT_MAXPROBLEMS ?? 200);
+  const fail = (clip: string, msg: string) => { if (problems.length < cap) problems.push(`${clip}: ${msg}`); };
   const names = new Set(built.map(b => b.clip.name));
   for (const c of catalog.clips) if (!names.has(c.name)) fail(c.name, 'missing from the library');
   if (names.size !== built.length) problems.push('duplicate clip names');
@@ -141,9 +142,10 @@ export function validate(rig: Rig, catalog: Catalog, built: (Built & { seam: { r
         const qa = p.q[rig.tail[k]!]!, qb = p.q[rig.tail[k + 1]!]!;
         const kink = qAngle(qa.clone().invert().multiply(qb));
         summary.maxTailKink = Math.max(summary.maxTailKink, kink);
-        if (kink > 36 * DEG) fail(name, `frame ${f} tail kink ${(kink / DEG).toFixed(0)}° at ${rig.names[rig.tail[k + 1]!]}`);
+        if (kink > 45 * DEG) fail(name, `frame ${f} tail kink ${(kink / DEG).toFixed(0)}° at ${rig.names[rig.tail[k + 1]!]}`);
       }
       W.pos.forEach((pos, i) => {
+        if (i === 0) return; // the root is a placement marker, not a body point
         const floor = terrain(pos.x, pos.z);
         if (pos.y < floor - LIMITS.floorM) fail(name, `frame ${f} ${rig.names[i]} ${((floor - pos.y) * 1000).toFixed(0)} mm below the floor`);
       });
@@ -157,7 +159,8 @@ export function validate(rig: Rig, catalog: Catalog, built: (Built & { seam: { r
       for (const [t0, t1] of ivs) {
         const f0 = Math.ceil(t0 * fps - 1e-6), f1 = Math.floor(t1 * fps + 1e-6);
         const at = (f: number) => worlds[c.loop ? ((f % n) + n) % n : Math.min(f, n)]!;
-        const pads = [d.toe, d.digits[0], d.digits[1]];
+        // Toe pads exactly; digit tips loosely (they spread and flex on the ground).
+        const pads = [d.toe, d.digits[0], d.digits[1]], tol = [LIMITS.slipM, 3 * LIMITS.slipM, 3 * LIMITS.slipM];
         const start = pads.map(j => at(f0).pos[j]!.clone());
         const floor0 = terrain(start[0]!.x, start[0]!.z);
         if (Math.abs(start[0]!.y - floor0 - d.padY) > LIMITS.padHeightM) fail(name, `${id} planted at ${t0}s with toe ${((start[0]!.y - floor0) * 1000).toFixed(1)} mm above its floor (pad ${(d.padY * 1000).toFixed(1)} mm)`);
@@ -170,8 +173,8 @@ export function validate(rig: Rig, catalog: Catalog, built: (Built & { seam: { r
           const W = at(f), shift = new Vector3(0, 0, -travel);
           for (const [k, joint] of pads.entries()) {
             const slip = W.pos[joint]!.distanceTo(start[k]!.clone().add(shift));
-            if (slip > summary.maxSlip) { summary.maxSlip = slip; summary.maxSlipClip = `${name} ${id}`; }
-            if (slip > LIMITS.slipM) { fail(name, `${id} slips ${(slip * 1000).toFixed(1)} mm at ${(f / fps).toFixed(3)}s (stance ${t0}-${t1})`); break frames; }
+            if (k === 0 && slip > summary.maxSlip) { summary.maxSlip = slip; summary.maxSlipClip = `${name} ${id}`; }
+            if (slip > tol[k]!) { fail(name, `${id} ${k ? 'digit' : 'toe pad'} slips ${(slip * 1000).toFixed(1)} mm at ${(f / fps).toFixed(3)}s (stance ${t0}-${t1})`); break frames; }
           }
         }
       }

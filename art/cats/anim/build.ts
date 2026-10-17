@@ -1,6 +1,7 @@
 // Turns clip specs into sampled poses at the catalog frame rate.
 import { type Body, solve } from './body.ts';
 import { type Built, type Catalog, type CatalogClip, type ClipSpec, type Ctx, expandBones } from './catalog.ts';
+import { Quaternion, Vector3 } from 'three';
 import { qAngle } from './math.ts';
 import { LEGS, type Pose, type Rig, clonePose, fk, localT } from './rig.ts';
 import { simulateTail } from './tail.ts';
@@ -99,6 +100,33 @@ function clearFloor(rig: Rig, b: Body, terrain: (x: number, z: number) => number
     }
     if (!moved) break;
     pose = solve(rig, b);
+  }
+  return tailFloor(rig, pose, terrain);
+}
+
+/** Tail joints rest on the floor rather than through it: the joints above a sinking one share the lift (no kinks). */
+function tailFloor(rig: Rig, pose: Pose, terrain: (x: number, z: number) => number): Pose {
+  const r = 0.009 * rig.M.legScale, shares = [0.45, 0.33, 0.22];
+  for (let pass = 0; pass < 8; pass++) {
+    const W = fk(rig, pose);
+    let worst = -1, worstDeficit = 1e-5;
+    for (let k = 1; k < rig.tail.length; k++) {
+      const p = W.pos[rig.tail[k]!]!, deficit = terrain(p.x, p.z) + r - p.y;
+      if (deficit > worstDeficit) { worstDeficit = deficit; worst = k; break; }
+    }
+    if (worst < 0) break;
+    const target = W.pos[rig.tail[worst]!]!;
+    shares.forEach((share, m) => {
+      const j = worst - 1 - m;
+      if (j < 0) return;
+      const i = rig.tail[j]!, lever = target.clone().sub(W.pos[i]!);
+      const horiz = Math.hypot(lever.x, lever.z);
+      if (horiz < 1e-4) return;
+      const axisW = new Vector3(0, 1, 0).cross(lever).normalize();
+      const angle = Math.min(0.35, (share * worstDeficit * 1.1) / horiz);
+      const axisL = axisW.applyQuaternion(W.rot[rig.parent[i]!]!.clone().invert());
+      pose.q[i] = new Quaternion().setFromAxisAngle(axisL, -angle).multiply(pose.q[i]!);
+    });
   }
   return pose;
 }

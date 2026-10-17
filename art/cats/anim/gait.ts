@@ -119,7 +119,7 @@ export function baseLeg(rig: Rig, id: LegId, x: number, z: number, style: GaitSt
   return {
     toe: [x, d.padY, z], c: [0, 0, 0], cw: 0, meta: d.stanceMeta + (d.front ? style.metaF[1] : style.metaH[1]), dig: d.digRestPitch, rel: 0,
     carpus: 0, digits: d.dRest, curl: 0, spread: 0, yaw: 0, out: d.front ? 0.05 : 0.08, roll: 0,
-    share: 0.38, swing: 0, fore: d.foreRest, foreW: 1.2, foreK: style.foreK,
+    share: 0.38, swing: 0, fore: d.foreRest, foreW: d.front ? 1.2 : 0.3, foreK: style.foreK,
     abduct: 0, slide: 0, glide: 0,
   };
 }
