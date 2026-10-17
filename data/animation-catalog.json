@@ -143,6 +143,7 @@
       "layer": "action",
       "loop": true,
       "durationS": 6.0,
+      "morphs": ["squint_L", "squint_R"],
       "notes": "Bread-loaf: legs tucked under the chest, paws hidden, body compact and rounded, eyes half closed; slow breathing; tail tight to the body."
     },
     {
@@ -164,16 +165,18 @@
       "layer": "action",
       "loop": true,
       "durationS": 8.0,
+      "morphs": ["blink_L", "blink_R"],
       "events": [{"t": 0.0, "name": "sfx:cat.sleep"}],
-      "notes": "Curled in a tight ring, nose tucked to the tail, tail covering the nose and paws; very slow breaths (about 20–30 per minute), occasional ear twitch during dreams."
+      "notes": "Curled in a tight ring, nose tucked to the tail, tail covering the nose and paws; eyelids held fully closed, very slow breaths (about 20–30 per minute), occasional ear twitch during dreams."
     },
     {
       "name": "cat.rest.wake_stretch",
       "layer": "action",
       "loop": false,
       "durationS": 3.0,
+      "morphs": ["blink_L", "blink_R"],
       "events": [{"t": 0.8, "name": "stretch_front"}, {"t": 2.0, "name": "stretch_hind"}],
-      "notes": "Rises, then the full downward-dog stretch: front legs reach far forward, chest low, hind end high, toes spread; then the hind-leg stretch, one leg extended back. Ends standing."
+      "notes": "Eyelids start closed and ease open as the cat rises, then the full downward-dog stretch: front legs reach far forward, chest low, hind end high, toes spread; then the hind-leg stretch, one leg extended back. Ends standing."
     },
     {
       "name": "cat.rest.yawn",
