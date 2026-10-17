@@ -3,7 +3,7 @@ import type { ClipSpec, Ctx } from '../catalog.ts';
 import { type Body, type Leg, partFrame, toWorld } from '../body.ts';
 import { type V3, bump, clamp, curve, lerp, loopNoise, pulse, smooth } from '../math.ts';
 import { type LegId, type Rig } from '../rig.ts';
-import { addBreath, chew, earFlick, flatMeta, foldHind, headPoint, plantLeg, setTrunk, stanceFromAir, step, stepLeg, tailShape } from '../poses.ts';
+import { addBreath, chew, earFlick, flatMeta, headPoint, plantLeg, setTrunk, stanceFromAir, step, stepLeg, tailShape } from '../poses.ts';
 import { allPlanted, idlePose, once, sitPose } from './rest.ts';
 
 const DEG = Math.PI / 180;

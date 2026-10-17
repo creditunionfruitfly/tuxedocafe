@@ -181,7 +181,7 @@ function featherBat(t: number, ctx: Ctx): Body {
 
 /** Feather leap (no root motion): crouch, spring straight up with both forepaws reaching, land back. */
 function featherLeap(t: number, ctx: Ctx): Body {
-  const M = ctx.M, k = M.legScale, sH = M.shoulderH, rig = ctx.rig, stand = idlePose(ctx);
+  const M = ctx.M, sH = M.shoulderH, rig = ctx.rig, stand = idlePose(ctx);
   const crouch = cloneBody(stand); setTrunk(rig, crouch, { pelvisDrop: 0.26 * sH, chestDrop: 0.16 * sH });
   for (const id of ['LH', 'RH'] as const) crouch.legs[id].meta = lerp(rig.legs[id].stanceMeta, flatMeta(rig, id), 0.4);
   crouch.gaze = [0.5, 0, 0, 1];
