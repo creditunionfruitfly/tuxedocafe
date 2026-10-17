@@ -8,6 +8,8 @@ export interface GameEvents {
   'chore:progress': { progress: number };
   'chore:done': { id: string };
   'player': { x: number; z: number };
+  /** A clip event crossed on the fixed step; names starting `sfx:` are audio event ids (M2-5 plays them). */
+  'cat:anim-event': { cat: string; clip: string; name: string };
 }
 export class EventBus<Events extends object = GameEvents> {
   #listeners = new Map<keyof Events, Set<(value: never) => void>>();
