@@ -326,9 +326,10 @@ export function buildCat(rig: Rig): Anatomy {
   // Nostrils (comma-shaped, blind) and the philtrum groove.
   for (const side of [1, -1] as const) {
     const n = (dx: number, dy: number, dz: number) => H(dx * side, dy, dz);
-    skull.push(S(roundCone(`nostril${side}`, n(.0015, -.0018, .0828), n(.0045, .0004, .0812), .0010, .0007), .0006));
+    // Comma-shaped nostril: an oval pit on the lower lateral nose leather, its long axis rising outward.
+    skull.push(S(ellipsoid(`nostril${side}`, n(.0034, -.0011, .0820), [.0021, .0011, .0026], basisFrom([side * .45, -.25, 1], [side * .75, 1, 0])), .0005));
   }
-  skull.push(S(capsule('philtrum', H(0, -.0052, .0818), H(0, -.0130, .0790), .0007), .0007));
+  skull.push(S(capsule('philtrum', H(0, -.0056, .0814), H(0, -.0132, .0788), .00075), .0006));
 
   // Mouth: closed lips separated by a thin slit that opens into a closed oral cavity.
   const mouth = makeMouth(head, J('jaw'));
@@ -378,32 +379,36 @@ function makeEar(side: Side, base01: Vec3, mid02: Vec3): EarFrame {
   return { side, base, up, front, lateral, height: .050, width: .043 };
 }
 
-function earShell(ear: EarFrame): Shape {
+/** Ear shell local coordinates: across (s), height (h), depth toward the opening (n), the cupped
+ * mid-surface depth, its slope, the shell thickness and the signed distance to the outline (negative inside). */
+export function earLocal(ear: EarFrame, x: number, y: number, z: number) {
   const { base, up, front, lateral, height, width } = ear;
-  const reach = height + .012;
-  const box = { min: sub(base, [reach, reach, reach]), max: add(base, [reach, reach, reach]) };
   const tipR = .0045;
-  const outerSign = dot(lateral, [ear.side, 0, 0]) > 0 ? 1 : -1;
+  const dx = x - base[0], dy = y - base[1], dz = z - base[2];
+  const s = dx * lateral[0] + dy * lateral[1] + dz * lateral[2], h = dx * up[0] + dy * up[1] + dz * up[2], n = dx * front[0] + dy * front[1] + dz * front[2];
+  const t = clamp(h / height, 0, 1);
+  // Cupped mid-surface: the edges curl forward around a recessed concha, flattening toward the tip.
+  const c = mix(24, 6, Math.pow(t, .8));
+  const recess = .0032 * (1 - t) * (1 - t);
+  const mid = c * s * s - recess, slope = 2 * c * s;
+  const thick = mix(.0029, .0018, Math.pow(t, .75));
+  // Outline: rounded isosceles triangle in (s, h); the outer edge bows out, the inner edge is straighter.
+  const hw = width / 2, ht = height - tipR, qy = clamp(h / ht, 0, 1);
+  const outer = s * (dot(lateral, [ear.side, 0, 0]) > 0 ? 1 : -1) > 0;
+  const edge = (hw - tipR) * (1 - qy) + tipR + (outer ? .0028 : .0010) * Math.sin(Math.PI * qy);
+  const sideDist = (Math.abs(s) - edge) * Math.cos(Math.atan2(hw, ht));
+  const tip = Math.hypot(s, Math.max(h - ht, 0)) - tipR;
+  const outline = h > ht ? tip : Math.max(sideDist, -h - .005);
+  return { s, h, n, t, mid, slope, thick, outline };
+}
+
+function earShell(ear: EarFrame): Shape {
+  const reach = ear.height + .012;
+  const box = { min: sub(ear.base, [reach, reach, reach]), max: add(ear.base, [reach, reach, reach]) };
   return custom(`ear${ear.side}`, box, (x, y, z) => {
-    const dx = x - base[0], dy = y - base[1], dz = z - base[2];
-    const s = dx * lateral[0] + dy * lateral[1] + dz * lateral[2], h = dx * up[0] + dy * up[1] + dz * up[2], n = dx * front[0] + dy * front[1] + dz * front[2];
-    const t = clamp(h / height, 0, 1);
-    // Cupped mid-surface: the edges curl forward around a recessed concha, flattening toward the tip.
-    const c = mix(24, 6, Math.pow(t, .8));
-    const recess = .0032 * (1 - t) * (1 - t);
-    const mid = c * s * s - recess;
-    const slope = 2 * c * s;
-    const thick = mix(.0026, .0014, Math.pow(t, .75));
-    const shell = Math.abs(n - mid) / Math.sqrt(1 + slope * slope) - thick / 2;
-    // Outline: rounded isosceles triangle in (s, h); the outer edge bows out, the inner edge is straighter.
-    const hw = width / 2, ht = height - tipR;
-    const qy = clamp(h / ht, 0, 1);
-    const outer = s * outerSign > 0;
-    const edge = (hw - tipR) * (1 - qy) + tipR + (outer ? .0028 : .0010) * Math.sin(Math.PI * qy);
-    const sideDist = (Math.abs(s) - edge) * Math.cos(Math.atan2(hw, ht));
-    const tip = Math.hypot(s, Math.max(h - ht, 0)) - tipR;
-    const outline = h > ht ? tip : Math.max(sideDist, -h - .010);
-    return smax(shell, outline, thick * .8);
+    const e = earLocal(ear, x, y, z);
+    const shell = Math.abs(e.n - e.mid) / Math.sqrt(1 + e.slope * e.slope) - e.thick / 2;
+    return smax(shell, e.outline, e.thick * .45);
   });
 }
 
@@ -448,10 +453,10 @@ function paw4(name: string, side: Side, front: boolean, upper: Vec3, paw: Vec3, 
     const bean = ellipsoid(`${name}.bean${i}`, add(c, [dir[0] * .0006, -.0045, dir[2] * .0006]), [.0038 * ws, .0026, .0044], basisFrom(dir, [0, 1, 0]));
     pads.push(bean);
     children.push(U(bean, .0010));
-    const tip = add(c, add(scale(dir, .0062), [0, .0004, 0]));
+    const tip = add(c, add(scale(dir, .0066), [0, .0006, 0]));
     toeFrames.push({ center: c, dir, tip });
     // Claw pocket: the sheath opening at the dorsal tip of the toe, where the retracted claw rests.
-    children.push(Sb(capsule(`${name}.sheath${i}`, add(c, add(scale(dir, .0018), [0, .0022, 0])), add(c, add(scale(dir, .0068), [0, .0010, 0])), .00105), .0006));
+    children.push(Sb(ellipsoid(`${name}.sheath${i}`, add(c, add(scale(dir, .0064), [0, .0006, 0])), [.00115, .0010, .0024], basisFrom(normalize(add(dir, [0, .12, 0])), [0, 1, 0])), .0005));
   });
   // Trilobed metacarpal/metatarsal pad under the foot.
   const padC = at(paw, -.0010, 0, .0040);
@@ -472,7 +477,7 @@ function paw4(name: string, side: Side, front: boolean, upper: Vec3, paw: Vec3, 
     const dewC = add(lerp3(upper, paw, .52), [-.0098 * side, .001, .001]);
     const dewDir = normalize([-.35 * side, -.55, 1]);
     children.push(U(ellipsoid(`${name}.dewclaw`, dewC, [.0032, .0044, .0040], basisFrom(dewDir, [0, 1, 0])), .0022));
-    children.push(Sb(capsule(`${name}.dewSheath`, add(dewC, scale(dewDir, .0012)), add(dewC, scale(dewDir, .0042)), .0010), .0006));
+    children.push(Sb(ellipsoid(`${name}.dewSheath`, add(dewC, scale(dewDir, .0036)), [.0012, .0010, .0022], basisFrom(dewDir, [0, 1, 0])), .0005));
     dewclaw = { center: dewC, dir: dewDir, tip: add(dewC, scale(dewDir, .0040)) };
   }
   labels[`${name}.pads`] = group(`${name}.pads`, pads.map(p => U(p, .001)));
