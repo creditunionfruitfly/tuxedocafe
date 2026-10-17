@@ -1,0 +1,6 @@
+source: art/cats/master/guides.ts
+tool: original procedural TypeScript; glTF Transform; meshoptimizer
+date: '2026-10-17'
+license: original
+author_role: artist
+notes: Exact geometry, UV and chart metadata for the exported shared atlas.

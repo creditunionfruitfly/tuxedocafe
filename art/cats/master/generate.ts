@@ -78,8 +78,8 @@ function fairFace(mesh:Mesh,cat:ReturnType<typeof buildCat>){
  for(let v=0;v<mask.length;v++){
   const d=Math.hypot((P[v*3]!-C[0])/.013,(P[v*3+1]!-C[1])/.011,(P[v*3+2]!-C[2])/.014);
   mask[v]=Math.max(0,1-d*d)**2;
-  const lip=Math.hypot(P[v*3]!/.021,(P[v*3+1]!-H[1]+.022)/.015,(P[v*3+2]!-H[2]-.062)/.022);
-  mask[v]=Math.max(mask[v]!,.65*Math.max(0,1-lip*lip)**2);
+  const lip=Math.hypot(P[v*3]!/.022,(P[v*3+1]!-H[1]+.018)/.014,(P[v*3+2]!-H[2]-.067)/.023);
+  mask[v]=Math.max(mask[v]!,.80*Math.max(0,1-lip*lip)**2);
   for(const e of cat.eyes){const a=eyeAngles(e,P[v*3]!,P[v*3+1]!,P[v*3+2]!);
    if(a.front>0)mask[v]=Math.max(mask[v]!, .8*ramp(.0122,.016,a.r)*(1-ramp(.027,.032,a.r)));
   }

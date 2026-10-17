@@ -10,10 +10,9 @@ cat_inner_ear and cat_mouth. LOD1/2 batch them into one body primitive, preservi
 the neutral surface tints in COLOR_0 and integer IDs in `_SURFACE` (0–4). LOD0
 also carries COLOR_0: its neutral nose, pads and inner-ear colours are blended
 over several millimetres at the vertices, while separate material partitions
-retain their roughness and surface identity. The nose/lid geometry is locally
+retain their roughness and surface identity. The nose, lid and lip geometry is locally
 faired after atlas generation, without moving atlas UVs or changing chart IDs.
-The
-runtime changes resident nose/pad tints using that ID rather than recolouring
+The runtime changes resident nose/pad tints using that ID rather than recolouring
 the whole animal. UV0 remains identical at surviving vertices across LODs.
 
 Each LOD has the same 65 joints in skeleton.json order, parent-local rest
