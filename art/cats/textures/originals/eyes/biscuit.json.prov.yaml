@@ -1,0 +1,6 @@
+source: original OpenAI built-in imagegen output, prompt in art/cats/textures/eye-prompts.json
+tool: OpenAI built-in imagegen
+date: '2026-10-17'
+license: original
+author_role: artist
+notes: Exact unmodified native PNG stored as lossless base64 source; 1254x1254; SHA256 041e252e8d7c516d4c4151ab06f761ba7337854cb4e5df43c7080158f162297e

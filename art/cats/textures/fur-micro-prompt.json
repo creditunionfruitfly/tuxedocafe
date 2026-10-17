@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "tool": "OpenAI built-in imagegen",
+  "prompt": "Use case: photorealistic-natural. Asset type: seamless production feline fur microstructure albedo texture, square 2048x2048. Primary request: an extremely detailed top-down orthographic view of naturally dense, fine, close-lying short adult cat fur, warm neutral ivory-grey monochrome. Strands gently combed in parallel from the top of the image toward the bottom, fine overlapping tapered hair tips, irregular individual strand widths, soft undercoat between guard hairs, realistic biological microtexture. One uniform continuous material edge to edge; no patches, stripes, body shape, ears, skin, grooming whorls, knots, clipped piles, long tufts, large clumps or visible animals. Flat diffuse illumination, evenly exposed, no shadows, no ambient occlusion, no specular highlights and no lighting gradient. Every edge must tile seamlessly with the opposite edge. Restrained luminance contrast to serve both pale and dark fur. No text, grid, frame, watermark or objects. This is an original material reference from which a technical pipeline derives band-limited microheight and roughness estimates."
+}

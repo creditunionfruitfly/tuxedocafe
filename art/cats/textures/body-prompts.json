@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "tool": "OpenAI built-in imagegen",
+  "uv": "2048 square; glTF v equals PNG row/2048; flipY=false; exact anatomical mask guide",
+  "template": "Use case: photorealistic-natural. Asset type: registered production cat coat ALBEDO texture atlas. Edit target: the supplied exact UV coat registration guide for {name}. Add exceptionally detailed natural feline fur texture inside the existing painted UV islands while preserving every island position, outline, scale, seam and the exact anatomical markings. This is a flat unwrapped atlas, never a picture of a cat. Coat: {coat}. Exact individual markings: {mask}. Palette sRGB: {palette}. Fur lengths by region in millimetres: {lengths}. Keep the large-scale patches and markings exactly registered to the guide. Give the fur fine individual tapering overlapping hairs, realistic irregular strand directions along each anatomical chart, and restrained subtle microcolor variation. Preserve white fur as warm neutral ivory and dark fur as deep naturally readable charcoal, with no specular highlights. The large top-left island is the torso; top-right island is the head; the four middle islands are legs; the elongated lower-left island is the tail; smaller lower charts are paws, ears, muzzle and anatomical surfaces. Keep all blank background and tiny non-fur anatomical islands plain white for stable UV padding and material tinting. No extra islands or silhouettes, no eyes, no paws as separate illustrations, no labels, no text, no borders, no watermark. Uniform flat diffuse albedo only: absolutely no baked shadows, no ambient occlusion, no lighting gradients, no painted rim light or shine. This bitmap must map back onto the actual 3D cat. Preserve the input pixel dimensions and atlas layout.",
+  "cats": {
+    "mochi": {
+      "name": "Mochi",
+      "coat": "Tuxedo",
+      "mask": "R: white bib from chin to chest, white front socks to the wrist, hind socks to just below the hock, small white muzzle patch below the nose; G: none; B: none; A: short body, longer chest and cheek ruff.",
+      "palette": "{\"base\": \"#17161B\", \"white\": \"#F4F1EA\"}",
+      "lengths": "{\"body\": 5, \"chest\": 12, \"cheeks\": 11, \"tail\": 9}",
+      "reference": "generated/references/mochi.png"
+    },
+    "waffles": {
+      "name": "Waffles",
+      "coat": "Tuxedo, chunky",
+      "mask": "R: broad white chest and belly, white muzzle and blaze to the nose bridge, white paws to mid-forearm and above the hind ankles (pink nose leather on the white muzzle); G: none; B: none; A: short body, fluffy belly fringe.",
+      "palette": "{\"base\": \"#1C1B20\", \"white\": \"#F5F2EB\"}",
+      "lengths": "{\"body\": 6, \"chest\": 14, \"cheeks\": 12, \"tail\": 10}",
+      "reference": "generated/references/waffles.png"
+    },
+    "pepper": {
+      "name": "Pepper",
+      "coat": "Brown mackerel tabby",
+      "mask": "R: pale chin and inner legs only; G: narrow parallel mackerel stripes descending from a dorsal line, unbroken necklaces, tail rings with a dark tip, leg bars, forehead M and cheek swirls (mascara lines from the outer eye corners), all curving with the fur flow; B: none; A: short.",
+      "palette": "{\"base\": \"#8A6E4C\", \"stripe\": \"#2B2219\", \"ticking\": \"#B39A73\", \"white\": \"#EFE6D6\"}",
+      "lengths": "{\"body\": 5, \"chest\": 10, \"cheeks\": 9, \"tail\": 8}",
+      "reference": "generated/references/pepper.png"
+    },
+    "biscuit": {
+      "name": "Biscuit",
+      "coat": "Orange",
+      "mask": "R: cream chin and belly wash; G: soft classic tabby swirls (bullseye on the flank, butterfly over the shoulders) in low contrast, tail rings; B: none (fully orange); A: short.",
+      "palette": "{\"base\": \"#D88A3D\", \"stripe\": \"#B0612A\", \"pale\": \"#F2C48D\"}",
+      "lengths": "{\"body\": 6, \"chest\": 12, \"cheeks\": 11, \"tail\": 9}",
+      "reference": "generated/references/biscuit.png"
+    },
+    "clementine": {
+      "name": "Clementine",
+      "coat": "Calico",
+      "mask": "R: white over chest, belly, legs, muzzle and a blaze between the eyes; G: faint tabby in the orange patches only; B: large distinct black and orange patches on the back, head and tail (orange left ear, black right ear, split face), patch edges soft but clear; A: fluffy kitten coat.",
+      "palette": "{\"black\": \"#1B1A1E\", \"orange\": \"#D9853A\", \"white\": \"#F6F2EA\"}",
+      "lengths": "{\"body\": 6, \"chest\": 10, \"cheeks\": 9, \"tail\": 8}",
+      "reference": "generated/references/clementine.png"
+    },
+    "juniper": {
+      "name": "Juniper",
+      "coat": "Brown rosetted Bengal",
+      "mask": "R: pale belly, chin and inner legs; G: horizontally aligned broken rosettes (dark outline, warm brown centre) over the flanks and back, spots on the legs, thick dark tail rings and a black tail tip, strong mascara lines; B: none; A: very short pelt. Glitter sparkle in the sheen.",
+      "palette": "{\"base\": \"#C8963E\", \"rosette\": \"#3A2618\", \"rosetteInner\": \"#8E5A2B\", \"belly\": \"#F0DCB2\"}",
+      "lengths": "{\"body\": 4, \"chest\": 7, \"cheeks\": 7, \"tail\": 6}",
+      "reference": "generated/references/juniper.png"
+    },
+    "pixel": {
+      "name": "Pixel",
+      "coat": "Glossy black Bombay",
+      "mask": "R: none; G: none; B: none; A: very short, close-lying patent-leather coat. Separate the silhouette with rim light and broad glossy highlights; the copper eyes are the focal point.",
+      "palette": "{\"base\": \"#0E0D11\", \"sheen\": \"#3A3542\"}",
+      "lengths": "{\"body\": 3, \"chest\": 5, \"cheeks\": 5, \"tail\": 4}",
+      "reference": "generated/references/pixel.png"
+    },
+    "duchess": {
+      "name": "Duchess",
+      "coat": "Cream long-hair",
+      "mask": "R: paler chest and ruff; G: faint cream ghost tabby on the tail only; B: none; A: long coat with a full ruff, britches, ear furnishings and a plumed tail. Fur cards at the ruff and tail matter most for this cat.",
+      "palette": "{\"base\": \"#E8D2AE\", \"pale\": \"#F7EBD6\", \"shade\": \"#C9A97C\"}",
+      "lengths": "{\"body\": 28, \"chest\": 35, \"cheeks\": 30, \"tail\": 34, \"britches\": 32}",
+      "reference": "generated/references/duchess.png"
+    }
+  }
+}

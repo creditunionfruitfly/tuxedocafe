@@ -1,0 +1,6 @@
+source: art/cats/textures/body-prompts.json#cats/biscuit
+tool: OpenAI built-in imagegen; deterministic anatomical registration
+date: '2026-10-17'
+license: original
+author_role: artist
+notes: Registered original painted coat, native generation 1254x1254, resampled to 2048, JPEG quality 91; generation-atlas archive for final mesh reprojection

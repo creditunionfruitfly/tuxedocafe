@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "tool": "OpenAI built-in imagegen",
+  "uv": "Radial front cap; iris centre (0.5,0.5), limbus radius 0.42, neutral dark outer bleed. Corneal highlights are rendered, never painted.",
+  "template": "Use case: photorealistic-natural. Asset type: production cat-eye diffuse texture, one flat square 1024x1024 bitmap. Primary request: a perfectly frontal, circular, anatomically realistic feline iris disc for {name}. Iris colours: {colours}. Composition: iris and dark limbal ring exactly centred at image centre; outside edge of the limbal ring at 42 percent of image width from the centre in every direction (84 percent diameter). A narrow black vertical slit pupil with softly pointed top and bottom ends at the exact centre. Fine interwoven radial iris stromal fibres, tiny natural pigment freckles and crypts, a subtly scalloped pupil border, highly detailed real feline iris anatomy. Flat evenly illuminated albedo with no lighting direction, no specular highlight, no reflection, no glint, no bright white spots, no photographic shadow and no ambient occlusion. The iris is a round flat texture, not a photograph of a sphere. Outside the iris is a completely neutral very dark charcoal bleed continuing uniformly to all four edges. No eyelids, lashes, fur, face, eyeball silhouette, labels, text, logos, borders or watermark. The geometric cornea will supply all highlights in the renderer; preserve rich natural iris detail without baking gloss.",
+  "cats": {
+    "mochi": {"name": "Mochi", "colours": "green-gold, predominantly olive-chartreuse #B8B33A with subtle amber near the pupil and a dark olive #5E6B2A limbal ring"},
+    "waffles": {"name": "Waffles", "colours": "warm yellow gold #D8B23A with fine ochre spokes, restrained honey near the pupil and dark golden-brown #8A6420 limbus"},
+    "pepper": {"name": "Pepper", "colours": "natural moss green #8DA83A, subtle lighter yellow-green radial fibres and dark forest-olive #4A5E23 limbus"},
+    "biscuit": {"name": "Biscuit", "colours": "rich warm amber #D99A2B with golden-orange and soft tawny stromal detail and burnt-umber #8C5718 limbus"},
+    "clementine": {"name": "Clementine", "colours": "muted kitten sage-grey #9DB0A0 with soft grey-green and pale sea-glass fibres, slate-teal #5F7A86 limbus; natural youthful cat iris"},
+    "juniper": {"name": "Juniper", "colours": "bright natural yellow-green #A9B43B with fine golden-green Bengal iris fibres and deep olive #6A7A25 limbus"},
+    "pixel": {"name": "Pixel", "colours": "deep saturated Bombay copper #C9772A with fine warm golden-copper and burnt-orange radial fibres and dark russet #7A3E12 limbus"},
+    "duchess": {"name": "Duchess", "colours": "pale clear blue #7FB8C9 with subtle powder-blue and desaturated aqua stromal fibres and dark blue-teal #3E6E84 limbus"}
+  }
+}
