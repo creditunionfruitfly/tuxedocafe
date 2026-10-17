@@ -55,3 +55,14 @@ test.describe('site files', () => {
     expect(response.status()).toBe(404);
   });
 });
+
+test('Mochi strolls the café behind the cats flag', async ({ page }, testInfo) => {
+  const problems: string[] = [];
+  page.on('console', (message) => { if (message.type() === 'error') problems.push(message.text()); });
+  page.on('pageerror', (error) => problems.push(String(error)));
+  await page.goto('./?flags=cats');
+  await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: STARTUP_TIMEOUT });
+  await expect(page.locator('body')).toHaveAttribute('data-cats', 'mochi');
+  await page.screenshot({ path: testInfo.outputPath('cafe-mochi.png') });
+  expect(problems).toEqual([]);
+});
