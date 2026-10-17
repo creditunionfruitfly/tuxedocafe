@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cat review</title>
+<style>
+  html, body { margin: 0; background: #cfd8d3; font: 12px system-ui, sans-serif; }
+  canvas { display: block; }
+  #labels { position: absolute; inset: 0; pointer-events: none; }
+  #labels span { position: absolute; color: #24302b; background: #ffffffb0; padding: 1px 5px; border-radius: 3px; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "/node_modules/three/build/three.module.js", "three/addons/": "/node_modules/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div id="labels"></div>
+<script type="module" src="./cat-review.js"></script>
+</body>
+</html>
