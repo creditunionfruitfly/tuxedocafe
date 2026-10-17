@@ -73,8 +73,17 @@ export interface Rig {
   index: (name: string) => number;
   legs: Record<LegId, LegDef>;
   spine: number[]; neck: number[]; tail: number[];
+  /**
+   * Tail neutral: local rotations that take the rest tail (whatever its modelled curve) to a straight tail
+   * leaving the pelvis along tailDir. Clips author tail bends against this neutral, so a re-posed rest tail
+   * changes no carriage.
+   */
+  tailNeutral: Quaternion[]; tailDir: Vector3;
   M: Measures;
 }
+
+/** Neutral tail carriage: straight, backward and this far below horizontal (a relaxed, slightly lowered tail). */
+const TAIL_NEUTRAL_PITCH = 10 * Math.PI / 180;
 
 /** Local rotations plus translations: root, pelvis, and optional per-bone overrides (scapula slide). */
 export interface Pose { q: Quaternion[]; root: Vector3; pelvis: Vector3; t: Map<number, Vector3> }
@@ -162,10 +171,20 @@ export function loadRig(path = process.env.CAT_SKELETON ?? 'art/rig/skeleton.jso
     pelvisZ: W('pelvis').z, chestZ: W('spine_04').z, headZ: W('head').z, headH: W('head').y,
     tailLen: tail.slice(1).reduce((sum, i) => sum + offset[i]!.length(), 0),
   };
+  // Rest rotations are identity, so the pelvis frame is the rest world frame.
+  const tailDir = new Vector3(0, -Math.sin(TAIL_NEUTRAL_PITCH), -Math.cos(TAIL_NEUTRAL_PITCH));
+  const tailNeutral: Quaternion[] = [];
+  let prev = new Quaternion();
+  tail.forEach((_, k) => {
+    const child = tail[k + 1];
+    const S = child === undefined ? prev.clone() : new Quaternion().setFromUnitVectors(offset[child]!.clone().normalize(), tailDir);
+    tailNeutral.push(prev.clone().invert().multiply(S));
+    prev = S;
+  });
   return {
     names, parent, offset, restWorld, index, legs,
     spine: ['spine_01', 'spine_02', 'spine_03', 'spine_04', 'spine_05'].map(index),
-    neck: ['neck_01', 'neck_02'].map(index), tail, M,
+    neck: ['neck_01', 'neck_02'].map(index), tail, tailNeutral, tailDir, M,
   };
 }
 

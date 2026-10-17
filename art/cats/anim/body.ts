@@ -88,6 +88,8 @@ export function mirrorBody(b: Body): Body {
 }
 
 export const qTail = (t: V3) => qAxis(AY, t[1]).multiply(qAxis(AX, t[0])).multiply(qAxis(AZ, t[2]));
+/** Local rotation of tail joint k for an authored [lift, toRight, twist] bend from the straight tail neutral. */
+export const tailLocal = (rig: Rig, k: number, t: V3) => rig.tailNeutral[k]!.clone().multiply(qTail(t));
 
 /** Trunk, head, ears, eyes and tail rotations plus translations (no legs). */
 export function solveTrunk(rig: Rig, b: Body): Pose {
@@ -118,7 +120,7 @@ export function solve(rig: Rig, b: Body, info?: Partial<Record<LegId, LegInfo>>)
   }
   q[I('eye_L')] = qAxis(AY, b.eyes[0]).multiply(qAxis(AX, -b.eyes[1]));
   q[I('eye_R')] = qAxis(AY, b.eyes[2]).multiply(qAxis(AX, -b.eyes[3]));
-  rig.tail.forEach((i, k) => { q[i] = qTail(b.tail[k]!); });
+  rig.tail.forEach((i, k) => { q[i] = tailLocal(rig, k, b.tail[k]!); });
 
   let W = fk(rig, pose);
   if (b.gaze[3] > 0) aimHead(rig, pose, W, qAxis(AY, b.rootYaw).multiply(qBody(b.gaze[0], b.gaze[1], b.gaze[2])), clamp(b.gaze[3], 0, 1));
