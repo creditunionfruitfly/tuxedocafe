@@ -35,8 +35,8 @@ export function gaitExtras(plan: GaitPlan) {
     rigSpeed: round(plan.v), strideFit: plan.fit, strideM: round(plan.L), stanceLengthM: round(plan.S),
     hindRegisterM: round(registerOf(plan, 'L')),
     speedNote: plan.fit < 1
-      ? 'This skeleton cannot reach the catalogued stride at authoredSpeed; planted paws slide at rigSpeed (scale playback by authoredSpeed / rigSpeed or let leg IK lock the pads).'
-      : 'Planted paws slide backward at exactly authoredSpeed.',
+      ? 'This skeleton cannot reach the designed stride at the gait speed (authoredSpeed where catalogued); planted paws slide at rigSpeed (scale playback by the speed ratio or let leg IK lock the pads).'
+      : 'Planted paws slide backward at exactly the gait speed (authoredSpeed where catalogued).',
   };
 }
 
@@ -69,7 +69,7 @@ export const walkStyle = (ctx: Ctx): GaitStyle => ({
   dropF: 0.03, dropH: 0.02, pitch: 0, liftF: 0.13, liftH: 0.1, carpusF: 1.75, carpusH: 1.6, curlF: 0.2, curlH: 0.1,
   metaF: [-4 * DEG, 0, 46 * DEG], metaH: [-4 * DEG, 0, 24 * DEG], heelOffF: 0.6, heelOffH: 0.75, matchTd: 0.55,
   width: 0.85, register: 0.005, frontBias: 0, hindBias: -0.12, bob: 0.025, roll: 0.04, yaw: 0.06, blade: 0.03, glide: 0.05,
-  headPitch: -0.07, headBob: 0.25, skewF: 0.85, skewH: 1, foreK: 0.5, ears: [0, 0, 0.04], tail: walkTail, seed: ctx.seed,
+  headPitch: -0.12, headBob: 0.25, neck: -0.5, skewF: 0.85, skewH: 1, foreK: 0.5, ears: [0, 0, 0.04], tail: walkTail, seed: ctx.seed,
 });
 
 export const trotStyle = (ctx: Ctx): GaitStyle => ({
@@ -77,7 +77,7 @@ export const trotStyle = (ctx: Ctx): GaitStyle => ({
   dropF: 0.04, dropH: 0.03, liftF: 0.16, liftH: 0.13, carpusF: 1.95, carpusH: 1.75, curlF: 0.25, curlH: 0.15,
   metaF: [-6 * DEG, -2 * DEG, 50 * DEG], metaH: [-6 * DEG, -2 * DEG, 30 * DEG], heelOffF: 0.5, heelOffH: 0.62, matchTd: 0.45,
   register: 0.03, frontBias: 0, hindBias: -0.1, bob: 0.02, roll: 0.03, yaw: 0.045, blade: 0.035, glide: 0.06,
-  headPitch: -0.05, headBob: 0.1, skewF: 0.8, skewH: 0.9, ears: [0.05, 0, 0.06],
+  headPitch: -0.1, headBob: 0.1, neck: -0.6, skewF: 0.8, skewH: 0.9, ears: [0.05, 0, 0.06],
   tail: (i, phase) => [i === 0 ? -0.12 : i < 7 ? -0.035 : 0.05,
     (0.04 * Math.sin(2 * Math.PI * (2 * phase - 0.12 - i * 0.03)) + 0.015 * Math.sin(2 * Math.PI * (phase + 0.2))) * (0.3 + i / 11), 0],
 });
@@ -92,7 +92,7 @@ export const gallopStyle = (ctx: Ctx): GaitStyle => ({
   dropF: 0.06, dropH: 0.05, liftF: 0.22, liftH: 0.19, carpusF: 2.1, carpusH: 1.85, curlF: 0.3, curlH: 0.2,
   metaF: [-10 * DEG, -6 * DEG, 52 * DEG], metaH: [-10 * DEG, -6 * DEG, 34 * DEG], heelOffF: 0.4, heelOffH: 0.5, matchTd: 0.35,
   register: -0.06, frontBias: 0.05, hindBias: 0.05, width: 0.75, bob: 0.0, roll: 0.025, yaw: 0.025, blade: 0.04, glide: 0.08,
-  headPitch: -0.1, headBob: 0.0, skewF: 0.75, skewH: 0.8, ears: [0.55, 0.3, -0.05],
+  headPitch: -0.12, headBob: 0.0, neck: -0.8, skewF: 0.75, skewH: 0.8, ears: [0.55, 0.3, -0.05],
   trunk: p => { const f = gallopFlex(p); return [f * 0.5 + gallopPitch(p), f, gallopRise(p), gallopSurge(p)]; },
   // The tail streams out low: its base counters the pelvis rocking so it does not whip into the floor.
   tail: (i, phase) => [i === 0 ? -0.08 + 0.6 * (gallopFlex(phase) * 0.5 + gallopPitch(phase)) : i < 6 ? -0.02 : 0.012,
@@ -102,7 +102,7 @@ export const gallopStyle = (ctx: Ctx): GaitStyle => ({
 export const walkAwayStyle = (ctx: Ctx): GaitStyle => ({
   ...walkStyle(ctx), speed: ctx.clip.authoredSpeed ?? 0.85, contacts: contacts(ctx), duty: ctx.clip.dutyFactor ?? 0.6,
   dropF: 0.02, dropH: 0.015, liftF: 0.1, liftH: 0.08, carpusF: 1.4, carpusH: 1.3, matchTd: 0.6,
-  bob: 0.016, roll: 0.025, yaw: 0.04, blade: 0.025, headPitch: -0.03, headBob: 0.08, skewF: 0.9, ears: [0.75, 0.35, -0.08],
+  bob: 0.016, roll: 0.025, yaw: 0.04, blade: 0.025, headPitch: -0.06, headBob: 0.08, neck: -0.35, skewF: 0.9, ears: [0.75, 0.35, -0.08],
   tail: (i, phase) => {
     const flick = Math.max(pulse(phase, 0.28, 0.04, 0.05), pulse(phase, 0.78, 0.04, 0.06) * 0.7) * smooth((i - 6) / 5);
     return [i === 0 ? -0.72 : i < 6 ? -0.05 : 0.035, 0.5 * flick + 0.02 * Math.sin(2 * Math.PI * phase) * (i / 11), 0];

@@ -85,7 +85,7 @@ function zoomStance(ctx: Ctx): Stance {
 const crouchGait = (o: { T: number; speed: number; duty: number; drop: number; head: number; lift: number }) => (ctx: Ctx): GaitStyle => ({
   ...walkStyle(ctx), T: o.T, speed: o.speed, duty: o.duty, contacts: { LH: 0, LF: 0.25, RH: 0.5, RF: 0.75 },
   dropF: o.drop, dropH: o.drop * 1.1, liftF: o.lift, liftH: o.lift * 0.8, carpusF: 1.5, carpusH: 1.4, matchTd: 0.8,
-  bob: 0.008, roll: 0.02, yaw: 0.03, blade: 0.045, glide: 0.03, headPitch: o.head, headBob: 0.0, skewF: 1.1, skewH: 1.1,
+  bob: 0.008, roll: 0.02, yaw: 0.03, blade: 0.045, glide: 0.03, headPitch: o.head, headBob: 0.0, neck: -0.5, skewF: 1.1, skewH: 1.1,
   metaF: [-0.05, -0.08, 0.6], metaH: [-0.15, -0.2, 0.35],
   tail: (i: number, phase: number) => [i === 0 ? -0.35 : i < 6 ? -0.04 : 0.05, 0.03 * Math.sin(TAU * (phase - i * 0.04)) * (i / 11), 0],
 });

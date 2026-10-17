@@ -38,6 +38,8 @@ export interface GaitStyle {
   /** Scapula slide amplitude (fraction of shoulder height): the stance blade rides up; glide: forward with protraction. */
   blade: number; glide: number;
   headPitch: number; headBob: number;
+  /** Neck carriage (rad, - lowers and extends the head forward); the gaze keeps the head itself near level. */
+  neck?: number;
   /** Swing timing: < 1 brings the paw forward early. */
   skewF: number; skewH: number;
   /** Elbow outward / forearm preference gain (forearm angle follows this share of the limb's protraction). */
@@ -166,7 +168,9 @@ export function gaitBody(rig: Rig, plan: GaitPlan, phase: number): Body {
     b.legs[id].glide = style.glide * sH * Math.tanh(1.3 * (b.legs[id].toe[2] - zMid) / Math.max(plan.S / 2, 1e-6)) / Math.tanh(1.3);
   }
   const nz = loopNoise(style.seed, 1, [1, 2, 3]);
-  b.gaze = [style.headPitch + style.headBob * (bobF / sH) * 2 + 0.008 * nz(phase), 0.012 * nz(phase + 0.37), 0, 0.9];
+  const neck = style.neck ?? 0;
+  b.neck = [[neck * 0.7, 0, 0], [neck * 0.3, 0, 0]];
+  b.gaze = [style.headPitch + style.headBob * (bobF / sH) * 2 + 0.008 * nz(phase), 0.012 * nz(phase + 0.37), 0, 0.85];
   b.earL = [...style.ears]; b.earR = [...style.ears];
   b.tail = Array.from({ length: 12 }, (_, i) => style.tail(i, phase));
   return b;

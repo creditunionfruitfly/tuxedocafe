@@ -72,7 +72,7 @@ function wakeStretch(t: number, ctx: Ctx): Body {
   }
   for (const id of ['LH', 'RH'] as const) { dog.legs[id].spread = 0.15; dog.legs[id].meta = rig.legs[id].stanceMeta + 0.12; }
   dog.gaze = [0.12, 0, 0, 1]; dog.earL = [0.3, 0.15, -0.05]; dog.earR = [0.3, 0.15, -0.05];
-  dog.tail = tailShape({ base: 0.3, lift: 0.25, tip: 0.55 });
+  dog.tail = tailShape({ base: 0.05, lift: 0.2, tip: 0.55 });
   const deep = cloneBody(dog); setTrunk(rig, deep, { pelvisDrop: -0.04 * sH, chestDrop: 0.45 * sH, arch: -0.36 });
   deep.legs = dog.legs;
   // Forward shift onto the forelegs, then the hind-leg stretch.

@@ -102,11 +102,12 @@ function greeting(t: number, ctx: Ctx): Body {
 /** Hiss: drawn back onto the hind legs, back arched, ears flattened sideways, mouth wide. */
 function hiss(t: number, ctx: Ctx): Body {
   const M = ctx.M, k = M.legScale, stand = idlePose(ctx);
-  const back = cloneBody(stand); setTrunk(ctx.rig, back, { pelvisDrop: 0.12 * M.shoulderH, chestDrop: 0.0, surge: -0.03 * k, arch: 0.32 });
+  // Defensive arch: the back humps high over straight legs, the body drawn back onto the hind legs.
+  const back = cloneBody(stand); setTrunk(ctx.rig, back, { pelvisDrop: 0.02 * M.shoulderH, chestDrop: 0.08 * M.shoulderH, surge: -0.035 * k, arch: 0.85 });
   back.gaze = [-0.12, 0, 0, 1]; back.whisk = -0.4;
   back.tail = tailShape({ base: -0.15, lift: -0.9, tip: 0.2 });
   for (const id of ['LF', 'RF'] as const) { back.legs[id].fore = -0.15; back.legs[id].foreK = 0.3; }
-  const lunge = cloneBody(back); setTrunk(ctx.rig, lunge, { pelvisDrop: 0.1 * M.shoulderH, chestDrop: 0.04 * M.shoulderH, surge: -0.012 * k, arch: 0.28 }); lunge.gaze = [-0.2, 0, 0, 1];
+  const lunge = cloneBody(back); setTrunk(ctx.rig, lunge, { pelvisDrop: 0.03 * M.shoulderH, chestDrop: 0.12 * M.shoulderH, surge: -0.015 * k, arch: 0.75 }); lunge.gaze = [-0.2, 0, 0, 1];
   const b = keyedLag(t, [[0, stand], [0.18, back, x => 1 - (1 - x) ** 3], [0.3, lunge], [0.45, back], [0.95, back], [1.2, mixBody(back, stand, 0.35)]], { head: 0.03, tail: 0.08 });
   const ears = hissEars(t);
   b.earL = [0.75 * ears, 0.85 * ears, -0.1 * ears]; b.earR = [0.75 * ears, 0.85 * ears, -0.1 * ears];

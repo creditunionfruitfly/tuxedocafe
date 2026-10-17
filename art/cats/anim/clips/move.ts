@@ -227,6 +227,8 @@ export function pounceStance(T: number, o: { tWig: [number, number]; tSpring: nu
   } as Partial<Record<LegId, [number, number][]>>;
 }
 
+/** Where the clip expects the ledge: its edge (z in the root frame at the start, m) and the floor change (m). */
+const edgeExtras = (edgeZ: number, H: number) => ({ edgeZ: Math.round(edgeZ * 10000) / 10000, ledgeHeightM: H });
 const edgeUp = (gap: number) => (ctx: Ctx) => idlePose(ctx).legs.LF.toe[2] + gap * ctx.M.legScale;
 const edgeDown = (ctx: Ctx) => idlePose(ctx).legs.LF.toe[2] + 0.02 * ctx.M.legScale;
 const UP_LOW: JumpUp = { H: 0.45, tk: 0.35, tc: 0.65, thl: 0.76, gap: 0.2, crouch: 0.26, frontLand: 0.08, scrabble: false };
@@ -237,22 +239,22 @@ const DOWN_HIGH: JumpDown = { H: -1.2, tl: 0.7, push: 0.22, lean: 0.22, reach: 0
 export const moveClips: ClipSpec[] = [
   {
     name: 'cat.move.jump_up_low', body: (t, ctx) => jumpUp(t, ctx, UP_LOW), tailSim: { wBase: 28, wTip: 12, zeta: 0.7 },
-    terrain: stepTerrain(edgeUp(UP_LOW.gap), UP_LOW.H),
+    terrain: stepTerrain(edgeUp(UP_LOW.gap), UP_LOW.H), extras: ctx => edgeExtras(edgeUp(UP_LOW.gap)(ctx), UP_LOW.H),
     stance: () => ({ LF: [[0, 0.29], [0.65, 0.7], [0.84, 0.9]], RF: [[0, 0.27], [0.67, 0.76]], LH: [[0, 0.35], [0.74, 0.9]], RH: [[0, 0.35], [0.76, 0.9]] }),
   },
   {
     name: 'cat.move.jump_up_high', body: (t, ctx) => jumpUp(t, ctx, UP_HIGH), tailSim: { wBase: 28, wTip: 12, zeta: 0.7 },
-    terrain: stepTerrain(edgeUp(UP_HIGH.gap), UP_HIGH.H),
+    terrain: stepTerrain(edgeUp(UP_HIGH.gap), UP_HIGH.H), extras: ctx => edgeExtras(edgeUp(UP_HIGH.gap)(ctx), UP_HIGH.H),
     stance: () => ({ LF: [[0, 0.54], [0.95, 1.1], [1.24, 1.3]], RF: [[0, 0.52], [0.97, 1.16]], LH: [[0, 0.6], [1.1, 1.3]], RH: [[0, 0.6], [1.12, 1.3]] }),
   },
   {
     name: 'cat.move.jump_down_low', body: (t, ctx) => jumpDown(t, ctx, DOWN_LOW), tailSim: { wBase: 28, wTip: 12, zeta: 0.7 },
-    terrain: stepTerrain(edgeDown, DOWN_LOW.H),
+    terrain: stepTerrain(edgeDown, DOWN_LOW.H), extras: ctx => edgeExtras(edgeDown(ctx), DOWN_LOW.H),
     stance: () => ({ LF: [[0, 0.35 * DOWN_LOW.push], [0.45, 0.8]], RF: [[0, 0.75 * DOWN_LOW.push], [0.47, 0.8]], LH: [[0, DOWN_LOW.push], [0.57, 0.8]], RH: [[0, DOWN_LOW.push], [0.59, 0.8]] }),
   },
   {
     name: 'cat.move.jump_down_high', body: (t, ctx) => jumpDown(t, ctx, DOWN_HIGH), tailSim: { wBase: 28, wTip: 12, zeta: 0.7 },
-    terrain: stepTerrain(edgeDown, DOWN_HIGH.H),
+    terrain: stepTerrain(edgeDown, DOWN_HIGH.H), extras: ctx => edgeExtras(edgeDown(ctx), DOWN_HIGH.H),
     stance: () => ({ LF: [[0, 0.35 * DOWN_HIGH.push], [0.7, 1.1]], RF: [[0, 0.75 * DOWN_HIGH.push], [0.72, 1.1]], LH: [[0, DOWN_HIGH.push], [0.82, 1.1]], RH: [[0, DOWN_HIGH.push], [0.84, 1.1]] }),
   },
   {

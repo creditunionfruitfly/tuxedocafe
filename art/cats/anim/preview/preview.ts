@@ -1,72 +1,80 @@
-// Local contact-sheet preview: binds cat_anims.glb onto the capsule rig
-// diagnostic (cat_placeholder_lod0.glb) by bone name and renders key poses.
-// Usage: node art/cats/anim/preview/preview.ts [sheet ...]
-// Needs `npm run assets` first. CHROMIUM_PATH selects a local Chromium.
+// Development contact sheets for the cat animation library (not part of the build).
+//   node art/cats/anim/preview/preview.ts [sheet ...]
+// Renders cat_anims.glb (PREVIEW_GLB, default the built library) on a volumetric proxy cat with Playwright and
+// writes PNGs to PREVIEW_OUT (default: the OS temp dir). CHROMIUM_PATH selects a local Chromium.
 import { createServer } from 'node:http';
 import { mkdirSync, readFileSync, existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { extname, join, resolve } from 'node:path';
 import { chromium } from '@playwright/test';
 
-interface Cell { clip: string; t: number; az?: number; el?: number; dist?: number; target?: [number, number, number]; label?: string; fov?: number; platform?: { h: number; z: number } }
+interface Cell {
+  clip: string; t: number; az?: number; el?: number; dist?: number; target?: [number, number, number]; label?: string; fov?: number;
+  ortho?: number; travel?: boolean; follow?: boolean; followRoot?: boolean; platform?: { h: number; z: number }; scaled?: boolean;
+}
 interface Sheet { title: string; cols: number; cellW: number; cellH: number; cells: Cell[] }
 
-const OUT = process.env.PREVIEW_OUT ?? 'docs/screenshots/m2-2';
-const phases = (clip: string, T: number, n: number, extra: Partial<Cell> = {}) =>
-  Array.from({ length: n }, (_, k) => ({ clip, t: (k / n) * T, ...extra, label: `${clip.replace('cat.', '')} ${(k / n).toFixed(3).replace(/0+$/, '').replace(/\.$/, '')}${extra.label ?? ''}` }));
-const keys = (clip: string, times: number[], extra: Partial<Cell> = {}) => times.map(t => ({ clip, t, ...extra }));
-const side = { az: 90, el: 3, dist: 2.35, target: [0, 0.24, -0.1] as [number, number, number] };
-const threeQ = { az: 50, el: 18, dist: 2.3, target: [0, 0.2, -0.08] as [number, number, number] };
-const front = { az: 0, el: 8, dist: 2.0, target: [0, 0.22, 0] as [number, number, number] };
-const top = { az: 90, el: 75, dist: 2.2, target: [0, 0.1, -0.1] as [number, number, number] };
+const OUT = process.env.PREVIEW_OUT ?? join(tmpdir(), 'cat-anim-preview');
+const GLB = process.env.PREVIEW_GLB ?? 'public/assets/art/cats/cat_anims.glb';
+const side: Partial<Cell> = { az: 90, el: 2, dist: 3, ortho: 0.62, target: [0, 0.15, 0.02] };
+const threeQ: Partial<Cell> = { az: 52, el: 16, dist: 2.2, fov: 20, target: [0, 0.13, 0] };
+const front: Partial<Cell> = { az: 8, el: 8, dist: 2.2, fov: 20, target: [0, 0.14, 0] };
+const top: Partial<Cell> = { az: 90, el: 80, dist: 2.4, fov: 20, target: [0, 0.05, 0] };
+const at = (clip: string, times: number[], extra: Partial<Cell> = {}, tag = ''): Cell[] =>
+  times.map(t => ({ clip, t, ...extra, label: `${clip.replace('cat.', '')} t=${t.toFixed(2)}${tag}` }));
+const phases = (clip: string, T: number, n: number, extra: Partial<Cell> = {}, tag = '') =>
+  at(clip, Array.from({ length: n }, (_, i) => (i / n) * T), extra, tag);
 
 export const SHEETS: Record<string, Sheet> = {
-  rig: { title: 'bind pose of the current skeleton', cols: 3, cellW: 420, cellH: 320,
-    cells: [{ clip: 'rest', t: 0, ...side, label: 'rest side' }, { clip: 'rest', t: 0, ...threeQ, label: 'rest 3/4' }, { clip: 'rest', t: 0, ...front, label: 'rest front' }] },
-  walk: { title: 'cat.loco.walk: side view, 8 phases (LH 0, LF .25, RH .5, RF .75); blue = left limbs', cols: 4, cellW: 360, cellH: 260,
-    cells: [...phases('cat.loco.walk', 1.0, 8, side), ...phases('cat.loco.walk', 1.0, 4, { ...threeQ, label: ' 3/4' })] },
-  trot: { title: 'cat.loco.trot: side view, 8 phases (LH+RF 0, RH+LF .5)', cols: 4, cellW: 360, cellH: 260,
-    cells: [...phases('cat.loco.trot', 0.6, 8, side), ...phases('cat.loco.trot', 0.6, 4, { ...threeQ, label: ' 3/4' })] },
-  gallop: { title: 'cat.loco.gallop: side view, 8 phases (LH 0, RH .1, LF .45, RF .55)', cols: 4, cellW: 360, cellH: 260,
-    cells: [...phases('cat.loco.gallop', 0.4, 8, side), ...phases('cat.loco.gallop', 0.4, 4, { ...threeQ, label: ' 3/4' })] },
-  loco: { title: 'idle, walk away, turns, start, stop', cols: 4, cellW: 340, cellH: 250,
-    cells: [...keys('cat.loco.idle', [0, 1.3, 2.6], side), ...keys('cat.loco.idle', [2.0], front),
-      ...phases('cat.react.walk_away', 1.0, 4, side),
-      ...keys('cat.loco.turn_left', [0.2, 0.4, 0.6, 0.8], top), ...keys('cat.loco.start', [0.1, 0.25, 0.4, 0.5], side), ...keys('cat.loco.stop', [0.1, 0.25, 0.4, 0.5], side)] },
-  sitdown: { title: 'cat.rest.sit_down: stand to sit (settle at 1.0 s)', cols: 4, cellW: 360, cellH: 280,
-    cells: [...keys('cat.rest.sit_down', [0, 0.2, 0.35, 0.5, 0.65, 0.8, 1.0, 1.2], side)] },
-  rest: { title: 'sit idle, loaf, lie side, sprawl, sleep curl', cols: 3, cellW: 460, cellH: 300,
-    cells: [...keys('cat.rest.sit_idle', [0], side), ...keys('cat.rest.sit_idle', [1], front), ...keys('cat.rest.sit_idle', [1], threeQ),
-      ...keys('cat.rest.loaf', [0], side), ...keys('cat.rest.loaf', [3], threeQ), ...keys('cat.rest.loaf', [3], front),
-      ...keys('cat.rest.lie_side', [0], threeQ), ...keys('cat.rest.lie_side', [0], top), ...keys('cat.rest.sprawl', [0], threeQ),
-      ...keys('cat.rest.sprawl', [0], top), ...keys('cat.rest.sleep_curl', [0], threeQ), ...keys('cat.rest.sleep_curl', [4], top)] },
-  wake: { title: 'wake stretch, yawn (over sit), roll over', cols: 4, cellW: 340, cellH: 250,
-    cells: [...keys('cat.rest.wake_stretch', [0, 0.5, 0.8, 1.2, 1.6, 2.0, 2.4, 3.0], side), ...keys('cat.rest.yawn', [0.2, 0.6, 1.0], side),
-      ...keys('cat.play.roll_over', [0.3, 0.6, 0.9, 1.2, 1.6], threeQ)] },
-  care: { title: 'groom face, groom flank, eat, drink, paw water, knead', cols: 4, cellW: 340, cellH: 250,
-    cells: [...keys('cat.care.groom_face', [0.2, 0.8, 1.5, 2.3], threeQ), ...keys('cat.care.groom_flank', [0.3, 1.5], threeQ), ...keys('cat.care.groom_flank', [0.8], top),
-      ...keys('cat.care.eat_crouch', [0.4], side), ...keys('cat.care.eat_crouch', [1.0], threeQ), ...keys('cat.care.drink_lap', [0.1], side), ...keys('cat.care.drink_lap', [0.5], front),
-      ...keys('cat.care.paw_water', [0.4, 0.9, 1.5], threeQ), ...keys('cat.care.knead', [0.2, 1.0], side)] },
-  care2: { title: 'litter dig, squat, cover, scratch post', cols: 4, cellW: 340, cellH: 250,
-    cells: [...keys('cat.care.litter_dig', [0.3, 0.8, 1.3, 2.0], threeQ), ...keys('cat.care.litter_squat', [0, 2], side),
-      ...keys('cat.care.litter_cover', [0.4, 1.0, 1.6, 2.2], threeQ), ...keys('cat.care.scratch_post', [0.2, 0.7, 1.2, 1.7], side)] },
-  jumps: { title: 'jump up low / high (root motion), jump down low / high, land', cols: 5, cellW: 300, cellH: 280,
-    cells: [...keys('cat.move.jump_up_low', [0.15, 0.32, 0.45, 0.6, 0.9], { az: 90, el: 4, dist: 2.6, target: [0, 0.4, 0.25], platform: { h: 0.45, z: 0.32 } }),
-      ...keys('cat.move.jump_up_high', [0.3, 0.58, 0.75, 0.95, 1.3], { az: 90, el: 4, dist: 3.6, target: [0, 0.75, 0.25], platform: { h: 1.2, z: 0.32 } }),
-      ...keys('cat.move.jump_down_low', [0.15, 0.3, 0.42, 0.55, 0.8], { az: 90, el: 4, dist: 2.6, target: [0, -0.1, 0.25] }),
-      ...keys('cat.move.jump_down_high', [0.3, 0.5, 0.65, 0.8, 1.1], { az: 90, el: 4, dist: 3.6, target: [0, -0.5, 0.25] }),
-      ...keys('cat.move.land', [0, 0.1, 0.2, 0.3, 0.5], side)] },
-  play: { title: 'pounce (root motion), bat left/right, swat, hiss, flinch', cols: 4, cellW: 340, cellH: 250,
-    cells: [...keys('cat.play.pounce', [0.2, 0.4, 0.55, 0.65], { ...side, dist: 2.2, target: [0, 0.2, 0.25] }), ...keys('cat.play.bat_left', [0.15, 0.3], threeQ), ...keys('cat.play.bat_right', [0.3], threeQ), ...keys('cat.react.swat', [0.25], threeQ),
-      ...keys('cat.react.hiss', [0.1, 0.4, 0.8], side), ...keys('cat.react.hiss', [0.5], front), ...keys('cat.react.flinch_startle', [0.1, 0.25, 0.5, 0.7], side)] },
-  social: { title: 'head rub, tail-up greeting, slow blink, additive layers', cols: 4, cellW: 340, cellH: 250,
-    cells: [...keys('cat.social.head_rub', [0.2, 0.5, 0.8, 1.1], threeQ), ...keys('cat.social.tail_up_greeting', [0.3, 0.9], side), ...keys('cat.social.slow_blink', [0.9], side),
-      ...keys('cat.layer.tail_up', [0], side), ...keys('cat.layer.tail_low', [0], side), ...keys('cat.layer.tail_lash', [0, 0.2, 0.4, 0.6], { ...top }), ...keys('cat.layer.ears_back', [0.5], front), ...keys('cat.layer.lean_in', [0.7], side)] },
-  perks: { title: 'perk clips (M5/M6)', cols: 5, cellW: 300, cellH: 240,
-    cells: [...keys('cat.perk.catnip_sniff', [1.2], side), ...keys('cat.perk.catnip_lick', [0.6], threeQ), ...keys('cat.perk.catnip_roll', [0.8, 1.5, 2.3], threeQ),
-      ...keys('cat.perk.catnip_zoom', [0.1, 0.25], side), ...keys('cat.perk.laser_stalk', [0.4, 1.4], side), ...keys('cat.perk.laser_butt_wiggle', [0.5], side),
-      ...keys('cat.perk.laser_pounce', [0.3, 0.45], side), ...keys('cat.perk.toy_catch', [0.6], threeQ), ...keys('cat.perk.feather_bat', [0.2], front),
-      ...keys('cat.perk.feather_leap', [0.5], side), ...keys('cat.perk.feather_catch', [0.6], threeQ), ...keys('cat.perk.harness_freeze', [1.0], side), ...keys('cat.perk.harness_low_walk', [0.3], side),
-      ...keys('cat.perk.harness_flop', [1.5], threeQ), ...keys('cat.perk.harness_sniff', [0.8], side)] },
+  walk: { title: 'cat.loco.walk: side, 8 phases of one cycle (contacts LH 0, LF .25, RH .5, RF .75), then 3/4', cols: 4, cellW: 400, cellH: 280,
+    cells: [...phases('cat.loco.walk', 1, 8, side), ...phases('cat.loco.walk', 1, 4, threeQ, ' 3/4')] },
+  trot: { title: 'cat.loco.trot: side, 8 phases (diagonal pairs LH+RF 0, RH+LF .5), then 3/4', cols: 4, cellW: 400, cellH: 280,
+    cells: [...phases('cat.loco.trot', 0.6, 8, side), ...phases('cat.loco.trot', 0.6, 4, threeQ, ' 3/4')] },
+  gallop: { title: 'cat.loco.gallop: side, 8 phases (LH 0, RH .1, LF .45, RF .55), then 3/4', cols: 4, cellW: 400, cellH: 280,
+    cells: [...phases('cat.loco.gallop', 0.4, 8, { ...side, ortho: 0.7 }), ...phases('cat.loco.gallop', 0.4, 4, threeQ, ' 3/4')] },
+  loco: { title: 'idle, start, stop, turn left, walk away', cols: 4, cellW: 360, cellH: 260,
+    cells: [...at('cat.loco.idle', [0, 1.0, 2.2], side), ...at('cat.loco.idle', [2.2], front, ' front'),
+      ...at('cat.loco.start', [0.1, 0.25, 0.4, 0.5], side), ...at('cat.loco.stop', [0.05, 0.2, 0.35, 0.5], side),
+      ...at('cat.loco.turn_left', [0.2, 0.4, 0.6, 0.8], { ...top, travel: false }), ...phases('cat.react.walk_away', 1, 4, side)] },
+  sitdown: { title: 'cat.rest.sit_down: stand to sit (settle 1.0 s), then sit idle', cols: 4, cellW: 360, cellH: 280,
+    cells: [...at('cat.rest.sit_down', [0, 0.2, 0.45, 0.65, 0.85, 1.2], side), ...at('cat.rest.sit_idle', [1.5], threeQ, ' 3/4'), ...at('cat.rest.sit_idle', [3], front, ' front')] },
+  loaf: { title: 'cat.rest.loaf and cat.rest.sleep_curl', cols: 3, cellW: 420, cellH: 300,
+    cells: [...at('cat.rest.loaf', [0], side), ...at('cat.rest.loaf', [1.5], threeQ, ' 3/4'), ...at('cat.rest.loaf', [3], front, ' front'),
+      ...at('cat.rest.sleep_curl', [0], threeQ, ' 3/4'), ...at('cat.rest.sleep_curl', [2], top, ' top'), ...at('cat.rest.sleep_curl', [4], side)] },
+  lying: { title: 'cat.rest.lie_side and cat.rest.sprawl', cols: 4, cellW: 360, cellH: 260,
+    cells: [...at('cat.rest.lie_side', [0], threeQ, ' 3/4'), ...at('cat.rest.lie_side', [1], top, ' top'), ...at('cat.rest.sprawl', [0], threeQ, ' 3/4'), ...at('cat.rest.sprawl', [1], top, ' top')] },
+  wake: { title: 'cat.rest.wake_stretch: loaf, downward-dog stretch (0.8), hind-leg stretch (2.0), stand', cols: 4, cellW: 380, cellH: 270,
+    cells: at('cat.rest.wake_stretch', [0, 0.4, 0.85, 1.2, 1.6, 2.1, 2.4, 3.0], side) },
+  groom: { title: 'cat.care.groom_face and cat.care.groom_flank', cols: 4, cellW: 360, cellH: 280,
+    cells: [...at('cat.care.groom_face', [0.4, 0.75, 0.95], threeQ), ...at('cat.care.groom_face', [2.3], { ...threeQ, az: -40 }), ...at('cat.care.groom_flank', [0.3, 0.7], threeQ), ...at('cat.care.groom_flank', [0.5], top, ' top'), ...at('cat.care.groom_flank', [1.0], front, ' front')] },
+  eat: { title: 'cat.care.eat_crouch and cat.care.drink_lap', cols: 4, cellW: 360, cellH: 260,
+    cells: [...at('cat.care.eat_crouch', [0.2, 1.0], side), ...at('cat.care.eat_crouch', [1.0], threeQ, ' 3/4'), ...at('cat.care.eat_crouch', [0.2], front, ' front'),
+      ...at('cat.care.drink_lap', [0.0, 0.12], side), ...at('cat.care.drink_lap', [0.5], threeQ, ' 3/4'), ...at('cat.care.drink_lap', [0.5], front, ' front')] },
+  jumps: { title: 'jump up low / high (root motion), jump down low / high, land', cols: 5, cellW: 320, cellH: 300,
+    cells: [...at('cat.move.jump_up_low', [0.2, 0.36, 0.52, 0.66, 0.9], { az: 90, el: 3, dist: 4, ortho: 1.0, target: [0, 0.32, 0.3], follow: false, travel: false, platform: { h: 0.45, z: 0.24 }, scaled: false }),
+      ...at('cat.move.jump_up_high', [0.4, 0.65, 0.82, 0.97, 1.3], { az: 90, el: 3, dist: 5, ortho: 1.8, target: [0, 0.75, 0.3], follow: false, travel: false, platform: { h: 1.2, z: 0.27 }, scaled: false }),
+      ...at('cat.move.jump_down_low', [0.08, 0.2, 0.32, 0.45, 0.8], { az: 90, el: 3, dist: 4, ortho: 1.0, target: [0, -0.1, 0.35], follow: false, travel: false, platform: { h: -0.45, z: 0.17 }, scaled: false }),
+      ...at('cat.move.jump_down_high', [0.1, 0.3, 0.5, 0.7, 1.1], { az: 90, el: 3, dist: 5, ortho: 1.9, target: [0, -0.45, 0.4], follow: false, travel: false, platform: { h: -1.2, z: 0.17 }, scaled: false }),
+      ...at('cat.move.land', [0, 0.08, 0.16, 0.3, 0.5], side)] },
+  pounce: { title: 'cat.play.pounce (root motion): crouch, butt wiggle, spring (0.46), pin (0.6)', cols: 4, cellW: 380, cellH: 270,
+    cells: at('cat.play.pounce', [0.1, 0.25, 0.38, 0.5, 0.56, 0.62, 0.8, 1.2], { ...side, ortho: 0.8, target: [0, 0.15, 0.2], travel: false }) },
+  hiss: { title: 'cat.react.hiss, cat.react.flinch_startle, cat.react.swat', cols: 4, cellW: 360, cellH: 270,
+    cells: [...at('cat.react.hiss', [0.1, 0.3, 0.8], side), ...at('cat.react.hiss', [0.5], front, ' front'),
+      ...at('cat.react.flinch_startle', [0.1, 0.6], side), ...at('cat.react.swat', [0.12, 0.25], threeQ, ' 3/4')] },
+  social: { title: 'cat.social.head_rub, tail_up_greeting; bat left / right', cols: 4, cellW: 360, cellH: 270,
+    cells: [...at('cat.social.head_rub', [0.3, 0.65, 1.0], front, ' front'), ...at('cat.social.head_rub', [0.65], threeQ, ' 3/4'),
+      ...at('cat.social.tail_up_greeting', [0.35, 1.0], side), ...at('cat.play.bat_left', [0.2], front, ' front'), ...at('cat.play.bat_right', [0.2], threeQ, ' 3/4')] },
+  roll: { title: 'cat.play.roll_over and cat.perk.catnip_roll', cols: 5, cellW: 320, cellH: 260,
+    cells: [...at('cat.play.roll_over', [0.25, 0.5, 0.9, 1.2, 1.8], threeQ), ...at('cat.perk.catnip_roll', [0.3, 0.6, 1.2, 1.9, 2.8], threeQ)] },
+  layers: { title: 'additive layers (shown on their reference pose)', cols: 4, cellW: 340, cellH: 250,
+    cells: [...at('cat.layer.tail_up', [0.5], side), ...at('cat.layer.tail_low', [0.5], side), ...at('cat.layer.tail_lash', [0, 0.2], top, ' top'),
+      ...at('cat.layer.ears_forward', [0.5], front, ' front'), ...at('cat.layer.ears_back', [0.5], front, ' front'), ...at('cat.layer.lean_in', [0.4], front, ' front'), ...at('cat.rest.yawn', [0.7], threeQ, ' 3/4')] },
+  perks: { title: 'perk clips (M5/M6)', cols: 5, cellW: 320, cellH: 240,
+    cells: [...at('cat.perk.catnip_sniff', [0.5, 1.4], side), ...at('cat.perk.catnip_lick', [0.5], threeQ), ...at('cat.perk.catnip_zoom', [0.15], side),
+      ...at('cat.perk.laser_stalk', [0.5], side), ...at('cat.perk.laser_butt_wiggle', [0.5], threeQ), ...at('cat.perk.laser_pounce', [0.32, 0.6], { ...side, travel: false }),
+      ...at('cat.perk.toy_catch', [0.8], threeQ), ...at('cat.perk.feather_bat', [0.17], front), ...at('cat.perk.feather_leap', [0.6], { ...side, ortho: 0.9, target: [0, 0.3, 0] }),
+      ...at('cat.perk.feather_catch', [0.32], threeQ), ...at('cat.perk.harness_freeze', [1.2], side), ...at('cat.perk.harness_low_walk', [0.3], side),
+      ...at('cat.perk.harness_flop', [1.5], threeQ), ...at('cat.perk.harness_sniff', [0.8], side)] },
 };
 
 const MIME: Record<string, string> = { '.html': 'text/html', '.js': 'text/javascript', '.glb': 'model/gltf-binary', '.wasm': 'application/wasm' };
@@ -75,8 +83,8 @@ function serve() {
   const server = createServer((req, res) => {
     const url = decodeURIComponent((req.url ?? '/').split('?')[0]!);
     const file = url === '/' ? join(root, 'art/cats/anim/preview/preview.html')
-      : url.startsWith('/three/') ? join(root, 'node_modules/three', url.slice(7))
-      : url.startsWith('/assets/') ? join(root, 'public/assets', url.slice(8)) : '';
+      : url === '/anims.glb' ? resolve(GLB)
+      : url.startsWith('/three/') ? join(root, 'node_modules/three', url.slice(7)) : '';
     if (url === '/favicon.ico') { res.writeHead(204); res.end(); return; }
     if (!file || !existsSync(file)) { res.writeHead(404); res.end(); return; }
     res.writeHead(200, { 'content-type': MIME[extname(file)] ?? 'application/octet-stream' });
@@ -93,22 +101,20 @@ const names = wanted.length ? wanted : Object.keys(SHEETS);
 const { port, close } = await serve();
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 try {
-  const page = await browser.newPage({ viewport: { width: 1600, height: 1200 } });
+  const page = await browser.newPage({ viewport: { width: 1700, height: 1300 } });
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(String(e)));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
-  await page.goto(`http://127.0.0.1:${port}/${process.env.PREVIEW_MESH === '0' ? '?mesh=0' : ''}`);
+  await page.goto(`http://127.0.0.1:${port}/`);
   await page.waitForFunction(() => (window as unknown as { ready?: boolean }).ready === true, null, { timeout: 60000 });
   mkdirSync(OUT, { recursive: true });
-  const available = new Set((await page.evaluate(() => (window as unknown as { clipInfo: () => { name: string }[] }).clipInfo())).map(c => c.name));
+  const prefix = process.env.PREVIEW_PREFIX ?? '';
   for (const name of names) {
     const sheet = SHEETS[name];
     if (!sheet) throw new Error(`unknown sheet ${name}`);
-    const cells = sheet.cells.filter(c => c.clip === 'rest' || available.has(c.clip));
-    if (!cells.length) { console.log(`${name}: no clips yet`); continue; }
-    await page.evaluate(s => (window as unknown as { renderSheet: (s: unknown) => Promise<boolean> }).renderSheet(s), { ...sheet, cells });
-    await page.locator('#wrap').screenshot({ path: `${OUT}/${name}.png` });
-    console.log(`${OUT}/${name}.png (${cells.length} cells)`);
+    await page.evaluate(s => (window as unknown as { renderSheet: (s: unknown) => Promise<boolean> }).renderSheet(s), sheet);
+    await page.locator('#wrap').screenshot({ path: `${OUT}/${prefix}${name}.png` });
+    console.log(`${OUT}/${prefix}${name}.png (${sheet.cells.length} cells)`);
   }
   if (errors.length) throw new Error(`preview page errors:\n${errors.join('\n')}`);
 } finally {
