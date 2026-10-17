@@ -88,6 +88,16 @@ test('cat studio plays authored clips, switches residents and scrubs the real ri
  await page.locator('#cat-resident').selectOption('clementine');await expect(page.locator('body')).toHaveAttribute('data-resident','clementine');await page.locator('#cat-skeleton').check();await page.locator('#cat-clay').check();await page.locator('#cat-ground').selectOption('step');await page.locator('#cat-ik').uncheck();await page.locator('#cat-look').check();
  await page.screenshot({path:info.outputPath('cat-studio.png')});expect(errors).toEqual([]);
 });
+test('optional residents load only after the first playable café frame',async({page})=>{
+ const catRequests:string[]=[];page.on('request',request=>{if(request.url().includes('/assets/art/cats/'))catRequests.push(request.url());});
+ await page.goto('./?tier=low&flags=cats');await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:STARTUP_TIMEOUT});
+ await expect(page.locator('body')).toHaveAttribute('data-gpu-ready','true');expect(catRequests).toEqual([]);
+ await page.locator('#start').click();await page.locator('#patron-name').fill('Resident visitor');
+ await page.getByRole('button',{name:'Make yourself at home'}).click();
+ await expect(page.locator('body')).toHaveAttribute('data-phase','play');
+ await expect(page.locator('body')).toHaveAttribute('data-cats','8',{timeout:STARTUP_TIMEOUT});
+ expect(catRequests.length).toBeGreaterThan(0);
+});
 test('Settings About shows the build and feedback opens a metadata-prefilled draft',async({page})=>{
  await page.goto('./?tier=low');await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:STARTUP_TIMEOUT});await page.locator('.top-settings').click();
  const stamp=await page.locator('#build-stamp').textContent();await expect(page.locator('#about-build')).toContainText(stamp!);await expect(page.locator('#about-flags')).toContainText('Enabled flags:');

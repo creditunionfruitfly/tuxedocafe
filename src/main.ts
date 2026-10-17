@@ -47,6 +47,20 @@ try {
   const probe=probeDevice(display.renderer.getContext() as WebGL2RenderingContext),benchmark=new TierBenchmark();
   const override=parseTier(new URLSearchParams(location.search).get('tier'));if(override){benchmarkDone=display.configure(override);contextReloadPending=!benchmarkDone;}
   let residents: Awaited<ReturnType<typeof import('./cats/residents-scene.ts').mountResidents>> | null = null;
+  let residentsLoading=false, alive=true;
+  const beginResidents=():void=>{
+    if(!flags.has('cats')||residentsLoading||residents||!alive)return;
+    residentsLoading=true;body.dataset.catsLoading='true';
+    // The opt-in cast is substantial: first make the café playable, then stream
+    // its resident kit and maps without holding the title screen or first frame.
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      if(!alive)return;
+      void import('./cats/residents-scene.ts').then(module=>module.mountResidents(scene,parseTier(body.dataset.tier??null)??'desktop',bus)).then(cast=>{
+        if(alive)residents=cast;else cast.dispose();
+        body.dataset.catsLoading='false';
+      }).catch(error=>{residentsLoading=false;body.dataset.catsLoading='error';console.warn('Optional residents did not load',error);});
+    }));
+  };
   const forwardVector=new Vector3();
   const loop=new FixedLoop(dt=>{
     if(!playing)return;
@@ -66,7 +80,7 @@ try {
     if(benchmarkDone&&!contextReloadPending&&body.dataset.ready!=='true'){const start=document.querySelector<HTMLButtonElement>('#start')!;start.disabled=false;start.setAttribute('aria-busy','false');body.dataset.ready='true';}body.dataset.drawCalls=String(display.renderer.info.render.calls);body.dataset.triangles=String(display.renderer.info.render.triangles);body.dataset.shaderPrograms=String(display.renderer.info.programs?.length??0);
     if(++drawFrames%60===0){body.dataset.frameMs=(frameSum/60).toFixed(1);frameSum=0;}
   });
-  bus.on('session',value=>{playing=value.playing;pointer.active(playing&&!paused);keyboard.keys.clear();});
+  bus.on('session',value=>{playing=value.playing;pointer.active(playing&&!paused);keyboard.keys.clear();if(playing)beginResidents();});
   bus.on('settings',value=>{if(value.tier!==tierPreference){tierPreference=value.tier;const url=new URL(location.href);if(value.tier==='auto')url.searchParams.delete('tier');else url.searchParams.set('tier',value.tier);void save().then(()=>location.assign(url.href));}player.reducedMotion=value.reducedMotion;const tier=parseTier(value.tier)??override;if(tier){benchmarkDone=display.configure(tier);contextReloadPending=!benchmarkDone;}else benchmarkDone=false;});
   bus.on('profile',profile=>hand.customize(profile.skin,profile.sleeve));
   bus.on('player',({x,z})=>cafe.updateLighting(x,1.3,z));
@@ -80,7 +94,6 @@ try {
   installOrientation(value=>{paused=value;loop.paused=value;loop.reset();pointer.active(playing&&!paused);});
   mountShell(bus,visit,save);mountAbout(buildInfo);
   await cafe.load();const handLoader=new GLTFLoader();handLoader.setMeshoptDecoder(MeshoptDecoder);const gltf=await handLoader.loadAsync(assetUrl('art/hand.glb'));useRoomProbe(gltf.scene);hand.setModel(gltf.scene,gltf.animations);if(visit.profile)hand.customize(visit.profile.skin,visit.profile.sleeve);
-  if(flags.has('cats'))residents=await (await import('./cats/residents-scene.ts')).mountResidents(scene,parseTier(body.dataset.tier??null)??'desktop',bus);
   // The first render skips the hidden hand. Compile every scene material before
   // input starts so the first reach cannot stall hover dwell or a floor tap.
   await display.renderer.compileAsync(scene,camera);
@@ -92,7 +105,7 @@ try {
     if(!benchmarkDone&&!contextReloadPending){const result=benchmark.update(time);if(result!==null){benchmarkDone=display.configure(chooseTier(probe,result));contextReloadPending=!benchmarkDone;body.dataset.benchmarkMs=result.toFixed(1);}}
     const elapsed=previous?time-previous:16.7;frameSum+=elapsed;if(previous)display.adapt(elapsed);previous=time;loop.frame(time);
   });
-  window.addEventListener('pagehide',event=>{void save();if(!event.persisted)residents?.dispose();});
+  window.addEventListener('pagehide',event=>{void save();if(!event.persisted){alive=false;residents?.dispose();}});
 } catch(error) {
   document.querySelector<HTMLElement>('#unsupported')?.removeAttribute('hidden');body.dataset.ready='unsupported';console.warn('Café loading failed',error);if(rendererReady)window.dispatchEvent(new Event('cafe:asset-error'));
 }
