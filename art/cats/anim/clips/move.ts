@@ -174,7 +174,7 @@ function land(t: number, ctx: Ctx): Body {
 }
 
 /** Pounce: crouch, butt wiggle with treading hind paws, spring, pin with both forepaws. */
-export function pounce(t: number, ctx: Ctx, o = { Dp: 0.4, tCrouch: 0.2, tWig: [0.2, 0.42] as [number, number], tSpring: 0.46, tPin: 0.6 }): Body {
+export function pounce(t: number, ctx: Ctx, o: { Dp: number; tCrouch: number; tWig: [number, number]; tSpring: number; tPin: number; tread?: boolean } = { Dp: 0.4, tCrouch: 0.2, tWig: [0.2, 0.42], tSpring: 0.46, tPin: 0.6 }): Body {
   const M = ctx.M, k = M.legScale, sH = M.shoulderH, rig = ctx.rig, stand = idlePose(ctx);
   const Dp = o.Dp * k;
   const crouch = cloneBody(stand);
@@ -208,8 +208,8 @@ export function pounce(t: number, ctx: Ctx, o = { Dp: 0.4, tCrouch: 0.2, tWig: [
   for (const id of ['LH', 'RH'] as const) {
     const L = b.legs[id], home = stand.legs[id].toe, landAt: V3 = [home[0], home[1], home[2] + Dp + 0.02 * k];
     const tread = id === 'LH' ? w0 + 0.04 : w0 + 0.12;
-    if (t > tread && t < tread + 0.07) stepLeg(rig, L, id, t, tread, tread + 0.07, home, home, 0.018 * k, 0.5);
-    else if (t > tread + 0.1 && t < tread + 0.17) stepLeg(rig, L, id, t, tread + 0.1, tread + 0.17, home, home, 0.018 * k, 0.5);
+    if (o.tread !== false && t > tread && t < tread + 0.07) stepLeg(rig, L, id, t, tread, tread + 0.07, home, home, 0.018 * k, 0.5);
+    else if (o.tread !== false && t > tread + 0.1 && t < tread + 0.17) stepLeg(rig, L, id, t, tread + 0.1, tread + 0.17, home, home, 0.018 * k, 0.5);
     if (t <= o.tSpring + 0.04) continue;
     if (t < o.tPin + 0.1) flightLeg(ctx, b, L, id, (t - o.tSpring - 0.04) / (o.tPin + 0.06 - o.tSpring), home, [[0.05, -0.16, -0.12]], landAt);
     else L.toe = landAt;
@@ -217,8 +217,9 @@ export function pounce(t: number, ctx: Ctx, o = { Dp: 0.4, tCrouch: 0.2, tWig: [
   return b;
 }
 
-export function pounceStance(T: number, o = { tWig: [0.2, 0.42] as [number, number], tSpring: 0.46, tPin: 0.6 }) {
+export function pounceStance(T: number, o: { tWig: [number, number]; tSpring: number; tPin: number; tread?: boolean } = { tWig: [0.2, 0.42], tSpring: 0.46, tPin: 0.6 }) {
   const w0 = o.tWig[0], tr = (id: LegId) => (id === 'LH' ? w0 + 0.04 : w0 + 0.12);
+  if (o.tread === false) return { LF: [[0, o.tSpring], [o.tPin, T]], RF: [[0, o.tSpring], [o.tPin, T]], LH: [[0, o.tSpring + 0.04], [o.tPin + 0.1, T]], RH: [[0, o.tSpring + 0.04], [o.tPin + 0.1, T]] } as Partial<Record<LegId, [number, number][]>>;
   return {
     LF: [[0, o.tSpring], [o.tPin, T]], RF: [[0, o.tSpring], [o.tPin, T]],
     LH: [[0, tr('LH')], [tr('LH') + 0.07, tr('LH') + 0.1], [tr('LH') + 0.17, o.tSpring + 0.04], [o.tPin + 0.1, T]],

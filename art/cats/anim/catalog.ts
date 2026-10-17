@@ -63,7 +63,7 @@ export interface ClipSpec {
   /** Floor model for ground checks (default flat at y = 0). */
   terrain?: (ctx: Ctx) => Terrain;
   /** Additive clips: bone offsets per frame, composed onto the reference pose. */
-  additive?: { reference: string; offsets: (t: number, ctx: Ctx) => Record<string, Quaternion> };
+  additive?: { reference: string; offsets: (t: number, ctx: Ctx, ref: Pose) => Record<string, Quaternion> };
   /** Extra extras (rigSpeed, strideFit...). */
   extras?: (ctx: Ctx) => Record<string, unknown>;
 }

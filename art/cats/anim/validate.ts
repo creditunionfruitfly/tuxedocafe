@@ -22,14 +22,14 @@ export const LIMITS = {
 const JOINT_MAX: [RegExp, number][] = [
   [/^spine_0[1-5]$/, 32], [/^neck_0[12]$/, 62], [/^head$/, 50], [/^jaw$/, 62],
   [/^ear_[LR]_01$/, 95], [/^ear_[LR]_02$/, 45], [/^eye_[LR]$/, 30], [/^whisker_[LR]$/, 30],
-  [/_toe$/, 60], [/_digit_/, 25], [/_metatarsal$/, 1], [/^tail_01$/, 95], [/^tail_\d\d$/, 55],
+  [/_toe$/, 60], [/_digit_/, 25], [/_metatarsal$/, 1], [/^tail_01$/, 110], [/^tail_\d\d$/, 55],
 ];
 
 /** Anatomical ranges (degrees): middle joint interior, carpus / hock flexion, digits, prox rotation. */
 export const ANATOMY = {
   midMin: 20, midMax: 178,
   carpusF: [-85, 160] as const, hockH: [-15, 170] as const,
-  digits: [-115, 75] as const, prox: 75, slideFrac: 0.15,
+  digits: [-115, 85] as const, prox: 75, slideFrac: 0.15,
 };
 
 export interface Summary { maxSlip: number; maxSlipClip: string; maxSeam: number; clips: number; frames: number; maxTailKink: number; minSwingLift: number }

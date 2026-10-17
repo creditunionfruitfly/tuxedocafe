@@ -224,18 +224,24 @@ export function lieSideBody(rig: Rig, roll = 80 * DEG, stretch = 0): Body {
   b.gaze = [0, 0, 0, 0];
   b.neck = [[0.06 + 0.1 * stretch, -0.1, -0.22], [0.05, -0.1, -0.28]];
   b.head = [0.05, -0.05, -0.32];
-  const front = (id: LegId, fwd: number, down: number, out: number) => {
-    const L = b.legs[id], d = rig.legs[id];
-    freeLeg(L, bodyPoint(rig, b, 'spine_04', [d.side * out, -down, fwd]), (0.7 - 0.6 * stretch), 0.2 - 0.3 * stretch,
-      { share: 0.3, fore: 0.6 + 0.6 * stretch, foreK: 0, foreW: 0.6, curl: 0.2, yaw: 0, out: 0 });
+  // Legs lie along the floor from their shoulder / hip joints (reach scaled to each rig's limbs): the lower pair
+  // on the floor, the upper pair resting a little higher and further forward.
+  const W = fk(rig, solveTrunk(rig, b));
+  const heading = new Vector3(0, 0, 1).applyQuaternion(W.rot[rig.index('spine_03')]!); heading.y = 0; heading.normalize();
+  const belly = new Vector3(Math.cos(roll) > 0 ? 1 : -1, 0, 0).multiplyScalar(Math.sin(roll) >= 0 ? 1 : -1);
+  const lay = (id: LegId, angleDeg: number, ext: number, carpus: number, digits: number) => {
+    const d = rig.legs[id], L = b.legs[id], A = W.pos[d.a]!;
+    const upper = (d.side > 0) === (roll > 0);
+    const a = angleDeg * DEG, len = ext * (d.L1 + d.L2 + d.Lm);
+    const dir = heading.clone().multiplyScalar(Math.cos(a)).addScaledVector(belly, Math.sin(a) * 0.55);
+    const toe = A.clone().addScaledVector(dir, len);
+    toe.y = (upper ? 0.35 * M.halfWidth : 0) + 0.014 * k;
+    freeLeg(L, [toe.x, toe.y, toe.z], carpus, digits, { share: 0.3, fore: d.front ? 0.9 : -0.2, foreK: 0, foreW: d.front ? 0.5 : 0.2, curl: 0.15, yaw: 0, out: 0 });
   };
-  const hind = (id: LegId, fwd: number, down: number, out: number) => {
-    const L = b.legs[id], d = rig.legs[id];
-    freeLeg(L, bodyPoint(rig, b, 'pelvis', [d.side * out, -down, fwd]), (0.9 - 0.7 * stretch), 0.1 - 0.2 * stretch,
-      { share: 0.3, foreW: 0.3, curl: 0.12, yaw: 0, out: 0 });
-  };
-  front('RF', 0.1 + stretch * 0.12, 0.2, 0.02); front('LF', 0.15 + stretch * 0.1, 0.18, 0.09);
-  hind('RH', 0.05 - stretch * 0.14, 0.2, 0.03); hind('LH', 0.09 - stretch * 0.1, 0.17, 0.11);
+  lay('RF', 38 + 22 * stretch, 0.62 + 0.25 * stretch, 0.75 - 0.65 * stretch, 0.15 - 0.3 * stretch);
+  lay('LF', 52 + 18 * stretch, 0.6 + 0.25 * stretch, 0.6 - 0.5 * stretch, 0.1 - 0.3 * stretch);
+  lay('RH', -(60 + 50 * stretch), 0.55 + 0.3 * stretch, 0.9 - 0.7 * stretch, 0.1 - 0.2 * stretch);
+  lay('LH', -(45 + 50 * stretch), 0.55 + 0.3 * stretch, 0.8 - 0.6 * stretch, 0.1 - 0.2 * stretch);
   b.earL = [0.22, 0.1, -0.05]; b.earR = [0.22, 0.1, -0.05];
   b.tailCurve = null;
   b.tail = tailShape({ base: -0.25, lift: 0.1, side: 0.35, tipSide: 0.4 });

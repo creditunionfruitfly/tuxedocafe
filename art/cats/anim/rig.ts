@@ -156,7 +156,8 @@ export function loadRig(path = process.env.CAT_SKELETON ?? 'art/rig/skeleton.jso
   const tail = Array.from({ length: 12 }, (_, i) => index(`tail_${String(i + 1).padStart(2, '0')}`));
   const M: Measures = {
     shoulderH, pelvisH: W('pelvis').y, legScale: shoulderH / ADULT_SHOULDER_M,
-    depth: 0.40 * shoulderH, halfWidth: 0.19 * shoulderH, skin: 0.03 * shoulderH,
+    depth: 0.40 * shoulderH, skin: 0.03 * shoulderH,
+    halfWidth: Math.max(0.19 * shoulderH, 1.05 * Math.max(Math.abs(W('hind_L_hip').x), Math.abs(W('front_L_scapula').x))),
     girdle: W('pelvis').distanceTo(W('spine_04')), trunk: W('pelvis').distanceTo(W('spine_05')),
     pelvisZ: W('pelvis').z, chestZ: W('spine_04').z, headZ: W('head').z, headH: W('head').y,
     tailLen: tail.slice(1).reduce((sum, i) => sum + offset[i]!.length(), 0),

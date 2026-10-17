@@ -29,26 +29,29 @@ const sample = (f: (t: number) => number, T: number, fps = EXPRESSION_FPS): Curv
 const envelope = (T: number, attack: number, release: number, peak = 1) => (t: number) =>
   peak * smooth(t / attack) * (1 - smooth((t - (T - release)) / release));
 
+/** A curve that starts `delay` seconds late but still ends at T (the trailing eye or ear). */
+const lagged = (f: (t: number) => number, delay: number, T: number) => (t: number) => t <= delay ? f(0) : f((t - delay) * T / (T - delay));
+
 /** Expression shapes by catalog name: per-morph functions of time. */
 function expressionCurves(name: string, T: number): Record<string, (t: number) => number> | null {
   switch (name) {
     case 'blink': {
       // Upper lid drops fast, a two-frame hold, then opens a little slower; the right eye trails by a hair.
       const f = curve([[0, 0], [0.02, 0.15], [0.055, 1], [0.075, 1], [0.13, 0.35], [0.18, 0]]);
-      return { blink_L: f, blink_R: (t: number) => f(t - 0.006) };
+      return { blink_L: f, blink_R: lagged(f, 0.006, T) };
     }
-    case 'slow_blink': return { blink_L: (t: number) => slowBlink(t * 1.8 / T), blink_R: (t: number) => slowBlink(t * 1.8 / T - 0.02) };
+    case 'slow_blink': { const f = (t: number) => slowBlink(t * 1.8 / T); return { blink_L: f, blink_R: lagged(f, 0.02, T) }; }
     case 'squint_content': {
       const f = curve([[0, 0], [0.35, 0.5], [0.9, 0.62], [1.4, 0.56], [1.75, 0.3], [2.0, 0]]);
-      return { squint_L: (t: number) => f(t * 2 / T), squint_R: (t: number) => f(t * 2 / T - 0.03) };
+      const g = (t: number) => f(t * 2 / T); return { squint_L: g, squint_R: lagged(g, 0.03, T) };
     }
-    case 'ears_flat': { const f = envelope(T, 0.12, 0.14); return { earFlatten_L: f, earFlatten_R: (t: number) => f(t - 0.015) }; }
+    case 'ears_flat': { const f = envelope(T, 0.12, 0.14); return { earFlatten_L: f, earFlatten_R: lagged(f, 0.015, T) }; }
     case 'whiskers_forward': return { whiskerForward: envelope(T, 0.14, 0.18) };
     case 'whiskers_back': return { whiskerBack: envelope(T, 0.1, 0.18) };
-    case 'snarl': return { noseWrinkle: envelope(T, 0.1, 0.18), mouthOpen: (t: number) => envelope(T, 0.12, 0.16, 0.85)(t - 0.06) };
+    case 'snarl': return { noseWrinkle: envelope(T, 0.1, 0.18), mouthOpen: lagged(envelope(T, 0.12, 0.16, 0.85), 0.06, T) };
     case 'flehmen': {
       // Grimace: the upper lip lifts (nose wrinkle) and the mouth hangs slightly open, held while scenting.
-      return { noseWrinkle: envelope(T, 0.3, 0.3, 0.9), mouthOpen: (t: number) => envelope(T, 0.35, 0.25, 0.4)(t - 0.08) };
+      return { noseWrinkle: envelope(T, 0.3, 0.3, 0.9), mouthOpen: lagged(envelope(T, 0.35, 0.25, 0.4), 0.08, T) };
     }
     default: return null;
   }

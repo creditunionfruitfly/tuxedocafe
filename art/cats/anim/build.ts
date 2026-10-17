@@ -38,7 +38,7 @@ export function buildClip(rig: Rig, catalog: Catalog, clip: CatalogClip, spec: C
     const touched = new Set<string>();
     frames = times.map(t => {
       const p = clonePose(refPose);
-      for (const [name, offset] of Object.entries(spec.additive!.offsets(t, ctx))) {
+      for (const [name, offset] of Object.entries(spec.additive!.offsets(t, ctx, refPose))) {
         if (names && !names.includes(name)) throw new Error(`${clip.name}: additive offset on ${name}, outside the catalog bone list`);
         touched.add(name);
         const i = rig.index(name);
@@ -83,7 +83,17 @@ const round = (x: number) => Math.round(x * 10000) / 10000;
  */
 function clearFloor(rig: Rig, b: Body, terrain: (x: number, z: number) => number): Pose {
   let pose = solve(rig, b);
-  for (let it = 0; it < 3; it++) {
+  // Trunk, head and ears rest on the floor rather than through it (lying, rolling): lift the body by the deficit.
+  const clearance = trunkClearance(rig);
+  for (let it = 0; it < 6; it++) {
+    const W = fk(rig, pose);
+    let deficit = 0;
+    clearance.forEach((r, i) => { if (r >= 0) { const p = W.pos[i]!; deficit = Math.max(deficit, terrain(p.x, p.z) + r - p.y); } });
+    if (deficit < 1e-5) break;
+    b.pelvisOff[1] += deficit;
+    pose = solve(rig, b);
+  }
+  for (let it = 0; it < 5; it++) {
     const W = fk(rig, pose);
     let moved = false;
     for (const id of LEGS) {
@@ -92,16 +102,34 @@ function clearFloor(rig: Rig, b: Body, terrain: (x: number, z: number) => number
       const planted = L.rel < 0.01 && L.cw < 0.01 && Math.abs(L.toe[1] - toeFloor - d.padY) < 1e-4;
       if (planted) continue;
       let deficit = 0;
-      for (const j of [d.c, ...d.meta, d.paw, d.toe, ...d.digits]) {
+      for (const j of [d.a, d.b, d.c, ...d.meta, d.paw, d.toe, ...d.digits]) {
         const p = W.pos[j]!;
         deficit = Math.max(deficit, terrain(p.x, p.z) + 0.003 - p.y);
       }
-      if (deficit > 1e-5) { L.toe[1] += deficit; if (L.cw > 0) L.c[1] += deficit; moved = true; }
+      if (deficit > 1e-5) { L.toe[1] += deficit * 1.2; if (L.cw > 0) L.c[1] += deficit * 1.2; moved = true; }
     }
     if (!moved) break;
     pose = solve(rig, b);
   }
   return tailFloor(rig, pose, terrain);
+}
+
+const clearanceCache = new WeakMap<Rig, number[]>();
+/** Floor clearance per joint (m) for the trunk pass: body volume around the spine, small for head parts; -1 for limbs and tail. */
+function trunkClearance(rig: Rig): number[] {
+  let c = clearanceCache.get(rig);
+  if (c) return c;
+  const hw = rig.M.halfWidth, limb = new Set<number>();
+  for (const d of Object.values(rig.legs)) for (const j of [d.b, d.c, ...d.meta, d.paw, d.toe, ...d.digits]) limb.add(j);
+  c = rig.names.map((n, i) => {
+    if (i === 0 || limb.has(i) || n.startsWith('tail_')) return -1;
+    if (n === 'pelvis' || n.startsWith('spine_')) return 0.8 * hw;
+    if (n.startsWith('neck_')) return 0.55 * hw;
+    if (n === 'head') return 0.5 * hw;
+    return 0.003;
+  });
+  clearanceCache.set(rig, c);
+  return c;
 }
 
 /** Tail joints rest on the floor rather than through it: the joints above a sinking one share the lift (no kinks). */

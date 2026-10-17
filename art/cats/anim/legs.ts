@@ -55,6 +55,7 @@ const AXIS_X = new Vector3(1, 0, 0), UP = new Vector3(0, 1, 0);
 const PROX_MAX = 62 * Math.PI / 180;
 /** Tightest elbow / knee fold the solver allows (rad). */
 const MID_MIN = 24 * Math.PI / 180;
+const clampProx = (a: number) => Math.max(-PROX_MAX - 0.15, Math.min(PROX_MAX + 0.15, a));
 const tmpM = new Matrix4();
 
 /** Rotation whose X/Y/Z columns are the frame built from a direction (e1) and a lateral axis (e2). */
@@ -165,8 +166,8 @@ export function solveLeg(rig: Rig, pose: Pose, W: World, d: LegDef, L: Leg): Leg
     // Coarse scan, then golden-section refinement: continuous in the inputs, so frames vary smoothly.
     const center = warm ?? pref, span = warm === null ? 0.9 : 0.25, step = span / 45;
     let best = center, bestC = Infinity;
-    for (let k = -45; k <= 45; k++) { const a = center + k * step, c = cost(a); if (c < bestC) { bestC = c; best = a; } }
-    let lo2 = best - step, hi2 = best + step;
+    for (let k = -45; k <= 45; k++) { const a = clampProx(center + k * step), c = cost(a); if (c < bestC) { bestC = c; best = a; } }
+    let lo2 = clampProx(best - step), hi2 = clampProx(best + step);
     const gr = (Math.sqrt(5) - 1) / 2;
     let x1 = hi2 - gr * (hi2 - lo2), x2 = lo2 + gr * (hi2 - lo2), f1 = cost(x1), f2 = cost(x2);
     for (let k = 0; k < 40; k++) {

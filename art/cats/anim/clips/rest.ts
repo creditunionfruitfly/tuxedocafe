@@ -72,7 +72,7 @@ function wakeStretch(t: number, ctx: Ctx): Body {
   }
   for (const id of ['LH', 'RH'] as const) { dog.legs[id].spread = 0.15; dog.legs[id].meta = rig.legs[id].stanceMeta + 0.12; }
   dog.gaze = [0.12, 0, 0, 1]; dog.earL = [0.3, 0.15, -0.05]; dog.earR = [0.3, 0.15, -0.05];
-  dog.tail = tailShape({ base: 0.45, lift: 0.45, tip: 0.5 });
+  dog.tail = tailShape({ base: 0.3, lift: 0.25, tip: 0.55 });
   const deep = cloneBody(dog); setTrunk(rig, deep, { pelvisDrop: -0.04 * sH, chestDrop: 0.45 * sH, arch: -0.36 });
   deep.legs = dog.legs;
   // Forward shift onto the forelegs, then the hind-leg stretch.
@@ -99,7 +99,8 @@ function wakeStretch(t: number, ctx: Ctx): Body {
   for (const [id, t0, t1] of [['LH', 0.15, 0.45], ['RH', 0.25, 0.55]] as const) {
     const L = b.legs[id];
     if (t <= t0) continue;
-    if (t <= t1) { Object.assign(L, stand.legs[id]); stepLeg(rig, L, id, t, t0, t1, loaf.legs[id].toe, stand.legs[id].toe, 0.035 * sH, 1.0); }
+    Object.assign(L, stand.legs[id]);
+    if (t <= t1) stepLeg(rig, L, id, t, t0, t1, loaf.legs[id].toe, stand.legs[id].toe, 0.035 * sH, 1.0);
   }
   // The hind-leg stretch: left hind extends far back, toes spread, held, then returns.
   {

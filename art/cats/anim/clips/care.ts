@@ -63,13 +63,13 @@ function faceWash(rig: Rig, b: Body, ctx: Ctx, u: number, side: 1 | -1) {
 function flankGroom(t: number, ctx: Ctx): Body {
   const b = sitPose(ctx), k = ctx.M.legScale;
   const p = (t % 1 + 1) % 1, drag = p < 0.68 ? smooth(p / 0.68) : 1 - smooth((p - 0.68) / 0.32);
-  b.pelvis[1] += 0.12; b.pelvis[2] -= 0.06;
+  b.pelvis[0] -= 0.06; b.pelvis[1] += 0.12; b.pelvis[2] -= 0.06;
   b.spine = b.spine.map((s, i) => [s[0] - 0.04, s[1] + [0.14, 0.18, 0.2, 0.2, 0.18][i]!, s[2]] as V3);
   b.gaze = [0, 0, 0, 0];
   b.neck = [[-0.3 - 0.08 * drag, 0.62 + 0.06 * drag, 0.1], [-0.28 - 0.06 * drag, 0.55 + 0.05 * drag, 0.12]];
   b.head = [-0.35 - 0.12 * drag, 0.35, 0.4];
   b.jaw = 0.1 + 0.08 * drag;
-  b.legs.RF.toe = [b.legs.RF.toe[0] - 0.025 * k, b.legs.RF.toe[1], b.legs.RF.toe[2] + 0.025 * k];
+  b.legs.RF.toe = [b.legs.RF.toe[0] - 0.02 * k, b.legs.RF.toe[1], b.legs.RF.toe[2] + 0.005 * k];
   b.earL = [0.35, 0.1, -0.05]; b.earR = [0.2, 0.05, 0];
   return addBreath(b, t, 3, 0.02);
 }

@@ -185,7 +185,8 @@ function startStopClip(name: string, starting: boolean): ClipSpec {
       const ph = phi(t);
       const walk = gaitBody(rig, plan, ((ph % 1) + 1) % 1);
       const idle = idleBody({ ...ctx, clip: ctx.catalog.clips.find(c => c.name === 'cat.loco.idle')! });
-      const w = starting ? smooth(t / T) : 1 - smooth(t / T);
+      // The trunk changes gait while the legs that are still at full stride keep the walk's posture.
+      const w = starting ? smooth(t / (0.75 * T)) : 1 - smooth((t - 0.28 * T) / (0.72 * T));
       const b = mixBody(idle, walk, w);
       const Tsw = (1 - style.duty) * style.T;
       const walkStanceLeg = (id: LegId, z: number) => {
