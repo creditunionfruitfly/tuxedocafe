@@ -9,8 +9,8 @@ import { fk, type Rig } from './rig.ts';
 
 export function simulateTail(rig: Rig, bodies: Body[], dt: number, loop: boolean, opts: TailSim) {
   const n = bodies.length, joints = rig.tail.length;
-  // Base angles: heading and elevation of the straight tail neutral's direction in world.
-  const restDir = rig.tailDir;
+  // Base angles: heading and elevation of the tail root's rest direction in world.
+  const restDir = rig.offset[rig.tail[1]!]!.clone().normalize();
   const base = bodies.map(b => {
     const W = fk(rig, solveTrunk(rig, b));
     const d = restDir.clone().applyQuaternion(W.rot[rig.parent[rig.tail[0]!]!]!);

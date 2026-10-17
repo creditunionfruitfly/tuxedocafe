@@ -3,7 +3,7 @@
 // bones only, so subtracting the reference recovers the layer.
 import { Quaternion } from 'three';
 import type { ClipSpec } from '../catalog.ts';
-import { tailLocal } from '../body.ts';
+import { qTail } from '../body.ts';
 import { type V3, AX, AY, AZ, bump, curve, loopCurve, pulse, qAxis, qBody, smooth } from '../math.ts';
 import { breath, tailShape } from '../poses.ts';
 import type { Pose, Rig } from '../rig.ts';
@@ -16,7 +16,7 @@ function tailTo(rig: Rig, ref: Pose, shape: V3[], from = 0): Record<string, Quat
   const out: Record<string, Quaternion> = {};
   for (let i = from; i < 12; i++) {
     const idx = rig.index(tailNames[i]!);
-    out[tailNames[i]!] = ref.q[idx]!.clone().invert().multiply(tailLocal(rig, i, shape[i]!));
+    out[tailNames[i]!] = ref.q[idx]!.clone().invert().multiply(qTail(shape[i]!));
   }
   return out;
 }
