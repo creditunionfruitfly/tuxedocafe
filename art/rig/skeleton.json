@@ -19,7 +19,7 @@
       "parent": "root",
       "restPosition": [
         0,
-        0.245,
+        0.262,
         -0.15
       ]
     },
@@ -28,8 +28,8 @@
       "parent": "pelvis",
       "restPosition": [
         0,
-        0.005,
-        0.052
+        0.011,
+        0.05
       ]
     },
     {
@@ -38,7 +38,7 @@
       "restPosition": [
         0,
         0.002,
-        0.054
+        0.05
       ]
     },
     {
@@ -46,8 +46,8 @@
       "parent": "spine_02",
       "restPosition": [
         0,
-        -0.003,
-        0.054
+        -0.005,
+        0.05
       ]
     },
     {
@@ -55,8 +55,8 @@
       "parent": "spine_03",
       "restPosition": [
         0,
-        -0.007,
-        0.052
+        -0.008,
+        0.048
       ]
     },
     {
@@ -64,8 +64,8 @@
       "parent": "spine_04",
       "restPosition": [
         0,
-        -0.008,
-        0.05
+        -0.011,
+        0.045
       ]
     },
     {
@@ -73,8 +73,8 @@
       "parent": "spine_05",
       "restPosition": [
         0,
-        -0.006,
-        0.026
+        0.001,
+        0.037
       ]
     },
     {
@@ -82,8 +82,8 @@
       "parent": "neck_01",
       "restPosition": [
         0,
-        0.028,
-        0.018
+        0.024,
+        0.028
       ]
     },
     {
@@ -91,8 +91,8 @@
       "parent": "neck_02",
       "restPosition": [
         0,
-        0.028,
-        0.014
+        0.024,
+        0.023
       ]
     },
     {
@@ -100,17 +100,17 @@
       "parent": "head",
       "restPosition": [
         0,
-        -0.006,
-        0.024
+        -0.013,
+        0.022
       ]
     },
     {
       "name": "ear_L_01",
       "parent": "head",
       "restPosition": [
-        0.024,
-        0.046,
-        0.018
+        0.0255,
+        0.0385,
+        0.0205
       ]
     },
     {
@@ -119,7 +119,7 @@
       "restPosition": [
         0.007,
         0.024,
-        -0.002
+        -0.003
       ]
     },
     {
@@ -127,52 +127,52 @@
       "parent": "head",
       "restPosition": [
         0.0185,
-        0.024,
-        0.054
+        0.0215,
+        0.0535
       ]
     },
     {
       "name": "whisker_L",
       "parent": "head",
       "restPosition": [
-        0.011,
-        -0.01,
-        0.08
+        0.0125,
+        -0.0095,
+        0.079
       ]
     },
     {
       "name": "front_L_scapula",
       "parent": "spine_04",
       "restPosition": [
+        0.03,
         0.024,
-        0.026,
-        0.038
+        0.037
       ]
     },
     {
       "name": "front_L_upper",
       "parent": "front_L_scapula",
       "restPosition": [
-        0.012,
-        -0.063,
-        0.042
+        0.01,
+        -0.064,
+        0.055
       ]
     },
     {
       "name": "front_L_fore",
       "parent": "front_L_upper",
       "restPosition": [
-        0.002,
-        -0.077,
-        -0.036
+        0,
+        -0.084,
+        -0.058
       ]
     },
     {
       "name": "front_L_wrist",
       "parent": "front_L_fore",
       "restPosition": [
-        -0.004,
-        -0.09,
+        -0.007,
+        -0.098,
         0.01
       ]
     },
@@ -180,8 +180,8 @@
       "name": "front_L_paw",
       "parent": "front_L_wrist",
       "restPosition": [
-        -0.001,
-        -0.025,
+        -0.002,
+        -0.026,
         0.015
       ]
     },
@@ -190,8 +190,8 @@
       "parent": "front_L_paw",
       "restPosition": [
         0,
-        -0.004,
-        0.015
+        -0.005,
+        0.014
       ]
     },
     {
@@ -200,7 +200,7 @@
       "restPosition": [
         -0.007,
         -0.002,
-        0.007
+        0.006
       ]
     },
     {
@@ -209,33 +209,33 @@
       "restPosition": [
         0.007,
         -0.002,
-        0.007
+        0.006
       ]
     },
     {
       "name": "hind_L_hip",
       "parent": "pelvis",
       "restPosition": [
-        0.03,
-        -0.011,
-        0.004
+        0.02,
+        -0.004,
+        0.008
       ]
     },
     {
       "name": "hind_L_thigh",
       "parent": "hind_L_hip",
       "restPosition": [
-        0.01,
-        -0.022,
-        -0.006
+        0.02,
+        -0.03,
+        -0.026
       ]
     },
     {
       "name": "hind_L_shin",
       "parent": "hind_L_thigh",
       "restPosition": [
-        0.005,
-        -0.072,
+        0.006,
+        -0.094,
         0.072
       ]
     },
@@ -243,9 +243,9 @@
       "name": "hind_L_hock",
       "parent": "hind_L_shin",
       "restPosition": [
-        -0.004,
-        -0.064,
-        -0.09
+        -0.006,
+        -0.062,
+        -0.108
       ]
     },
     {
@@ -254,16 +254,16 @@
       "restPosition": [
         -0.001,
         -0.016,
-        0.004
+        0.006
       ]
     },
     {
       "name": "hind_L_paw",
       "parent": "hind_L_metatarsal",
       "restPosition": [
-        -0.001,
-        -0.047,
-        0.018
+        -0.003,
+        -0.042,
+        0.024
       ]
     },
     {
@@ -271,35 +271,35 @@
       "parent": "hind_L_paw",
       "restPosition": [
         0,
-        -0.004,
-        0.016
+        -0.005,
+        0.015
       ]
     },
     {
       "name": "hind_L_digit_inner",
       "parent": "hind_L_toe",
       "restPosition": [
-        -0.007,
+        -0.006,
         -0.002,
-        0.007
+        0.006
       ]
     },
     {
       "name": "hind_L_digit_outer",
       "parent": "hind_L_toe",
       "restPosition": [
-        0.007,
+        0.006,
         -0.002,
-        0.007
+        0.006
       ]
     },
     {
       "name": "ear_R_01",
       "parent": "head",
       "restPosition": [
-        -0.024,
-        0.046,
-        0.018
+        -0.0255,
+        0.0385,
+        0.0205
       ]
     },
     {
@@ -308,7 +308,7 @@
       "restPosition": [
         -0.007,
         0.024,
-        -0.002
+        -0.003
       ]
     },
     {
@@ -316,52 +316,52 @@
       "parent": "head",
       "restPosition": [
         -0.0185,
-        0.024,
-        0.054
+        0.0215,
+        0.0535
       ]
     },
     {
       "name": "whisker_R",
       "parent": "head",
       "restPosition": [
-        -0.011,
-        -0.01,
-        0.08
+        -0.0125,
+        -0.0095,
+        0.079
       ]
     },
     {
       "name": "front_R_scapula",
       "parent": "spine_04",
       "restPosition": [
-        -0.024,
-        0.026,
-        0.038
+        -0.03,
+        0.024,
+        0.037
       ]
     },
     {
       "name": "front_R_upper",
       "parent": "front_R_scapula",
       "restPosition": [
-        -0.012,
-        -0.063,
-        0.042
+        -0.01,
+        -0.064,
+        0.055
       ]
     },
     {
       "name": "front_R_fore",
       "parent": "front_R_upper",
       "restPosition": [
-        -0.002,
-        -0.077,
-        -0.036
+        0,
+        -0.084,
+        -0.058
       ]
     },
     {
       "name": "front_R_wrist",
       "parent": "front_R_fore",
       "restPosition": [
-        0.004,
-        -0.09,
+        0.007,
+        -0.098,
         0.01
       ]
     },
@@ -369,8 +369,8 @@
       "name": "front_R_paw",
       "parent": "front_R_wrist",
       "restPosition": [
-        0.001,
-        -0.025,
+        0.002,
+        -0.026,
         0.015
       ]
     },
@@ -379,8 +379,8 @@
       "parent": "front_R_paw",
       "restPosition": [
         0,
-        -0.004,
-        0.015
+        -0.005,
+        0.014
       ]
     },
     {
@@ -389,7 +389,7 @@
       "restPosition": [
         0.007,
         -0.002,
-        0.007
+        0.006
       ]
     },
     {
@@ -398,33 +398,33 @@
       "restPosition": [
         -0.007,
         -0.002,
-        0.007
+        0.006
       ]
     },
     {
       "name": "hind_R_hip",
       "parent": "pelvis",
       "restPosition": [
-        -0.03,
-        -0.011,
-        0.004
+        -0.02,
+        -0.004,
+        0.008
       ]
     },
     {
       "name": "hind_R_thigh",
       "parent": "hind_R_hip",
       "restPosition": [
-        -0.01,
-        -0.022,
-        -0.006
+        -0.02,
+        -0.03,
+        -0.026
       ]
     },
     {
       "name": "hind_R_shin",
       "parent": "hind_R_thigh",
       "restPosition": [
-        -0.005,
-        -0.072,
+        -0.006,
+        -0.094,
         0.072
       ]
     },
@@ -432,9 +432,9 @@
       "name": "hind_R_hock",
       "parent": "hind_R_shin",
       "restPosition": [
-        0.004,
-        -0.064,
-        -0.09
+        0.006,
+        -0.062,
+        -0.108
       ]
     },
     {
@@ -443,16 +443,16 @@
       "restPosition": [
         0.001,
         -0.016,
-        0.004
+        0.006
       ]
     },
     {
       "name": "hind_R_paw",
       "parent": "hind_R_metatarsal",
       "restPosition": [
-        0.001,
-        -0.047,
-        0.018
+        0.003,
+        -0.042,
+        0.024
       ]
     },
     {
@@ -460,26 +460,26 @@
       "parent": "hind_R_paw",
       "restPosition": [
         0,
-        -0.004,
-        0.016
+        -0.005,
+        0.015
       ]
     },
     {
       "name": "hind_R_digit_inner",
       "parent": "hind_R_toe",
       "restPosition": [
-        0.007,
+        0.006,
         -0.002,
-        0.007
+        0.006
       ]
     },
     {
       "name": "hind_R_digit_outer",
       "parent": "hind_R_toe",
       "restPosition": [
-        -0.007,
+        -0.006,
         -0.002,
-        0.007
+        0.006
       ]
     },
     {
@@ -487,8 +487,8 @@
       "parent": "pelvis",
       "restPosition": [
         0,
-        0.007,
-        -0.04
+        -0.006,
+        -0.048
       ]
     },
     {
@@ -496,8 +496,8 @@
       "parent": "tail_01",
       "restPosition": [
         0,
-        -0.0039,
-        -0.0211
+        -0.006202,
+        -0.021628
       ]
     },
     {
@@ -505,8 +505,8 @@
       "parent": "tail_02",
       "restPosition": [
         0,
-        -0.0039,
-        -0.0211
+        -0.009152,
+        -0.020555
       ]
     },
     {
@@ -514,8 +514,8 @@
       "parent": "tail_03",
       "restPosition": [
         0,
-        -0.0039,
-        -0.0211
+        -0.011923,
+        -0.019081
       ]
     },
     {
@@ -523,8 +523,8 @@
       "parent": "tail_04",
       "restPosition": [
         0,
-        -0.0039,
-        -0.0211
+        -0.014761,
+        -0.016981
       ]
     },
     {
@@ -532,8 +532,8 @@
       "parent": "tail_05",
       "restPosition": [
         0,
-        -0.0039,
-        -0.0211
+        -0.017236,
+        -0.014463
       ]
     },
     {
@@ -541,8 +541,8 @@
       "parent": "tail_06",
       "restPosition": [
         0,
-        -0.0039,
-        -0.0211
+        -0.019081,
+        -0.011923
       ]
     },
     {
@@ -550,8 +550,8 @@
       "parent": "tail_07",
       "restPosition": [
         0,
-        -0.0039,
-        -0.0211
+        -0.020223,
+        -0.009863
       ]
     },
     {
@@ -559,8 +559,8 @@
       "parent": "tail_08",
       "restPosition": [
         0,
-        -0.0039,
-        -0.0211
+        -0.020862,
+        -0.008429
       ]
     },
     {
@@ -568,8 +568,8 @@
       "parent": "tail_09",
       "restPosition": [
         0,
-        -0.0039,
-        -0.0211
+        -0.021143,
+        -0.007695
       ]
     },
     {
@@ -577,8 +577,8 @@
       "parent": "tail_10",
       "restPosition": [
         0,
-        -0.0039,
-        -0.0211
+        -0.020862,
+        -0.008429
       ]
     },
     {
@@ -586,8 +586,8 @@
       "parent": "tail_11",
       "restPosition": [
         0,
-        -0.0039,
-        -0.0211
+        -0.019866,
+        -0.010563
       ]
     }
   ],
@@ -599,8 +599,8 @@
       "effector": "front_L_paw",
       "pole": [
         0.11,
-        0.12,
-        -0.02
+        0.14,
+        0
       ]
     },
     {
@@ -610,8 +610,8 @@
       "effector": "front_R_paw",
       "pole": [
         -0.11,
-        0.12,
-        -0.02
+        0.14,
+        0
       ]
     },
     {
@@ -622,7 +622,7 @@
       "pole": [
         0.11,
         0.14,
-        0.05
+        -0.02
       ]
     },
     {
@@ -633,7 +633,7 @@
       "pole": [
         -0.11,
         0.14,
-        0.05
+        -0.02
       ]
     }
   ]
