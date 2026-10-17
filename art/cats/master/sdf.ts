@@ -214,3 +214,28 @@ export function gradient(f: Field, x: number, y: number, z: number, h = 2e-5): V
     (f(x, y, z + h) - f(x, y, z - h)) / (2 * h),
   ];
 }
+
+/**
+ * Egg: an ellipsoid whose semi-axes differ on the positive and negative side of each local axis
+ * (`rp` and `rn`), giving muscle-like asymmetric volumes. Tangent-continuous across the axis planes.
+ */
+export function egg(name: string, c: Vec3, rp: Vec3, rn: Vec3, basis: Basis = IDENTITY): Shape {
+  const [cx, cy, cz] = c, [bx, by, bz] = basis;
+  const rmin = Math.min(...rp, ...rn), rmax = Math.max(...rp, ...rn);
+  return leaf(name, boxAround(c, rmax), (x, y, z) => {
+    const dx = x - cx, dy = y - cy, dz = z - cz;
+    const px = dx * bx[0] + dy * bx[1] + dz * bx[2], py = dx * by[0] + dy * by[1] + dz * by[2], pz = dx * bz[0] + dy * bz[1] + dz * bz[2];
+    const rx = px > 0 ? rp[0] : rn[0], ry = py > 0 ? rp[1] : rn[1], rz = pz > 0 ? rp[2] : rn[2];
+    const lx = px / rx, ly = py / ry, lz = pz / rz;
+    const k0 = Math.sqrt(lx * lx + ly * ly + lz * lz);
+    if (k0 < 1e-9) return -rmin;
+    const k1 = Math.sqrt(lx * lx / (rx * rx) + ly * ly / (ry * ry) + lz * lz / (rz * rz));
+    return k0 * (k0 - 1) / k1;
+  });
+}
+
+/** Basis whose local +Y follows `along` and +Z leans toward `toward` (re-orthogonalised). */
+export function basisAlong(along: Vec3, toward: Vec3): Basis {
+  const y = normalize(along), x = normalize(cross(y, toward)), z = cross(x, y);
+  return [x, y, z];
+}

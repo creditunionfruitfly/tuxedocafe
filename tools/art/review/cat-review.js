@@ -84,6 +84,8 @@ function applyMode(root) {
       o.material = new THREE.MeshStandardMaterial({ color: o.material.color ?? 0xcccccc, roughness: .8, transparent: o.material.transparent, opacity: o.material.opacity });
       const wire = new THREE.Mesh(o.geometry, new THREE.MeshBasicMaterial({ color: 0x1b2420, wireframe: true, transparent: true, opacity: .35 }));
       if (o.isSkinnedMesh) { const s = new THREE.SkinnedMesh(o.geometry, wire.material); s.bind(o.skeleton, o.bindMatrix); o.add(s); } else o.add(wire);
+    } else if (mode === 'clay' && g.attributes.color) {
+      o.material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .25 });
     } else if (mode === 'clay') {
       o.material = new THREE.MeshStandardMaterial({ color: o.material.transparent ? 0xffffff : 0xb9b2a6, roughness: o.material.transparent ? .05 : .62, transparent: o.material.transparent, opacity: o.material.transparent ? .25 : 1 });
     }
@@ -115,18 +117,18 @@ const VIEWS = {
   threequarterBack: { dir: [-.8, .35, -.8], target: [0, .19, -.05], dist: 1.25, fov: 30 },
   sideRight: { dir: [-1, .05, 0], target: [0, .19, -.06], dist: 1.35, fov: 30 },
   under: { dir: [.2, -1, .15], target: [0, .1, -.05], dist: 1.1, fov: 34 },
-  face: { dir: [0, .06, 1], target: [0, .292, .27], dist: .24, fov: 30 },
-  faceThreeQuarter: { dir: [.7, .12, .8], target: [0, .292, .265], dist: .24, fov: 30 },
-  faceSide: { dir: [1, .05, .05], target: [0, .29, .255], dist: .26, fov: 30 },
-  eyeClose: { dir: [.25, .05, 1], target: [.019, .296, .27], dist: .085, fov: 30 },
-  mouth: { dir: [.25, -.12, 1], target: [0, .262, .285], dist: .14, fov: 30 },
-  mouthSide: { dir: [.8, -.1, .6], target: [0, .262, .28], dist: .15, fov: 30 },
+  face: { dir: [0, .06, 1], target: [0, .315, .224], dist: .25, fov: 30 },
+  faceThreeQuarter: { dir: [.7, .12, .8], target: [0, .315, .22], dist: .25, fov: 30 },
+  faceSide: { dir: [1, .05, .05], target: [0, .31, .21], dist: .28, fov: 30 },
+  eyeClose: { dir: [.25, .05, 1], target: [.017, .318, .234], dist: .09, fov: 30 },
+  mouth: { dir: [.25, -.12, 1], target: [0, .286, .244], dist: .15, fov: 30 },
+  mouthSide: { dir: [.8, -.1, .6], target: [0, .286, .239], dist: .16, fov: 30 },
   paws: { dir: [.45, .25, 1], target: [0, .03, .11], dist: .33, fov: 30 },
-  pawsHind: { dir: [.6, .3, -1], target: [0, .04, -.15], dist: .33, fov: 30 },
-  pawSole: { dir: [.1, -1, .25], target: [.033, .01, .135], dist: .16, fov: 30 },
-  pawFront: { dir: [.35, .25, 1], target: [.033, .02, .135], dist: .14, fov: 30 },
-  ears: { dir: [.3, .5, 1], target: [0, .33, .23], dist: .22, fov: 30 },
-  earBack: { dir: [.4, .4, -1], target: [0, .33, .22], dist: .22, fov: 30 },
+  pawsHind: { dir: [.6, .3, -1], target: [0, .04, -.16], dist: .33, fov: 30 },
+  pawSole: { dir: [.1, -1, .25], target: [.030, .01, .12], dist: .16, fov: 30 },
+  pawFront: { dir: [.35, .25, 1], target: [.030, .02, .12], dist: .14, fov: 30 },
+  ears: { dir: [.3, .5, 1], target: [0, .35, .21], dist: .22, fov: 30 },
+  earBack: { dir: [.4, .4, -1], target: [0, .35, .2], dist: .22, fov: 30 },
   custom: { dir: (q.get('cdir') ?? '0,0,1').split(',').map(Number), target: (q.get('ctarget') ?? '0,.2,0').split(',').map(Number), dist: Number(q.get('cdist') ?? .3), fov: 30 },
 };
 

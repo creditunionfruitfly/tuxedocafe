@@ -2,59 +2,62 @@
  * The master cat sculpt as one signed distance field, built on the rig's rest joints.
  *
  * Volumes follow feline anatomy rather than one capsule per bone: a lofted trunk with a deep keel
- * and tucked waist, sliding scapulae over the withers, heavy haunches and a hamstring mass, a
- * gastrocnemius that tapers into the hock, slender metapodials, four toe lobes with digital pads,
- * trilobed metacarpal/metatarsal pads, front carpal pads and dewclaws, a tapered tail, and a
- * skull with a projecting muzzle, whisker pads, chin, jaw slit and oral cavity, nose leather with
- * nostrils, real eyelid apertures around the eye sockets, and cupped ear shells.
+ * and tucked waist, sliding scapulae over the withers, a thick neck, heavy haunches with hamstrings,
+ * a calf that tapers into the hock, slender metapodials, four toe lobes with digital pads,
+ * trilobed metacarpal/metatarsal pads, front carpal pads and dewclaws with claw pockets, a tapered
+ * tail, and a skull with a projecting muzzle, whisker pads, chin, mouth slit and oral cavity,
+ * nose leather with nostrils, open almond eyelid apertures around spherical sockets, and cupped
+ * ear shells with a concha.
+ *
+ * Every frame the later stages need (eyes, ears, mouth, paws, claws) is returned with the field.
  */
-import { type Basis, type Child, type Shape, type Vec3, add, basisFrom, capsule, clamp, cross, custom, dot, ellipsoid, expand, group, mix,
-  normalize, roundCone, scale, smax, smin, smoothstep, sphere, sub, tube } from './sdf.ts';
+import { type Basis, type Child, type Shape, type Vec3, add, basisAlong, basisFrom, capsule, clamp, cross, custom, dot, egg, ellipsoid, expand,
+  group, lerp3, mix, normalize, roundCone, scale, smax, smin, smoothstep, sphere, sub } from './sdf.ts';
 import { type Rig, joint } from './skeleton.ts';
 
 export type Side = 1 | -1;
-export type Region = 'torso' | 'neck' | 'head' | 'muzzle' | 'ear' | 'frontLeg' | 'hindLeg' | 'frontPaw' | 'hindPaw' | 'tail' | 'scapula' | 'pad';
-export interface Part { shape: Shape; region: Region; side: 0 | Side }
+export const deg = Math.PI / 180;
 
 export interface EyeFrame {
   side: Side; center: Vec3; radius: number; gap: number; lid: number;
+  /** Optical axis, lid up direction and lateral (outward) direction. */
   axis: Vec3; up: Vec3; lateral: Vec3;
-  /** Aperture outline in radians: horizontal angle range and upper/lower margins as functions of t∈[0,1]. */
+  /** Aperture outline in radians: horizontal angle range (medial negative) and lid elevations at t ∈ [0, 1]. */
   inner: number; outer: number; upper: (t: number) => number; lower: (t: number) => number;
+  /** Elevation where the lids meet when closed. */
+  closure: (t: number) => number;
 }
 export interface EarFrame { side: Side; base: Vec3; up: Vec3; front: Vec3; lateral: Vec3; height: number; width: number }
 export interface MouthFrame {
-  /** Slit mid-surface height at (x, z) and the 2D arch region (negative inside). */
+  /** Mid-height of the lip slit at (x, z) and the 2D arch region (negative inside). */
   slitY: (x: number, z: number) => number; arch: (x: number, z: number) => number; halfGap: number;
-  cavity: { center: Vec3; radii: Vec3 }; hinge: Vec3; front: number; corner: Vec3;
+  cavity: { center: Vec3; rp: Vec3; rn: Vec3; basis: Basis };
+  hinge: Vec3; front: number; corner: Vec3;
+}
+export interface PawFrame {
+  name: string; side: Side; front: boolean; fwd: Vec3; lat: Vec3; joint: Vec3;
+  toes: { center: Vec3; dir: Vec3; tip: Vec3 }[]; pads: Vec3[]; dewclaw?: { center: Vec3; dir: Vec3; tip: Vec3 };
 }
 export interface Anatomy {
-  shape: Shape; parts: Part[]; eyes: [EyeFrame, EyeFrame]; ears: [EarFrame, EarFrame]; mouth: MouthFrame;
-  nose: { tip: Vec3; center: Vec3; radii: Vec3 }; landmarks: Record<string, Vec3>;
-  /** Field without eye sockets, mouth and nostrils (head volume only) for morph collision tests. */
-  headVolume: Shape;
+  shape: Shape; eyes: [EyeFrame, EyeFrame]; ears: [EarFrame, EarFrame]; mouth: MouthFrame; paws: PawFrame[];
+  nose: { center: Vec3; radii: Vec3; basis: Basis };
+  /** Named sub-shapes used to label surfaces (pads, nose leather, ears, cavity). */
+  labels: Record<string, Shape>;
+  landmarks: Record<string, Vec3>;
 }
 
 const mirror = (p: Vec3, side: Side): Vec3 => [p[0] * side, p[1], p[2]];
-const deg = Math.PI / 180;
+const boxAt = (c: Vec3, r: number) => ({ min: [c[0] - r, c[1] - r, c[2] - r] as Vec3, max: [c[0] + r, c[1] + r, c[2] + r] as Vec3 });
 
-/** Catmull–Rom through samples (uniform), returns value at u ∈ [0, n-1]. */
-function catmull(values: number[], u: number) {
-  const n = values.length, i = clamp(Math.floor(u), 0, n - 2), t = u - i;
-  const p0 = values[Math.max(i - 1, 0)]!, p1 = values[i]!, p2 = values[i + 1]!, p3 = values[Math.min(i + 2, n - 1)]!;
-  return .5 * (2 * p1 + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
-}
-
-/** Monotone cubic (Fritsch–Carlson) interpolant through (xs, ys); returns value and slope. */
-function monotone(xs: number[], ys: number[]) {
+/** Monotone cubic (Fritsch–Carlson) interpolant through (xs, ys) with zero end slopes; returns value and slope. */
+export function monotone(xs: number[], ys: number[]) {
   const n = xs.length, d: number[] = [], m: number[] = [];
   for (let i = 0; i + 1 < n; i++) d.push((ys[i + 1]! - ys[i]!) / (xs[i + 1]! - xs[i]!));
-  // Zero end slopes so lofts can be closed by smooth caps.
   for (let i = 0; i < n; i++) m.push(i === 0 || i === n - 1 || d[i - 1]! * d[i]! <= 0 ? 0 : (d[i - 1]! + d[i]!) / 2);
   for (let i = 0; i + 1 < n; i++) {
     if (d[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
-    const a = m[i]! / d[i]!, b = m[i + 1]! / d[i]!, h = a * a + b * b;
-    if (h > 9) { const t = 3 / Math.sqrt(h); m[i] = t * a * d[i]!; m[i + 1] = t * b * d[i]!; }
+    const a = m[i]! / d[i]!, b = m[i + 1]! / d[i]!, hh = a * a + b * b;
+    if (hh > 9) { const t = 3 / Math.sqrt(hh); m[i] = t * a * d[i]!; m[i + 1] = t * b * d[i]!; }
   }
   return (x: number): [number, number] => {
     if (x <= xs[0]!) return [ys[0]!, 0];
@@ -67,366 +70,416 @@ function monotone(xs: number[], ys: number[]) {
   };
 }
 
+export interface Station { s: number; c: number; w: number; top: number; bottom: number; pTop?: number; pBot?: number }
+
 /**
- * Lofted body section sliced along a straight axis: each station gives the section centre offset
- * along `up`, half width, and half heights above/below the widest line (flat back, deep keel),
- * with optional superelliptic flattening. Profiles use monotone cubics, so the field is smooth and
- * unambiguous; the value is the first-order distance F/|∇F| including the axial taper.
+ * Lofted section along a straight axis from `a` toward `b`: each station gives the axial position
+ * `s`, the section centre offset `c` along `up`, the half width and the half heights above/below the
+ * centre, with superelliptic exponents for the upper and lower halves (flat back, keeled chest).
+ * Profiles are monotone cubics; the value is the first-order distance F/|∇F| including the axial
+ * taper. Ellipsoidal caps continue the end sections (zero end slopes), so the loft closes C1.
  */
-function trunkLoft(name: string, stations: { z: number; y: number; w: number; top: number; bottom: number; flat?: number }[], axisFrom: Vec3 = [0, 0, -1], axisTo: Vec3 = [0, 0, 1]): Shape {
-  const axis = normalize(sub(axisTo, axisFrom)), up = normalize(cross(axis, [1, 0, 0])), o = axisFrom;
-  // Station positions are given in world (z, y); express them as axis coordinate s and offset c.
-  const S = stations.map(v => dot(sub([0, v.y, v.z], o), axis)), Cc = stations.map(v => dot(sub([0, v.y, v.z], o), up));
-  const fc = monotone(S, Cc), fw = monotone(S, stations.map(v => v.w)), ft = monotone(S, stations.map(v => v.top)), fb = monotone(S, stations.map(v => v.bottom)), ff = monotone(S, stations.map(v => v.flat ?? 0));
+export function loft(name: string, a: Vec3, b: Vec3, upHint: Vec3, stations: Station[], caps: [number, number]): Shape {
+  const axis = normalize(sub(b, a)), lateral = normalize(cross(upHint, axis)), up = cross(axis, lateral);
+  const S = stations.map(v => v.s);
+  const fc = monotone(S, stations.map(v => v.c)), fw = monotone(S, stations.map(v => v.w)), ft = monotone(S, stations.map(v => v.top)),
+    fb = monotone(S, stations.map(v => v.bottom)), fpt = monotone(S, stations.map(v => v.pTop ?? 2)), fpb = monotone(S, stations.map(v => v.pBot ?? 2));
   const s0 = S[0]!, s1 = S[S.length - 1]!;
-  let rMax = 0, wMax = 0;
-  for (const v of stations) { rMax = Math.max(rMax, v.top, v.bottom); wMax = Math.max(wMax, v.w); }
-  const pts = stations.flatMap(v => [[0, v.y + rMax, v.z + rMax], [0, v.y - rMax, v.z - rMax]] as Vec3[]);
-  const box = { min: [-wMax - .005, Math.min(...pts.map(p => p[1])) - .005, Math.min(...pts.map(p => p[2])) - .005] as Vec3, max: [wMax + .005, Math.max(...pts.map(p => p[1])) + .005, Math.max(...pts.map(p => p[2])) + .005] as Vec3 };
-  // Ellipsoidal end caps continue the end sections (zero slope there), so the loft closes C1.
-  const capLen = (i: number) => Math.min(stations[i]!.w, stations[i]!.top, stations[i]!.bottom) * .9;
-  const cap0 = capLen(0), cap1 = capLen(stations.length - 1);
-  return custom(name, expand(box, Math.max(cap0, cap1)), (x, y, z) => {
-    const dy = y - o[1], dz = z - o[2], dx = x - o[0];
-    const sRaw = dx * axis[0] + dy * axis[1] + dz * axis[2], s = clamp(sRaw, s0, s1);
-    const vRaw = dx * up[0] + dy * up[1] + dz * up[2];
+  let box = { min: [Infinity, Infinity, Infinity] as Vec3, max: [-Infinity, -Infinity, -Infinity] as Vec3 };
+  for (let i = 0; i <= 64; i++) {
+    const s = mix(s0 - caps[0], s1 + caps[1], i / 64), sc = clamp(s, s0, s1);
+    const r = Math.max(fw(sc)[0], ft(sc)[0], fb(sc)[0]), centre = add(add(a, scale(axis, s)), scale(up, fc(sc)[0]));
+    for (let k = 0; k < 3; k++) { box.min[k] = Math.min(box.min[k]!, centre[k]! - r); box.max[k] = Math.max(box.max[k]!, centre[k]! + r); }
+  }
+  box = expand(box, .002);
+  const [ax, ay, az] = a;
+  return custom(name, box, (x, y, z) => {
+    const dx = x - ax, dy = y - ay, dz = z - az;
+    const sRaw = dx * axis[0] + dy * axis[1] + dz * axis[2], s = sRaw < s0 ? s0 : sRaw > s1 ? s1 : sRaw;
+    const u = dx * lateral[0] + dy * lateral[1] + dz * lateral[2], vRaw = dx * up[0] + dy * up[1] + dz * up[2];
     const over = sRaw - s;
-    if (over !== 0) {
-      // Half-ellipsoid cap on the end section (end slopes are zero, so this joins C1).
-      const L = over < 0 ? cap0 : cap1, c = fc(s)[0], w = fw(s)[0], v = vRaw - c, b = v > 0 ? ft(s)[0] : fb(s)[0];
-      const lu = x / w, lv = v / b, ls = over / L;
-      const k0 = Math.sqrt(lu * lu + lv * lv + ls * ls), k1 = Math.sqrt((lu / w) ** 2 + (lv / b) ** 2 + (ls / L) ** 2);
-      return k0 < 1e-9 ? -Math.min(w, b, L) : k0 * (k0 - 1) / k1;
-    }
-    const [c, dc] = fc(s), [w, dw] = fw(s), [top, dt] = ft(s), [bottom, db] = fb(s), p = 2 + Math.max(ff(s)[0], 0);
-    const v = vRaw - c, b = v > 0 ? top : bottom, dbs = v > 0 ? dt : db;
-    const au = Math.abs(x) / w, av = Math.abs(v) / b;
+    const [c, dc] = fc(s), [w, dw] = fw(s), [top, dt] = ft(s), [bottom, db] = fb(s);
+    const v = vRaw - c, upper = v > 0, hgt = upper ? top : bottom, dh = upper ? dt : db, p = upper ? fpt(s)[0] : fpb(s)[0];
+    const au = Math.abs(u) / w, av = Math.abs(v) / hgt;
     const q = Math.pow(Math.pow(au, p) + Math.pow(av, p), 1 / p);
-    if (q < 1e-6) return -Math.min(w, b);
+    if (q < 1e-6 && over === 0) return -Math.min(w, hgt);
     const qp = Math.pow(q, p - 1), pu = Math.pow(au, p - 1), pv = Math.pow(av, p - 1);
-    const Fu = pu / (w * qp), Fv = pv / (b * qp) * Math.sign(v);
-    const Fs = -Fv * dc - (pu * au) / (w * qp) * dw - (pv * av) / (b * qp) * dbs;
+    const Fu = pu / (w * qp), Fv = pv / (hgt * qp) * Math.sign(v);
+    if (over !== 0) {
+      // Cap beyond an end station: the end section shrinks elliptically over the cap length. Value
+      // and gradient match the loft at the station (end slopes are zero), so blends stay smooth.
+      const L = over < 0 ? caps[0] : caps[1], ls = over / L, qc = Math.sqrt(q * q + ls * ls);
+      return (qc - 1) / Math.max(Math.hypot(q / qc * Fu, q / qc * Fv, ls / (qc * L)), 1e-6);
+    }
+    const Fs = -Fv * dc - (pu * au) / (w * qp) * dw - (pv * av) / (hgt * qp) * dh;
     return (q - 1) / Math.max(Math.hypot(Fu, Fv, Fs), 1e-6);
   });
 }
 
-/**
- * Eyelids: a spherical band of thickness `lid` around the eyeball, open inside the aperture,
- * fading into the face. Margins are rounded by the smooth intersection.
- */
-export function apertureDistance(eye: EyeFrame, x: number, y: number, z: number): { ang: number; r: number; front: number; h: number; t: number } {
-  const dx = (x - eye.center[0]) * eye.side, dy = y - eye.center[1], dz = z - eye.center[2];
-  // Work in the left-eye frame (mirror the right eye).
-  const ax = eye.axis[0] * eye.side, ux = eye.up[0] * eye.side, lx = eye.lateral[0] * eye.side;
-  const qa = dx * ax + dy * eye.axis[1] + dz * eye.axis[2], qu = dx * ux + dy * eye.up[1] + dz * eye.up[2], ql = dx * lx + dy * eye.lateral[1] + dz * eye.lateral[2];
+/** Angular position of a point relative to an eye and its signed angular distance to the aperture outline (negative inside). */
+export function eyeAngles(eye: EyeFrame, x: number, y: number, z: number) {
+  const dx = x - eye.center[0], dy = y - eye.center[1], dz = z - eye.center[2];
+  const qa = dx * eye.axis[0] + dy * eye.axis[1] + dz * eye.axis[2], qu = dx * eye.up[0] + dy * eye.up[1] + dz * eye.up[2];
+  const ql = dx * eye.lateral[0] + dy * eye.lateral[1] + dz * eye.lateral[2];
   const r = Math.hypot(qa, qu, ql);
   const h = Math.atan2(ql, qa), v = Math.atan2(qu, Math.hypot(qa, ql));
-  const t = (h - eye.inner) / (eye.outer - eye.inner);
-  const tc = clamp(t, 0, 1), up = eye.upper(tc), lo = eye.lower(tc);
-  // Angular signed distance to the aperture outline (negative inside).
-  const dv = Math.max(v - up, lo - v), dh = Math.max(eye.inner - h, h - eye.outer);
-  const ang = smax(dv, dh * 1.4, 4 * deg);
-  return { ang, r, front: qa, h, t };
+  const t = (h - eye.inner) / (eye.outer - eye.inner), tc = clamp(t, 0, 1);
+  const upper = eye.upper(tc), lower = eye.lower(tc);
+  const dv = Math.max(v - upper, lower - v), dh = Math.max(eye.inner - h, h - eye.outer);
+  const ang = smax(dv, dh * 1.3, 3 * deg);
+  return { ang, r, front: qa, h, v, t: tc, upper, lower };
 }
 
 export function buildCat(rig: Rig): Anatomy {
   const J = (name: string) => joint(rig, name);
-  const parts: Part[] = [];
-  const reg = (shape: Shape, region: Region, side: 0 | Side = 0) => { parts.push({ shape, region, side }); return shape; };
   const U = (shape: Shape, k: number): Child => ({ shape, op: 'union', k });
   const S = (shape: Shape, k: number): Child => ({ shape, op: 'subtract', k });
+  const labels: Record<string, Shape> = {};
 
-  // ---------------------------------------------------------------- trunk and neck
-  const head = J('head');
-  // Stations: z, centre height, half width, half heights above/below the widest line (skin
-  // surface under a short coat). Dorsal line ~0.29–0.30 m, keel at ~0.13 m, waist tucked to 0.15 m.
-  const st = (z: number, dorsal: number, ventral: number, w: number, ratio: number, flat = 0) => {
+  // ---------------------------------------------------------------- trunk
+  // Stations along world z: dorsal and ventral skin heights, half width, fraction of the depth above
+  // the widest line, and the superellipse exponents of the back and the keel.
+  const st = (z: number, dorsal: number, ventral: number, w: number, ratio: number, pTop = 2.2, pBot = 2): Station => {
     const depth = dorsal - ventral, top = depth * ratio;
-    return { z, y: dorsal - top, w, top, bottom: depth - top, flat };
+    return { s: z, c: dorsal - top, w, top, bottom: depth - top, pTop, pBot };
   };
-  const trunk = reg(trunkLoft('trunk', [
-    st(-.240, .242, .208, .016, .5),
-    st(-.212, .266, .196, .036, .5, .2),
-    st(-.162, .290, .180, .050, .45, .35),
-    st(-.098, .296, .166, .045, .45, .4),
-    st(-.035, .292, .154, .046, .42, .4),
-    st(.025, .290, .138, .053, .40, .3),
-    st(.080, .292, .126, .052, .38, .3),
-    st(.125, .293, .131, .046, .38, .2),
-    st(.160, .286, .152, .040, .42, .1),
-    st(.186, .270, .182, .026, .45),
-  ]), 'torso');
-  // Neck: its own loft along a rising axis from inside the withers to the skull base.
-  const neckFrom: Vec3 = [0, .240, .085], neckTo: Vec3 = [0, head[1] + .002, head[2] + .022];
-  const neck = reg(trunkLoft('neck', [
-    st(.090, .272, .208, .026, .5),
-    st(.122, .296, .184, .038, .5),
-    st(head[2] - .020, head[1] + .021, head[1] - .066, .039, .5),
-    st(head[2] + .004, head[1] + .028, head[1] - .042, .034, .5),
-    st(head[2] + .022, head[1] + .022, head[1] - .022, .022, .5),
-  ], neckFrom, neckTo), 'neck');
-  const torsoChildren: Child[] = [U(trunk, 0), U(neck, .04)];
-  // Manubrium and pectorals: the rounded chest front between the forelegs.
-  torsoChildren.push(U(reg(ellipsoid('pectoral', [0, .160, .142], [.030, .032, .030], basisFrom([0, -.4, 1], [0, 1, 0])), 'torso'), .035));
-  // Abdomen with a slight primordial pouch ahead of the stifles.
-  torsoChildren.push(U(reg(ellipsoid('pouch', [0, .172, -.105], [.032, .020, .048]), 'torso'), .028));
-  // Croup and sacrum: a broad rounded rump that carries the tail root.
-  torsoChildren.push(U(reg(ellipsoid('croup', [0, .262, -.176], [.036, .028, .040]), 'torso'), .022));
-  // Neck muscle mass (crest above, throat below) blending into the skull base.
-  torsoChildren.push(U(reg(ellipsoid('nape', [0, .296, .146], [.028, .016, .034], basisFrom([0, .25, 1], [0, 1, 0])), 'neck'), .02));
-  torsoChildren.push(U(reg(ellipsoid('throat', [0, .214, .160], [.027, .026, .028], basisFrom([0, 1, .9], [0, 1, 0])), 'neck'), .03));
+  const trunk = loft('trunk', [0, 0, 0], [0, 0, 1], [0, 1, 0], [
+    st(-.200, .280, .216, .030, .48, 2.1, 2.0),
+    st(-.162, .298, .196, .040, .44, 2.3, 2.0),
+    st(-.120, .302, .187, .042, .44, 2.3, 2.0),
+    st(-.075, .299, .186, .041, .44, 2.3, 2.0),
+    st(-.040, .294, .175, .044, .42, 2.2, 1.9),
+    st(-.005, .291, .158, .049, .40, 2.2, 1.85),
+    st(.040, .295, .146, .047, .40, 2.2, 1.8),
+    st(.082, .301, .150, .043, .40, 2.1, 1.8),
+    st(.116, .295, .165, .036, .44, 2.1, 1.9),
+    st(.140, .280, .183, .028, .48, 2.0, 2.0),
+  ], [.030, .018]);
+
+  // ---------------------------------------------------------------- neck
+  const head = J('head');
+  const neckA: Vec3 = [0, .236, .104], neckB: Vec3 = [0, head[1] + .010, head[2] + .010];
+  const neckLen = Math.hypot(neckB[1] - neckA[1], neckB[2] - neckA[2]);
+  const neck = loft('neck', neckA, neckB, [0, 1, -0.4], [
+    { s: 0, c: .002, w: .037, top: .043, bottom: .039, pTop: 2.1, pBot: 2.0 },
+    { s: neckLen * .35, c: .002, w: .036, top: .038, bottom: .036, pTop: 2.1, pBot: 2.0 },
+    { s: neckLen * .70, c: .000, w: .034, top: .034, bottom: .033 },
+    { s: neckLen, c: -.002, w: .030, top: .030, bottom: .029 },
+  ], [.02, .012]);
+
+  const torsoChildren: Child[] = [U(trunk, 0), U(neck, .03)];
+  // Pectorals: the rounded chest front between the forelegs.
+  torsoChildren.push(U(egg('pectoral', [0, .178, .130], [.023, .020, .020], [.023, .026, .020], basisFrom([0, -.35, 1], [0, 1, 0])), .03));
+  // Throat dewlap blending the neck into the chest.
+  torsoChildren.push(U(ellipsoid('throat', [0, .216, .164], [.025, .028, .023], basisFrom([0, .7, 1], [0, 1, 0])), .025));
+  // Primordial pouch ahead of the stifles.
+  torsoChildren.push(U(ellipsoid('pouch', [0, .190, -.116], [.028, .012, .032]), .03));
+  // Croup over the sacrum, carrying the tail root, and the rounded rump below it.
+  torsoChildren.push(U(ellipsoid('croup', [0, .282, -.176], [.034, .019, .036]), .03));
+  torsoChildren.push(U(ellipsoid('rump', [0, .246, -.204], [.026, .030, .022]), .03));
 
   for (const side of [1, -1] as const) {
     const m = (p: Vec3) => mirror(p, side);
-    // Scapula: blade lying on the thorax, its dorsal border just below the withers.
-    const scapTop = mirror(J('front_L_scapula'), side), shoulder = mirror(J('front_L_upper'), side);
+    const L = (name: string) => mirror(J(name.replace('#', 'L')), side);
+    // Scapula: a blade lying on the thorax; its dorsal border rises just proud of the withers.
+    const scapTop = L('front_#_scapula'), shoulder = L('front_#_upper'), elbow = L('front_#_fore');
     const scapAxis = normalize(sub(shoulder, scapTop));
-    torsoChildren.push(U(reg(ellipsoid(`scapula${side}`, add(mix3(scapTop, shoulder, .40), m([.006, 0, -.004])), [.0105, .040, .025], basisFrom(cross([side, 0, 0], scapAxis), scapAxis)), 'scapula', side), .024));
-    // Haunch: a broad, laterally flattened thigh from the croup to the stifle.
-    const hip = mirror(J('hind_L_thigh'), side), knee = mirror(J('hind_L_shin'), side);
-    const femur = normalize(sub(knee, hip));
-    torsoChildren.push(U(reg(ellipsoid(`haunch${side}`, add(mix3(hip, knee, .46), m([-.002, .004, -.014])), [.0200, .074, .056], basisFrom([side * .06, 0, 1], femur)), 'hindLeg', side), .055));
-    // Hamstrings: the rear thigh line from the ischium down to the gastrocnemius.
-    torsoChildren.push(U(reg(ellipsoid(`hamstring${side}`, m([.028, .170, -.186]), [.019, .048, .022], basisFrom([0, -.55, 1], [0, 1, .45])), 'hindLeg', side), .03));
-    // Upper arm: triceps behind and brachiocephalic in front, mostly inside the trunk outline.
-    const elbow = mirror(J('front_L_fore'), side);
+    torsoChildren.push(U(egg(`scapula${side}`, add(lerp3(scapTop, shoulder, .42), m([.004, 0, -.002])), [.0085, .044, .024], [.0085, .038, .022],
+      basisAlong(scale(scapAxis, -1), [0, 0, 1])), .024));
+    // Point of the shoulder.
+    torsoChildren.push(U(sphere(`shoulder${side}`, add(shoulder, m([-.004, .002, -.002])), .0100), .022));
+    // Upper arm: brachium in front, triceps behind, mostly inside the trunk envelope.
     const humerus = normalize(sub(elbow, shoulder));
-    torsoChildren.push(U(reg(ellipsoid(`triceps${side}`, add(mix3(shoulder, elbow, .52), m([.003, 0, -.014])), [.0165, .042, .022], basisFrom([0, 0, 1], scale(humerus, -1))), 'frontLeg', side), .022));
-    torsoChildren.push(U(reg(ellipsoid(`biceps${side}`, add(mix3(shoulder, elbow, .40), m([.001, .004, .010])), [.0145, .036, .014], basisFrom([0, 0, 1], scale(humerus, -1))), 'frontLeg', side), .018));
+    torsoChildren.push(U(egg(`brachium${side}`, add(lerp3(shoulder, elbow, .48), m([-.001, 0, .002])), [.0105, .050, .0150], [.0105, .050, .0125],
+      basisAlong(scale(humerus, -1), [0, 0, 1])), .024));
+    torsoChildren.push(U(egg(`triceps${side}`, add(lerp3(shoulder, elbow, .58), m([-.002, .004, -.013])), [.0110, .040, .0135], [.0110, .034, .0155],
+      basisAlong(scale(humerus, -1), [0, 0, 1])), .024));
+    // Haunch: a broad, laterally flattened thigh from the croup to the stifle.
+    const hip = L('hind_#_thigh'), knee = L('hind_#_shin');
+    const femur = normalize(sub(knee, hip));
+    torsoChildren.push(U(egg(`haunch${side}`, add(lerp3(hip, knee, .42), m([-.014, .004, -.010])), [.0310, .058, .040], [.0260, .064, .044],
+      basisAlong(scale(femur, -1), [0, 0, 1])), .04));
+    // Hamstrings: the rear thigh line from the ischium down to the calf.
+    torsoChildren.push(U(egg(`hamstring${side}`, m([.024, .198, -.209]), [.0165, .044, .017], [.0150, .044, .016], basisAlong([.12, 1, -.12], [0, 0, -1])), .025));
   }
   const torso = group('torso', torsoChildren);
 
   // ---------------------------------------------------------------- legs and paws
   const limbs: Child[] = [];
+  const paws: PawFrame[] = [];
   for (const side of [1, -1] as const) {
     const L = (name: string) => mirror(J(name.replace('#', 'L')), side);
     const m = (p: Vec3) => mirror(p, side);
     // Foreleg below the elbow.
     const elbow = L('front_#_fore'), wrist = L('front_#_wrist'), paw = L('front_#_paw'), toe = L('front_#_toe');
+    const radius = normalize(sub(wrist, elbow));
     const fore: Child[] = [
-      U(reg(sphere(`olecranon${side}`, add(elbow, m([.001, .003, -.009])), .0108), 'frontLeg', side), 0),
-      U(reg(roundCone(`forearm${side}`, add(elbow, [0, -.004, 0]), add(wrist, [0, .004, 0]), .0158, .0108), 'frontLeg', side), .008),
-      U(reg(ellipsoid(`forearmMuscle${side}`, add(mix3(elbow, wrist, .3), m([0, 0, .003])), [.0148, .032, .0142], basisFrom([0, 0, 1], normalize(sub(elbow, wrist)))), 'frontLeg', side), .01),
-      U(reg(sphere(`carpus${side}`, add(wrist, [0, 0, -.001]), .0110), 'frontLeg', side), .006),
+      U(sphere(`olecranon${side}`, add(elbow, m([.000, .004, -.0095])), .0100), 0),
+      U(roundCone(`forearm${side}`, add(elbow, [0, -.006, .002]), add(wrist, [0, .008, 0]), .0150, .0106), .008),
+      U(egg(`forearmMuscle${side}`, add(lerp3(elbow, wrist, .27), m([.0015, 0, .003])), [.0135, .032, .0145], [.0130, .028, .0130], basisAlong(scale(radius, -1), [0, 0, 1])), .01),
+      U(sphere(`carpus${side}`, add(wrist, [0, .001, -.0005]), .0110), .006),
     ];
-    limbs.push(U(group(`foreleg${side}`, fore), .014));
-    limbs.push(U(paw4(`frontPaw${side}`, side, wrist, paw, toe, true, reg), .006));
+    limbs.push(U(group(`foreleg${side}`, fore), .012));
+    const fp = paw4(`frontPaw${side}`, side, true, wrist, paw, toe, labels);
+    paws.push(fp.frame);
+    limbs.push(U(fp.shape, .005));
     // Hind leg below the stifle.
     const knee = L('hind_#_shin'), hock = L('hind_#_hock'), meta = L('hind_#_metatarsal'), hpaw = L('hind_#_paw'), htoe = L('hind_#_toe');
-    const tibia = normalize(sub(hock, knee));
+    const tibia = normalize(sub(hock, knee)), back = normalize(cross([side, 0, 0], tibia));
+    const calfBack: Vec3 = dot(back, [0, 0, -1]) > 0 ? back : scale(back, -1);
     const hind: Child[] = [
-      U(reg(sphere(`stifle${side}`, add(knee, m([-.003, .006, -.006])), .0115), 'hindLeg', side), 0),
-      U(reg(roundCone(`shank${side}`, knee, add(hock, [0, .003, 0]), .0152, .0094), 'hindLeg', side), .01),
-      U(reg(ellipsoid(`gastrocnemius${side}`, add(mix3(knee, hock, .32), [0, .006, -.011]), [.0150, .034, .0180], basisFrom(cross([1, 0, 0], tibia), scale(tibia, -1))), 'hindLeg', side), .012),
-      U(reg(capsule(`achilles${side}`, add(mix3(knee, hock, .55), [0, 0, -.016]), add(hock, [0, .006, -.0115]), .0045), 'hindLeg', side), .008),
-      U(reg(sphere(`calcaneus${side}`, add(hock, [0, .006, -.0098]), .0068), 'hindLeg', side), .006),
-      U(reg(sphere(`tarsus${side}`, add(hock, [0, -.004, .000]), .0094), 'hindLeg', side), .006),
-      U(reg(roundCone(`metatarsus${side}`, add(meta, [0, 0, .001]), add(hpaw, [0, .006, -.004]), .0098, .0108), 'hindLeg', side), .008),
+      U(sphere(`stifle${side}`, add(knee, m([.000, .003, .003])), .0115), 0),
+      U(roundCone(`shank${side}`, knee, add(hock, [0, .003, 0]), .0140, .0088), .01),
+      U(egg(`calf${side}`, add(lerp3(knee, hock, .34), scale(calfBack, .0085)), [.0120, .028, .0125], [.0120, .036, .0110], basisAlong(scale(tibia, -1), calfBack)), .012),
+      U(capsule(`achilles${side}`, add(lerp3(knee, hock, .62), scale(calfBack, .0105)), add(hock, scale(calfBack, .0095)), .0042), .008),
+      U(sphere(`calcaneus${side}`, add(hock, add(scale(calfBack, .0098), [0, .002, 0])), .0060), .005),
+      U(sphere(`tarsus${side}`, add(hock, [0, -.003, .001]), .0088), .006),
+      U(roundCone(`metatarsus${side}`, add(meta, [0, 0, .001]), add(hpaw, [0, .006, -.004]), .0096, .0108), .008),
     ];
-    limbs.push(U(group(`hindleg${side}`, hind), .014));
-    limbs.push(U(paw4(`hindPaw${side}`, side, meta, hpaw, htoe, false, reg), .006));
+    limbs.push(U(group(`hindleg${side}`, hind), .012));
+    const hp = paw4(`hindPaw${side}`, side, false, meta, hpaw, htoe, labels);
+    paws.push(hp.frame);
+    limbs.push(U(hp.shape, .005));
   }
 
   // ---------------------------------------------------------------- tail
   const tailPoints: Vec3[] = [], tailRadii: number[] = [];
   for (let i = 1; i <= 12; i++) tailPoints.push(J(`tail_${String(i).padStart(2, '0')}`));
   const last = tailPoints[11]!, prev = tailPoints[10]!;
-  tailPoints.push(add(last, scale(sub(last, prev), .9)));
+  tailPoints.push(add(last, scale(normalize(sub(last, prev)), .022)));
   for (let i = 0; i < tailPoints.length; i++) {
     const t = i / (tailPoints.length - 1);
-    tailRadii.push(mix(.0128, .0080, Math.pow(t, .8)) * (i === tailPoints.length - 1 ? .78 : 1));
+    tailRadii.push(mix(.0128, .0068, Math.pow(t, .9)));
   }
-  tailPoints.unshift(add(tailPoints[0]!, [0, -.006, .030])); tailRadii.unshift(.017);
-  const tail = reg(tube('tail', tailPoints, tailRadii), 'tail');
+  tailRadii[tailRadii.length - 1] = .0058;
+  tailPoints.unshift(add(tailPoints[0]!, [0, .006, .026])); tailRadii.unshift(.0165);
+  const tailParts: Child[] = [];
+  for (let i = 0; i + 1 < tailPoints.length; i++) tailParts.push(U(roundCone(`tail.${i}`, tailPoints[i]!, tailPoints[i + 1]!, tailRadii[i]!, tailRadii[i + 1]!), 0));
+  const tail = group('tail', tailParts);
 
   // ---------------------------------------------------------------- head
+  const H = (dx: number, dy: number, dz: number): Vec3 => [head[0] + dx, head[1] + dy, head[2] + dz];
   const eyeL = J('eye_L');
   const eyes = ([1, -1] as const).map(side => makeEye(mirror(eyeL, side), side)) as [EyeFrame, EyeFrame];
   const ears = ([1, -1] as const).map(side => makeEar(side, J('ear_L_01'), J('ear_L_02'))) as [EarFrame, EarFrame];
 
   const skull: Child[] = [];
-  const H = (dx: number, dy: number, dz: number): Vec3 => [head[0] + dx, head[1] + dy, head[2] + dz];
-  // Cranium, brow and nose bridge.
-  skull.push(U(reg(ellipsoid('cranium', H(0, .0245, .0215), [.0300, .0275, .0340]), 'head'), 0));
-  skull.push(U(reg(ellipsoid('brow', H(0, .0275, .0455), [.0205, .0150, .0200], basisFrom([0, -.45, 1], [0, 1, .2])), 'head'), .012));
-  skull.push(U(reg(ellipsoid('occiput', H(0, .0150, .0020), [.0235, .0215, .0175]), 'head'), .012));
-  skull.push(U(reg(ellipsoid('noseBridge', H(0, .0172, .0722), [.0078, .0058, .0160], basisFrom(normalize([0, -.0170, .0225]), [0, 1, 0])), 'muzzle'), .009));
+  // Cranium and occiput.
+  skull.push(U(ellipsoid('cranium', H(0, .0210, .0210), [.0265, .0280, .0330]), 0));
+  // Face mass: one continuous dome over the orbits, zygomatic arches, masseters and cheek pads.
+  skull.push(U(egg('face', H(0, .0070, .0360), [.0325, .0250, .0270], [.0325, .0230, .0300]), .020));
+  skull.push(U(ellipsoid('occiput', H(0, .0100, .0000), [.0245, .0230, .0185]), .012));
+  // Forehead: fills between the brows and carries the stop down onto the nose bridge.
+  skull.push(U(ellipsoid('forehead', H(0, .0310, .0420), [.0180, .0125, .0170], basisFrom([0, -.6, 1], [0, 1, 0])), .014));
   for (const side of [1, -1] as const) {
     const m = (dx: number, dy: number, dz: number) => H(dx * side, dy, dz);
-    // Zygomatic arch and masseter: the broad cat cheek line below and behind the eye.
-    skull.push(U(reg(ellipsoid(`zygoma${side}`, m(.0258, .0098, .0340), [.0135, .0105, .0210], basisFrom([side * .18, 0, 1], [0, 1, 0])), 'head', side), .010));
-    skull.push(U(reg(ellipsoid(`masseter${side}`, m(.0228, -.0010, .0225), [.0140, .0145, .0170]), 'head', side), .010));
+    // Broad feline cheeks: zygomatic arch and masseter below and behind the eye.
+    // Brow over the eye.
+    skull.push(U(ellipsoid(`brow${side}`, m(.0150, .0335, .0500), [.0105, .0055, .0090], basisFrom([side * .35, -.25, 1], [0, 1, 0])), .008));
     // Whisker pads: the rounded mystacial pads either side of the philtrum.
-    skull.push(U(reg(ellipsoid(`whiskerPad${side}`, m(.0080, -.0058, .0782), [.0088, .0072, .0084], basisFrom([side * .25, -.1, 1], [0, 1, 0])), 'muzzle', side), .0045));
-    // Mandible ramus from the chin back to the jaw angle.
-    skull.push(U(reg(roundCone(`mandible${side}`, m(.0048, -.0182, .0655), m(.0205, -.0135, .0175), .0055, .0078), 'muzzle', side), .007));
-    // Orbit rims: brow over the eye and the malar ridge under it, holding the lid band.
-    skull.push(U(reg(ellipsoid(`supraorbital${side}`, m(.0175, .0335, .0480), [.0105, .0055, .0090], basisFrom([side * .3, -.2, 1], [0, 1, 0])), 'head', side), .006));
+    skull.push(U(ellipsoid(`whiskerPad${side}`, m(.0070, -.0094, .0722), [.0081, .0076, .0076], basisFrom([side * .40, -.22, 1], [0, 1, 0])), .0045));
+    // Mandible from the chin back to the jaw angle.
+    skull.push(U(roundCone(`mandible${side}`, m(.0045, -.0232, .0610), m(.0200, -.0205, .0230), .0054, .0075), .008));
   }
-  skull.push(U(reg(ellipsoid('maxilla', H(0, -.0005, .0700), [.0150, .0112, .0140]), 'muzzle'), .010));
-  skull.push(U(reg(ellipsoid('chin', H(0, -.0182, .0680), [.0074, .0055, .0072]), 'muzzle'), .006));
-  skull.push(U(reg(ellipsoid('jawFloor', H(0, -.0165, .0340), [.0175, .0105, .0260]), 'muzzle'), .010));
-  // Nose leather: a rounded inverted triangle at the tip of the muzzle.
-  const noseCenter = H(0, .0035, .0905), noseRadii: Vec3 = [.0058, .0041, .0033];
-  skull.push(U(reg(custom('noseLeather', { min: sub(noseCenter, [.008, .007, .006]), max: add(noseCenter, [.008, .007, .006]) }, (x, y, z) => {
-    const lx = x - noseCenter[0], ly = y - noseCenter[1], lz = z - noseCenter[2];
-    const w = noseRadii[0] * (.62 + .38 * smoothstep(-noseRadii[1], noseRadii[1], ly));
+  // Nose bridge from the stop down to the nose leather, the maxilla behind the whisker pads.
+  skull.push(U(roundCone('noseBridge', H(0, .0255, .0590), H(0, .0050, .0755), .0074, .0055), .008));
+  skull.push(U(ellipsoid('maxilla', H(0, -.0030, .0640), [.0125, .0105, .0130]), .010));
+  skull.push(U(ellipsoid('chin', H(0, -.0232, .0640), [.0068, .0056, .0066]), .006));
+  skull.push(U(ellipsoid('jawFloor', H(0, -.0200, .0400), [.0155, .0085, .0250]), .010));
+  // Nose leather: a rounded inverted triangle at the tip of the muzzle, facing forward and down.
+  const noseCenter = H(0, -.0002, .0798), noseRadii: Vec3 = [.0068, .0050, .0044];
+  const noseBasis = basisFrom([0, -.55, 1], [0, 1, 0]);
+  const noseLeather = custom('noseLeather', boxAt(noseCenter, .009), (x, y, z) => {
+    const dx = x - noseCenter[0], dy = y - noseCenter[1], dz = z - noseCenter[2];
+    const lx = dx * noseBasis[0][0] + dy * noseBasis[0][1] + dz * noseBasis[0][2], ly = dx * noseBasis[1][0] + dy * noseBasis[1][1] + dz * noseBasis[1][2];
+    const lz = dx * noseBasis[2][0] + dy * noseBasis[2][1] + dz * noseBasis[2][2];
+    const w = noseRadii[0] * (.50 + .50 * smoothstep(-noseRadii[1], noseRadii[1] * .7, ly));
     const k0 = Math.hypot(lx / w, ly / noseRadii[1], lz / noseRadii[2]), k1 = Math.hypot(lx / (w * w), ly / (noseRadii[1] ** 2), lz / (noseRadii[2] ** 2));
     return k0 < 1e-9 ? -noseRadii[2] : k0 * (k0 - 1) / k1;
-  }), 'muzzle'), .0025));
+  });
+  labels.noseLeather = noseLeather;
+  skull.push(U(noseLeather, .0025));
 
-  // Ears: cupped shells with thickness and a concha, blended into the cranium.
-  for (const ear of ears) skull.push(U(reg(earShell(ear), 'ear', ear.side), .0045));
+  // Ears: cupped shells with thickness and a concha, on a muscular base blended into the cranium.
+  for (const ear of ears) {
+    skull.push(U(ellipsoid(`earBase${ear.side}`, add(ear.base, scale(ear.up, -.002)), [.0175, .0105, .0085], basisFrom(ear.front, ear.up)), .008));
+    const shell = earShell(ear);
+    labels[`ear${ear.side}`] = shell;
+    skull.push(U(shell, .0045));
+  }
 
-  // Eyelid bands around both eyes, then apertures and sockets.
-  // Periorbital fill brings the face up to the lid surface so the lids sit flush, not in a crater.
-  for (const eye of eyes) skull.push(U(reg(ellipsoid(`orbit${eye.side}`, add(eye.center, scale(eye.axis, -.0012)), [eye.radius + eye.gap + eye.lid * .55, eye.radius + eye.gap + eye.lid * .45, eye.radius + eye.gap + eye.lid * .5], basisFrom(eye.axis, [0, 1, 0])), 'head', eye.side), .0045));
-  for (const eye of eyes) skull.push(U(reg(eyelids(eye), 'head', eye.side), .0016));
+  // Periorbital fill: skin wraps the globe so the lids sit on a sphere around the eyeball.
   for (const eye of eyes) {
-    skull.push(S(custom(`aperture${eye.side}`, boxAt(eye.center, eye.radius + .009), (x, y, z) => {
-      const a = apertureDistance(eye, x, y, z);
-      return Math.max(a.ang * a.r, a.r - (eye.radius + eye.gap + eye.lid + .0045), -a.front);
-    }), .0005));
-    skull.push(S(sphere(`socket${eye.side}`, eye.center, eye.radius + eye.gap), .0003));
+    const rOuter = eye.radius + eye.gap + eye.lid;
+    skull.push(U(sphere(`orbit${eye.side}`, eye.center, rOuter), .0055));
+  }
+  // Apertures: open the almond through the lid shell; the socket gives the globe its clearance.
+  for (const eye of eyes) {
+    const rOuter = eye.radius + eye.gap + eye.lid;
+    skull.push(S(custom(`aperture${eye.side}`, boxAt(eye.center, eye.radius + .012), (x, y, z) => {
+      const a = eyeAngles(eye, x, y, z);
+      return Math.max(a.ang * a.r, a.r - (rOuter + .006), -a.front);
+    }), eye.lid * .55));
+    skull.push(S(sphere(`socket${eye.side}`, eye.center, eye.radius + eye.gap), .0002));
   }
 
   // Nostrils (comma-shaped, blind) and the philtrum groove.
   for (const side of [1, -1] as const) {
     const n = (dx: number, dy: number, dz: number) => H(dx * side, dy, dz);
-    skull.push(S(roundCone(`nostril${side}`, n(.0021, .0012, .0945), n(.0046, .0040, .0898), .00085, .00055), .0006));
+    skull.push(S(roundCone(`nostril${side}`, n(.0015, -.0018, .0828), n(.0045, .0004, .0812), .0010, .0007), .0006));
   }
-  skull.push(S(capsule('philtrum', H(0, .0002, .0952), H(0, -.0122, .0885), .00062), .0006));
+  skull.push(S(capsule('philtrum', H(0, -.0052, .0818), H(0, -.0130, .0790), .0007), .0007));
 
   // Mouth: closed lips separated by a thin slit that opens into a closed oral cavity.
   const mouth = makeMouth(head, J('jaw'));
-  skull.push(S(custom('mouthSlit', { min: [-.02, mouth.cavity.center[1] - .012, mouth.cavity.center[2] - .03], max: [.02, mouth.cavity.center[1] + .01, mouth.cavity.center[2] + .04] },
-    (x, y, z) => Math.max(Math.abs(y - mouth.slitY(x, z)) - mouth.halfGap, mouth.arch(x, z))), .0004));
-  skull.push(S(ellipsoid('oralCavity', mouth.cavity.center, mouth.cavity.radii, basisFrom([0, -.12, 1], [0, 1, 0])), .0012));
+  const slit = custom('mouthSlit', { min: [-.02, head[1] - .032, head[2] + .035], max: [.02, head[1] - .002, head[2] + .095] },
+    (x, y, z) => Math.max(Math.abs(y - mouth.slitY(x, z)) - mouth.halfGap, mouth.arch(x, z)));
+  skull.push(S(slit, .0004));
+  const cavity = egg('oralCavity', mouth.cavity.center, mouth.cavity.rp, mouth.cavity.rn, mouth.cavity.basis);
+  labels.cavity = cavity;
+  skull.push(S(cavity, .0012));
 
   const headShape = group('head', skull);
-  const headVolume = group('headVolume', skull.filter(c => c.op === 'union' && !c.shape.name.startsWith('ear')));
-
-  const shape = group('cat', [U(torso, 0), U(headShape, .016), U(tail, .02), ...limbs.map(c => ({ ...c, k: c.shape.name.startsWith('fore') || c.shape.name.startsWith('hind') ? .014 : .006 }))]);
+  const shape = group('cat', [U(torso, 0), U(headShape, .018), U(tail, .016), ...limbs]);
+  for (const p of paws) for (const k of ['pads']) void k;
   return {
-    shape, parts, eyes, ears, mouth, headVolume,
-    nose: { tip: add(noseCenter, [0, 0, noseRadii[2]]), center: noseCenter, radii: noseRadii },
-    landmarks: { head, jaw: J('jaw'), noseCenter },
+    shape, eyes, ears, mouth, paws, labels,
+    nose: { center: noseCenter, radii: noseRadii, basis: noseBasis },
+    landmarks: { head, jaw: J('jaw'), noseCenter, noseTip: add(noseCenter, scale(noseBasis[2], noseRadii[2])) },
   };
 }
-
-function mix3(a: Vec3, b: Vec3, t: number): Vec3 { return [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)]; }
-function boxAt(c: Vec3, r: number) { return { min: [c[0] - r, c[1] - r, c[2] - r] as Vec3, max: [c[0] + r, c[1] + r, c[2] + r] as Vec3 }; }
 
 function makeEye(center: Vec3, side: Side): EyeFrame {
-  // Optical axis: forward, 9° outward and 4° down; the band hugs a 10.5 mm eyeball.
-  const axis = normalize([Math.sin(9 * deg) * side, -Math.sin(4 * deg), Math.cos(9 * deg)]);
-  const lateral = normalize(cross([0, 1, 0], axis)), up = cross(axis, lateral);
-  const inner = -50 * deg, outer = 47 * deg;
-  const tiltIn = -7 * deg, tiltOut = 5 * deg;
+  // Optical axis: forward, 9° outward and 3° down. Lids hug a 10.5 mm globe.
+  const yaw = 9 * deg, pitch = 3 * deg;
+  const axis = normalize([Math.sin(yaw) * Math.cos(pitch) * side, -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)]);
+  const lateral = normalize(cross([0, 1, 0], axis)), lat = dot(lateral, [side, 0, 0]) > 0 ? lateral : scale(lateral, -1);
+  const up = normalize(cross(axis, lat)), upFixed = up[1] > 0 ? up : scale(up, -1);
+  const inner = -44 * deg, outer = 45 * deg;
+  // The lid line rises toward the outer corner (oblique almond); the inner corner is the sharper
+  // tear-duct canthus, the outer corner is rounder.
+  const tilt = (t: number) => mix(-5 * deg, 6 * deg, t);
+  const shapeU = (t: number) => Math.pow(Math.sin(Math.PI * Math.pow(t, .82)), .62);
+  const shapeL = (t: number) => Math.pow(Math.sin(Math.PI * Math.pow(t, .90)), .70);
   return {
-    side, center, radius: .0105, gap: .00045, lid: .0013, axis, up, lateral, inner, outer,
-    upper: t => mix(tiltIn, tiltOut, t) + 35 * deg * Math.pow(Math.sin(Math.PI * t), .62),
-    lower: t => mix(tiltIn, tiltOut, t) - 30 * deg * Math.pow(Math.sin(Math.PI * t), .78),
+    side, center, radius: .0105, gap: .00045, lid: .0017, axis, up: upFixed, lateral: lat, inner, outer,
+    upper: t => tilt(t) + 31 * deg * shapeU(t),
+    lower: t => tilt(t) - 27 * deg * shapeL(t),
+    closure: t => tilt(t) - 27 * deg * shapeL(t) * .55,
   };
-}
-
-function eyelids(eye: EyeFrame): Shape {
-  const rMid = eye.radius + eye.gap + eye.lid / 2;
-  return custom(`eyelids${eye.side}`, boxAt(eye.center, eye.radius + .006), (x, y, z) => {
-    const a = apertureDistance(eye, x, y, z);
-    const shell = Math.abs(a.r - rMid) - eye.lid / 2;
-    // The band exists outside the aperture, within ~32° of the margin, and only on the front half.
-    const band = Math.max(-a.ang * rMid, (a.ang - 32 * deg) * rMid, -a.front - .002);
-    return smax(shell, band, eye.lid * .85);
-  });
 }
 
 function makeEar(side: Side, base01: Vec3, mid02: Vec3): EarFrame {
-  const base = mirror(add(base01, [.0015, -.001, -.0005]), side);
-  const up = normalize(mirror(add(normalize(sub(mid02, base01)), [.02, 0, -.06]), side));
-  const front = normalize(sub([Math.sin(27 * deg) * side, .1, Math.cos(27 * deg)], scale(up, dot(up, [Math.sin(27 * deg) * side, .1, Math.cos(27 * deg)]))));
+  const base = mirror(base01, side);
+  const up = normalize(mirror(add(normalize(sub(mid02, base01)), [.05, 0, -.05]), side));
+  const facing: Vec3 = [Math.sin(24 * deg) * side, .05, Math.cos(24 * deg)];
+  const front = normalize(sub(facing, scale(up, dot(up, facing))));
   const lateral = normalize(cross(up, front));
-  return { side, base, up, front, lateral, height: .0445, width: .0395 };
+  return { side, base, up, front, lateral, height: .050, width: .043 };
 }
 
 function earShell(ear: EarFrame): Shape {
   const { base, up, front, lateral, height, width } = ear;
-  const reach = height + .01;
+  const reach = height + .012;
   const box = { min: sub(base, [reach, reach, reach]), max: add(base, [reach, reach, reach]) };
-  const tipR = .0042;
+  const tipR = .0045;
+  const outerSign = dot(lateral, [ear.side, 0, 0]) > 0 ? 1 : -1;
   return custom(`ear${ear.side}`, box, (x, y, z) => {
     const dx = x - base[0], dy = y - base[1], dz = z - base[2];
     const s = dx * lateral[0] + dy * lateral[1] + dz * lateral[2], h = dx * up[0] + dy * up[1] + dz * up[2], n = dx * front[0] + dy * front[1] + dz * front[2];
-    const t = clamp(h / height, -.3, 1);
-    // Cupped mid-surface: edges curl forward around a recessed concha, flattening toward the tip.
-    const c = mix(30, 9, clamp(t, 0, 1));
-    const mid = c * s * s - .0035 * (1 - clamp(t, 0, 1));
+    const t = clamp(h / height, 0, 1);
+    // Cupped mid-surface: the edges curl forward around a recessed concha, flattening toward the tip.
+    const c = mix(24, 6, Math.pow(t, .8));
+    const recess = .0032 * (1 - t) * (1 - t);
+    const mid = c * s * s - recess;
     const slope = 2 * c * s;
-    const thick = mix(.0032, .0015, Math.pow(clamp(t, 0, 1), .7));
+    const thick = mix(.0026, .0014, Math.pow(t, .75));
     const shell = Math.abs(n - mid) / Math.sqrt(1 + slope * slope) - thick / 2;
-    // Outline: rounded isosceles triangle in (s, h); the inner edge is slightly convex.
-    const hw = width / 2;
-    const ht = height - tipR;
-    const qx = Math.abs(s), qy = h;
-    const edge = (hw - tipR * .2) * (1 - clamp(qy / ht, 0, 1)) + tipR * .9;
-    const bulge = .0018 * Math.sin(Math.PI * clamp(qy / ht, 0, 1)) * (s * ear.side < 0 ? 1 : .3);
-    const side = (qx - edge - bulge) * Math.cos(Math.atan2(hw, ht));
+    // Outline: rounded isosceles triangle in (s, h); the outer edge bows out, the inner edge is straighter.
+    const hw = width / 2, ht = height - tipR;
+    const qy = clamp(h / ht, 0, 1);
+    const outer = s * outerSign > 0;
+    const edge = (hw - tipR) * (1 - qy) + tipR + (outer ? .0028 : .0010) * Math.sin(Math.PI * qy);
+    const sideDist = (Math.abs(s) - edge) * Math.cos(Math.atan2(hw, ht));
     const tip = Math.hypot(s, Math.max(h - ht, 0)) - tipR;
-    const outline = h > ht ? tip : Math.max(side, -h - .008);
-    return smax(shell, outline, thick * .9);
+    const outline = h > ht ? tip : Math.max(sideDist, -h - .010);
+    return smax(shell, outline, thick * .8);
   });
 }
 
 function makeMouth(head: Vec3, hinge: Vec3): MouthFrame {
-  const zFront = head[2] + .0828, zCorner = head[2] + .0625, ySlit = head[1] - .0132;
-  const halfWidth = .0124;
+  // Lip line: from the philtrum base around the dental arch to the commissures under the eyes.
+  const zFront = head[2] + .0800, zCorner = head[2] + .0585, yFront = head[1] - .0152, yCorner = head[1] - .0176;
+  const halfWidth = .0122;
   const arch = (x: number, z: number) => {
-    // Front half-ellipse of the dental arch, extending past the lips; closed behind the corners.
-    const cz = zCorner, rz = (zFront + .006) - cz;
+    const cz = zCorner, rz = (zFront + .008) - cz;
     const e = Math.hypot(x / halfWidth, Math.max(z - cz, 0) / rz) - 1;
-    return Math.max(e * Math.min(halfWidth, rz), cz - z);
+    return Math.max(e * Math.min(halfWidth, rz), cz - .006 - z);
   };
-  const slitY = (x: number, z: number) => ySlit + .0024 * (x / halfWidth) ** 2 + .06 * Math.max(zFront - z, 0) * .5;
+  const slitY = (x: number, z: number) => mix(yFront, yCorner, clamp((x / halfWidth) ** 2, 0, 1)) - .0012 * clamp((zFront - z) / .02, 0, 1);
   return {
-    slitY, arch, halfGap: .00058,
-    cavity: { center: [0, ySlit + .0002, head[2] + .0620], radii: [.0098, .0042, .0185] },
-    hinge, front: zFront, corner: [halfWidth, slitY(halfWidth, zCorner), zCorner],
+    slitY, arch, halfGap: .00072,
+    cavity: { center: [0, head[1] - .0172, head[2] + .0480], rp: [.0108, .0048, .0235], rn: [.0108, .0058, .0200], basis: basisFrom([0, .18, 1], [0, 1, 0]) },
+    hinge, front: zFront, corner: [halfWidth, yCorner, zCorner],
   };
 }
 
-/** Paw: metapodial, foot mass, four toe lobes with digital pads, a trilobed central pad, and for
- * front paws a carpal pad and a dewclaw. Pads are registered as region 'pad'. */
-function paw4(name: string, side: Side, upper: Vec3, paw: Vec3, toe: Vec3, front: boolean, reg: (s: Shape, r: Region, side: 0 | Side) => Shape): Shape {
-  const region: Region = front ? 'frontPaw' : 'hindPaw';
+/** Paw: metapodial, foot mass, four toe lobes with digital pads and claw pockets, a trilobed
+ * central pad, and for front paws a carpal pad and a dewclaw. */
+function paw4(name: string, side: Side, front: boolean, upper: Vec3, paw: Vec3, toe: Vec3, labels: Record<string, Shape>): { shape: Shape; frame: PawFrame } {
   const fwd = normalize([toe[0] - paw[0], 0, toe[2] - paw[2]]);
   const lat: Vec3 = [fwd[2] * side, 0, -fwd[0] * side];
   const at = (o: Vec3, f: number, l: number, y: number): Vec3 => [o[0] + fwd[0] * f + lat[0] * l, y, o[2] + fwd[2] * f + lat[2] * l];
   const children: Child[] = [];
   const U = (shape: Shape, k: number): Child => ({ shape, op: 'union', k });
-  const widthScale = front ? 1 : .93, lengthScale = front ? 1 : 1.06;
-  children.push(U(reg(roundCone(`${name}.metapodial`, add(upper, [0, -.004, 0]), at(paw, -.002, 0, .0150), front ? .0108 : .0100, .0120 * widthScale), region, side), 0));
-  children.push(U(reg(ellipsoid(`${name}.foot`, at(paw, .0035 * lengthScale, 0, .0122), [.0128 * widthScale, .0098, .0135 * lengthScale], basisFrom(fwd, [0, 1, 0])), region, side), .006));
-  // Toes 2–5 from medial to lateral; the middle toes reach farthest.
-  const toes = [-1.42, -.47, .47, 1.42];
-  toes.forEach((u, i) => {
-    const reach = (i === 1 || i === 2 ? .0138 : .0118) * lengthScale, spread = u * .0058 * widthScale;
-    const c = at(paw, reach, spread, .0084);
-    const dir = normalize([fwd[0] + lat[0] * u * .22, -.12, fwd[2] + lat[2] * u * .22]);
-    children.push(U(reg(ellipsoid(`${name}.toe${i}`, c, [.0052 * widthScale, .0060, .0066], basisFrom(dir, [0, 1, 0])), region, side), .0016));
-    children.push(U(reg(ellipsoid(`${name}.bean${i}`, add(c, [dir[0] * .0004, -.0052, dir[2] * .0004]), [.0038 * widthScale, .0026, .0043], basisFrom(dir, [0, 1, 0])), 'pad', side), .0011));
+  const Sb = (shape: Shape, k: number): Child => ({ shape, op: 'subtract', k });
+  const ws = front ? 1.10 : 1.0, ls = front ? 1.08 : 1.18;
+  const pads: Shape[] = [];
+  children.push(U(roundCone(`${name}.metapodial`, add(upper, [0, -.003, 0]), at(paw, -.003, 0, .0145), front ? .0100 : .0092, .0118 * ws), 0));
+  children.push(U(ellipsoid(`${name}.foot`, at(paw, .0030 * ls, 0, .0115), [.0128 * ws, .0090, .0132 * ls], basisFrom(fwd, [0, 1, 0])), .006));
+  // Toes II–V from medial to lateral; the middle toes reach farthest.
+  const toeFrames: PawFrame['toes'] = [];
+  const spread = [-1.45, -.48, .48, 1.45];
+  spread.forEach((u, i) => {
+    const reach = (i === 1 || i === 2 ? .0150 : .0124) * ls, off = u * .0061 * ws;
+    const c = at(paw, reach, off, .0072);
+    const dir = normalize([fwd[0] + lat[0] * u * .2, -.10, fwd[2] + lat[2] * u * .2]);
+    children.push(U(ellipsoid(`${name}.toe${i}`, c, [.0051 * ws, .0060, .0066], basisFrom(dir, [0, 1, 0])), .0014));
+    const bean = ellipsoid(`${name}.bean${i}`, add(c, [dir[0] * .0006, -.0045, dir[2] * .0006]), [.0038 * ws, .0026, .0044], basisFrom(dir, [0, 1, 0]));
+    pads.push(bean);
+    children.push(U(bean, .0010));
+    const tip = add(c, add(scale(dir, .0062), [0, .0004, 0]));
+    toeFrames.push({ center: c, dir, tip });
+    // Claw pocket: the sheath opening at the dorsal tip of the toe, where the retracted claw rests.
+    children.push(Sb(capsule(`${name}.sheath${i}`, add(c, add(scale(dir, .0018), [0, .0022, 0])), add(c, add(scale(dir, .0068), [0, .0010, 0])), .00105), .0006));
   });
   // Trilobed metacarpal/metatarsal pad under the foot.
-  const padC = at(paw, -.0005, 0, .0042);
-  children.push(U(reg(ellipsoid(`${name}.mainPad`, padC, [.0086 * widthScale, .0034, .0060], basisFrom(fwd, [0, 1, 0])), 'pad', side), .0012));
-  for (const l of [-1, 1]) children.push(U(reg(ellipsoid(`${name}.mainPadLobe${l}`, at(padC, -.0036, l * .0052 * widthScale, .0044), [.0046, .0032, .0042], basisFrom(fwd, [0, 1, 0])), 'pad', side), .0016));
-  children.push(U(reg(ellipsoid(`${name}.mainPadRear`, at(padC, -.0048, 0, .0046), [.0050, .0031, .0040], basisFrom(fwd, [0, 1, 0])), 'pad', side), .0016));
+  const padC = at(paw, -.0010, 0, .0040);
+  const main = ellipsoid(`${name}.mainPad`, padC, [.0088 * ws, .0034, .0062], basisFrom(fwd, [0, 1, 0]));
+  pads.push(main);
+  children.push(U(main, .0012));
+  for (const l of [-1, 1]) {
+    const lobe = ellipsoid(`${name}.mainPadLobe${l}`, at(padC, -.0036, l * .0054 * ws, .0043), [.0046, .0031, .0042], basisFrom(fwd, [0, 1, 0]));
+    pads.push(lobe); children.push(U(lobe, .0015));
+  }
+  const rear = ellipsoid(`${name}.mainPadRear`, at(padC, -.0050, 0, .0045), [.0050, .0030, .0040], basisFrom(fwd, [0, 1, 0]));
+  pads.push(rear); children.push(U(rear, .0015));
+  let dewclaw: PawFrame['dewclaw'];
   if (front) {
     // Carpal pad on the palmar side of the wrist and the dewclaw on the medial side.
-    children.push(U(reg(ellipsoid(`${name}.carpalPad`, add(upper, [0, -.0075, -.0098]), [.0032, .0042, .0026], basisFrom([0, -.4, -1], [0, 1, 0])), 'pad', side), .0012));
-    const dew = add(mix3(upper, paw, .48), [-.0102 * side, .002, -.0005]);
-    children.push(U(reg(ellipsoid(`${name}.dewclaw`, dew, [.0034, .0046, .0038], basisFrom([-.5 * side, -.4, 1], [0, 1, 0])), region, side), .0022));
+    const carpal = ellipsoid(`${name}.carpalPad`, add(upper, [0, -.0060, -.0098]), [.0032, .0040, .0026], basisFrom([0, -.4, -1], [0, 1, 0]));
+    pads.push(carpal); children.push(U(carpal, .0012));
+    const dewC = add(lerp3(upper, paw, .52), [-.0098 * side, .001, .001]);
+    const dewDir = normalize([-.35 * side, -.55, 1]);
+    children.push(U(ellipsoid(`${name}.dewclaw`, dewC, [.0032, .0044, .0040], basisFrom(dewDir, [0, 1, 0])), .0022));
+    children.push(Sb(capsule(`${name}.dewSheath`, add(dewC, scale(dewDir, .0012)), add(dewC, scale(dewDir, .0042)), .0010), .0006));
+    dewclaw = { center: dewC, dir: dewDir, tip: add(dewC, scale(dewDir, .0040)) };
   }
-  return group(name, children);
+  labels[`${name}.pads`] = group(`${name}.pads`, pads.map(p => U(p, .001)));
+  return {
+    shape: group(name, children),
+    frame: { name, side, front, fwd, lat, joint: paw, toes: toeFrames, pads: [], dewclaw },
+  };
 }
 
-export const helpers = { catmull, smin, smoothstep, mirror };
+export const helpers = { smin, mix };
