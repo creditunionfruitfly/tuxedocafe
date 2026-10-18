@@ -270,7 +270,7 @@ def evening_cue(spec):
         if reggae:
             # Clipped nylon upstrokes exclusively between beats. The Rhodes
             # answers sparsely; neither instrument masks the one-drop.
-            shell = [base + tones[i] for i in (1, 3, -1)]
+            shell = list(dict.fromkeys(base + tones[i] for i in (1, 3, -1)))
             for eighth in (1, 3, 5, 7):
                 for pitch in shell:
                     note(1, at(bar, eighth), pitch, 125, 39 + (eighth == 5) * 4)
@@ -288,7 +288,7 @@ def evening_cue(spec):
             if bar % 4 == 3:
                 note(9, at(bar, 7), 76, 55, 22)
         else:
-            shell = [base + tones[i] for i in (1, 2, 3, -1)]
+            shell = list(dict.fromkeys(base + tones[i] for i in (1, 2, 3, -1)))
             for eighth, length, vel in [(0, 650, 34), (5, 400, 31)]:
                 for pitch in shell:
                     note(1, at(bar, eighth), pitch, length, vel)
