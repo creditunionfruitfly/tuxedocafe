@@ -202,6 +202,22 @@
       }
     },
     {
+      "id": "evening_reggae",
+      "title": "Evening Reggae",
+      "mood": "Unhurried evening roots groove",
+      "file": "evening_reggae.mid",
+      "bpm": 88,
+      "key": 55,
+      "arrangement": "reggae",
+      "mix": {
+        "0": [71, 84, 70, 42, 12],
+        "1": [24, 82, 54, 18, 4],
+        "2": [32, 90, 64, 5, 0],
+        "3": [4, 64, 76, 45, 15],
+        "9": [0, 62, 64, 12, 0]
+      }
+    },
+    {
       "id": "night",
       "title": "Cozy Night",
       "mood": "Cozy night",
@@ -244,6 +260,21 @@
           100,
           60
         ]
+      }
+    },
+    {
+      "id": "late_night_jazz",
+      "title": "Late Night Jazz",
+      "mood": "Soft after-hours jazz",
+      "file": "late_night_jazz.mid",
+      "bpm": 76,
+      "key": 53,
+      "arrangement": "late_jazz",
+      "mix": {
+        "0": [11, 88, 72, 70, 26],
+        "1": [4, 74, 56, 58, 20],
+        "2": [32, 76, 64, 12, 0],
+        "9": [0, 48, 64, 28, 0]
       }
     }
   ]

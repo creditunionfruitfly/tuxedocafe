@@ -1,0 +1,6 @@
+source: Original synthesis and composition for Tuxedo Cafe (Late Night Jazz MIDI source)
+tool: tools/audio/author-bank.py; ffmpeg libvorbis
+date: '2026-10-18'
+license: original
+author_role: composer
+notes: Generated at build time; no recordings, third-party samples, melodies or progressions. Dedicated to the public domain under CC0-1.0.
