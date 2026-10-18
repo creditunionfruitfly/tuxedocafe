@@ -14,9 +14,10 @@ const TURN_RATE = 3.2;
 export class Wander {
   x: number; z: number; yaw = 0; speed = 0;
   previousX: number; previousZ: number; previousYaw = 0;
-  #wait: number; #path: Waypoint[] = []; readonly #rng: Rng;
-  constructor(rng: Rng, start: Waypoint) {
-    this.#rng = rng; this.x = this.previousX = start.x; this.z = this.previousZ = start.z; this.#wait = rng.range(1, 3);
+  target: Waypoint | null = null;
+  #wait: number; #path: Waypoint[] = []; readonly #rng: Rng; readonly #walk: number; readonly #avoid: (x: number, z: number) => boolean;
+  constructor(rng: Rng, start: Waypoint, options: { speed?: number; avoid?: (x: number, z: number) => boolean } = {}) {
+    this.#rng = rng; this.#walk = options.speed ?? WALK_SPEED; this.#avoid = options.avoid ?? (() => false); this.x = this.previousX = start.x; this.z = this.previousZ = start.z; this.#wait = rng.range(1, 3);
   }
   get moving(): boolean { return this.#path.length > 0; }
   step(dt: number): void {
@@ -25,7 +26,7 @@ export class Wander {
       if ((this.#wait -= dt) > 0) return;
       for (let tries = 0; tries < 8 && !this.moving; tries++) {
         const target = { x: this.#rng.range(ROOM.minX + .5, ROOM.maxX - .5), z: this.#rng.range(ROOM.minZ + .5, ROOM.maxZ - .5) };
-        if (walkable(target.x, target.z) && Math.hypot(target.x - this.x, target.z - this.z) > 1) this.#path = route(this, target);
+        if (walkable(target.x, target.z) && Math.hypot(target.x - this.x, target.z - this.z) > 1 && !this.#avoid(target.x, target.z)) { this.#path = route(this, target); this.target = this.moving ? target : null; }
       }
       this.#wait = this.moving ? 0 : 1;
       return;
@@ -35,12 +36,12 @@ export class Wander {
     turn = Math.atan2(Math.sin(turn), Math.cos(turn));
     this.yaw += Math.sign(turn) * Math.min(Math.abs(turn), TURN_RATE * dt);
     // Turn on the spot first, then walk; the walk clip's speed follows the real speed.
-    this.speed = WALK_SPEED * Math.max(0, Math.cos(turn));
+    this.speed = this.#walk * Math.max(0, Math.cos(turn));
     const advance = Math.min(distance, this.speed * dt);
     if (distance > 1e-6) { this.x += dx / distance * advance; this.z += dz / distance * advance; }
     if (distance - advance < .02) {
       this.#path.shift();
-      if (!this.moving) this.#wait = this.#rng.exponential(5) + 2;
+      if (!this.moving) { this.#wait = this.#rng.exponential(5) + 2; this.target = null; }
     }
   }
 }
