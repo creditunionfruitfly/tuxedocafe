@@ -31,6 +31,8 @@ import { mountHoverMenu } from './ui/hover-menu.ts';
 import { freshVisit,cleanVisit } from './save/visit.ts';
 import { createRng } from './core/rng.ts';
 import { loadCast,type Cast } from './cats/resident.ts';
+import { CloseUp } from './interaction/closeup.ts';
+import { mountRadialMenu } from './ui/radial-menu.ts';
 async function boot():Promise<void>{
 const body=document.body,bus=new EventBus();
 const stamp=document.querySelector<HTMLElement>('#build-stamp');if(stamp)stamp.textContent=formatStamp(buildInfo);
@@ -44,16 +46,19 @@ try {
   rendererReady=true;const player=new Player(),holding=new HoldDrag(),water=new TapFill();water.completed=visit.waterDone;
   const targets=[makeProxy('water-bowl',[1.4,.13,-.7],[.5,.26,.5],['Pick up','Fill']),makeProxy('food-bowl',[1.9,.13,-.7],[.45,.26,.45],['Pick up','Fill']),makeProxy('tap',[-2,1.2,-3.55],[.9,.65,.75],['Fill']),makeProxy('litter-1',[4.25,.2,-3.6],[.8,.4,.55],['Clean']),makeProxy('litter-2',[4.25,.2,-4.3],[.8,.4,.55],['Clean']),makeProxy('scoop',[4.65,.4,-3.9],[.35,.25,.5],['Pick up']),makeProxy('table-1',[-2,.75,-.6],[1.3,.12,1.3],['Place']),makeProxy('table-2',[.5,.75,-3.1],[1.3,.12,1.3],['Place'])];
   const targetMap=new Map(targets.map(target=>[target.id,target]));
-  const menu=mountHoverMenu(bus),keyboard=installKeys(index=>menu.select(index));
-  const pointer=installPointer(canvas,camera,player,targets,bus,holding,water,visit.settings),hand=createHand(camera);
+  const menu=mountHoverMenu(bus),radial=mountRadialMenu(bus,()=>visit.settings.holdToggle),keyboard=installKeys(index=>radial.open?radial.select(index):menu.select(index));
+  const closeup=new CloseUp(bus,()=>visit.settings.reducedMotion);let cast:Cast|undefined;
+  // Any tap on a cat opens its close-up; a tap elsewhere during one steps back out.
+  const tapCat=(ray:Parameters<CloseUp['pick']>[0]):boolean=>{if(closeup.target){closeup.exit();return true;}const cat=cast&&closeup.pick(ray,cast.residents);if(!cat)return false;closeup.enter(cat,{x:player.x,z:player.z});return true;};
+  const pointer=installPointer(canvas,camera,player,targets,bus,holding,water,visit.settings,tapCat),hand=createHand(camera);
   let playing=false,paused=false,benchmarkDone=false,contextReloadPending=false,previous=0,drawFrames=0,frameSum=0,tierPreference=visit.settings.tier;
   const probe=probeDevice(display.renderer.getContext() as WebGL2RenderingContext),benchmark=new TierBenchmark();
   const override=parseTier(new URLSearchParams(location.search).get('tier'));if(override){benchmarkDone=display.configure(override);contextReloadPending=!benchmarkDone;}
-  const forwardVector=new Vector3();let cast:Cast|undefined;
+  const forwardVector=new Vector3();
   const loop=new FixedLoop(dt=>{
-    cast?.step(dt,playing?{x:player.x,z:player.z}:null);
+    cast?.step(dt,playing?{x:player.x,z:player.z}:null);closeup.step(dt,{x:player.x,z:player.z});body.dataset.closeup=closeup.target?.id??'';
     if(!playing)return;
-    const k=keyboard.keys;player.step(dt,Number(k.has('d'))-Number(k.has('a')),Number(k.has('w'))-Number(k.has('s')));player.steer(dt,Number(k.has('arrowleft'))-Number(k.has('arrowright')),Number(k.has('arrowup'))-Number(k.has('arrowdown')));
+    const k=keyboard.keys;if(!closeup.target)player.step(dt,Number(k.has('d'))-Number(k.has('a')),Number(k.has('w'))-Number(k.has('s')));player.steer(dt,Number(k.has('arrowleft'))-Number(k.has('arrowright')),Number(k.has('arrowup'))-Number(k.has('arrowdown')));
     pointer.step(dt);hand.step(dt);bus.emit('player',{x:player.x,z:player.z});body.dataset.player=`${player.x.toFixed(2)},${player.z.toFixed(2)}`;
     body.dataset.carry=holding.id??'';body.dataset.look=`${player.yaw.toFixed(3)},${player.pitch.toFixed(3)},${player.lean.toFixed(3)}`;
     for(const [id,placed] of holding.placements){
@@ -64,7 +69,7 @@ try {
   },alpha=>{
     camera.position.set(player.previousX+(player.x-player.previousX)*alpha,1.6,player.previousZ+(player.z-player.previousZ)*alpha);player.orientation(camera.quaternion);
     // Leaning never pushes the near plane through a wall when the patron faces it.
-    forwardVector.set(0,0,-player.lean).applyQuaternion(camera.quaternion);camera.position.add(forwardVector);camera.position.x=Math.max(ROOM.minX+.1,Math.min(ROOM.maxX-.1,camera.position.x));camera.position.z=Math.max(ROOM.minZ+.1,Math.min(ROOM.maxZ-.1,camera.position.z));camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();camera.updateMatrixWorld();
+    forwardVector.set(0,0,-player.lean).applyQuaternion(camera.quaternion);camera.position.add(forwardVector);camera.position.x=Math.max(ROOM.minX+.1,Math.min(ROOM.maxX-.1,camera.position.x));camera.position.z=Math.max(ROOM.minZ+.1,Math.min(ROOM.maxZ-.1,camera.position.z));closeup.apply(camera);camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();camera.updateMatrixWorld();
     hand.update(playing,!!holding.id,visit.settings.leftHanded);for(const cat of cast?.residents??[])cat.render(alpha);display.renderer.render(scene,camera);
     if(benchmarkDone&&!contextReloadPending&&body.dataset.ready!=='true'){const start=document.querySelector<HTMLButtonElement>('#start')!;start.disabled=false;start.setAttribute('aria-busy','false');body.dataset.ready='true';}body.dataset.drawCalls=String(display.renderer.info.render.calls);body.dataset.triangles=String(display.renderer.info.render.triangles);body.dataset.shaderPrograms=String(display.renderer.info.programs?.length??0);
     if(++drawFrames%60===0){body.dataset.frameMs=(frameSum/60).toFixed(1);frameSum=0;}
