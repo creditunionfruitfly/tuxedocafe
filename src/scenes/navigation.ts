@@ -9,19 +9,21 @@ function clear(a: Waypoint, b: Waypoint): boolean {
   for(let i=1;i<=steps;i++)if(!walkable(a.x+(b.x-a.x)*i/steps,a.z+(b.z-a.z)*i/steps))return false;
   return true;
 }
+const width=24, height=19, nodes: Waypoint[]=[];
+for(let z=0;z<height;z++)for(let x=0;x<width;x++)nodes.push({x:-4.6+x*spacing,z:-4.6+z*spacing});
+const open=nodes.map(node=>walkable(node.x,node.z)), OPEN=nodes.map((_,i)=>i).filter(i=>open[i]);
 /** Small deterministic room grid. Only destination changes allocate or search. */
 export function route(start: Waypoint, end: Waypoint): Waypoint[] {
   if(!walkable(end.x,end.z))return [];
   if(clear(start,end))return [{...end}];
-  const nodes: Waypoint[]=[], width=24, height=19;
-  for(let z=0;z<height;z++)for(let x=0;x<width;x++)nodes.push({x:-4.6+x*spacing,z:-4.6+z*spacing});
-  const nearest=(point:Waypoint):number=>{let best=-1,distance=Infinity;nodes.forEach((node,i)=>{const d=Math.hypot(node.x-point.x,node.z-point.z);if(d<distance&&walkable(node.x,node.z)&&clear(point,node)){distance=d;best=i;}});return best;};
+  // Nearest open node first, so only a handful of line-of-sight checks run per route.
+  const nearest=(point:Waypoint):number=>{const order=OPEN.slice().sort((a,b)=>Math.hypot(nodes[a]!.x-point.x,nodes[a]!.z-point.z)-Math.hypot(nodes[b]!.x-point.x,nodes[b]!.z-point.z));return order.find(i=>clear(point,nodes[i]!))??-1;};
   const first=nearest(start),last=nearest(end);if(first<0||last<0)return [];
   const parents=new Int16Array(nodes.length).fill(-1),queue=[first];parents[first]=first;
   for(let q=0;q<queue.length&&parents[last]===-1;q++){
     const current=queue[q]!;
     for(const next of [current-width,current+width,current%width?current-1:-1,current%width<width-1?current+1:-1]){
-      if(next<0||next>=nodes.length||parents[next]!==-1||!walkable(nodes[next]!.x,nodes[next]!.z))continue;
+      if(next<0||next>=nodes.length||parents[next]!==-1||!open[next])continue;
       parents[next]=current;queue.push(next);
     }
   }

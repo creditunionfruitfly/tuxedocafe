@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "notes": "Cat behavior tuning (README Cats: behavior spec). Needs rise per second and fall while a plan step satisfies them. Spots and perches are café floor coordinates; yaw faces (sin yaw, cos yaw).",
+  "rethinkSeconds": [0.5, 2],
+  "inertia": 0.12,
+  "noise": 0.08,
+  "needRise": { "hunger": 0.0016, "thirst": 0.002, "energy": 0.0022, "play": 0.0028, "social": 0.0022, "litter": 0.0011, "grooming": 0.0024 },
+  "gaitSpeed": { "walk": 0.7, "trot": 1.6, "gallop": 3.5 },
+  "spots": {
+    "food": { "x": 1.9, "z": -0.3, "yaw": 3.1416 },
+    "water": { "x": 1.4, "z": -0.3, "yaw": 3.1416 },
+    "scratch": { "x": 2.86, "z": -2.2, "yaw": 1.5708 }
+  },
+  "litter": [
+    { "from": { "x": 3.45, "z": -3.6 }, "x": 4.25, "z": -3.6, "yaw": 1.5708 },
+    { "from": { "x": 3.45, "z": -4.3 }, "x": 4.25, "z": -4.3, "yaw": 1.5708 }
+  ],
+  "perches": [
+    { "id": "banquette", "from": { "x": 2.0, "z": -3.8 }, "x": 2.0, "z": -4.4, "y": 0.45, "yaw": 3.1416, "height": "low", "window": true },
+    { "id": "tree-low", "from": { "x": 2.86, "z": -2.2 }, "x": 3.55, "z": -2.2, "y": 0.47, "yaw": 1.5708, "height": "low" },
+    { "id": "tree-high", "from": { "x": 2.86, "z": -2.0 }, "x": 3.7, "z": -2.2, "y": 1.25, "yaw": 1.5708, "height": "high" }
+  ],
+  "pairs": { "mochi|waffles": "friendly", "pepper|biscuit": "friendly", "clementine|duchess": "friendly", "mochi|clementine": "friendly", "juniper|pixel": "tense", "waffles|juniper": "tense" }
+}
