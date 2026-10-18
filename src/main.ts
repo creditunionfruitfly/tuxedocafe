@@ -33,6 +33,8 @@ import { createRng } from './core/rng.ts';
 import { loadCast,type Cast } from './cats/resident.ts';
 import { CloseUp } from './interaction/closeup.ts';
 import { mountRadialMenu } from './ui/radial-menu.ts';
+import { Jukebox } from './audio/music.ts';
+import { mountMusicPill } from './ui/music-pill.ts';
 async function boot():Promise<void>{
 const body=document.body,bus=new EventBus();
 const stamp=document.querySelector<HTMLElement>('#build-stamp');if(stamp)stamp.textContent=formatStamp(buildInfo);
@@ -87,6 +89,7 @@ try {
   });
   installOrientation(value=>{paused=value;loop.paused=value;loop.reset();pointer.active(playing&&!paused);});
   mountShell(bus,visit,save);mountAbout(buildInfo);
+  const jukebox=new Jukebox(visit.settings.music);mountMusicPill(jukebox);bus.on('settings',value=>{void jukebox.setVolume(value.music);});
   await cafe.load();const handLoader=new GLTFLoader();handLoader.setMeshoptDecoder(MeshoptDecoder);const gltf=await handLoader.loadAsync(assetUrl('art/hand.glb'));useRoomProbe(gltf.scene);hand.setModel(gltf.scene,gltf.animations);if(visit.profile)hand.customize(visit.profile.skin,visit.profile.sleeve);
   // M2: the resident cast strolls the café behind ?flags=cats until the behavior engine lands.
   if(flags.has('cats'))try{cast=await loadCast(override??(probe.mobile?'phone':'desktop'),createRng('cafe'));for(const cat of cast.residents){scene.add(cat.root);cat.render(0);}body.dataset.cats=cast.residents.map(cat=>cat.id).join(',');}catch(error){console.warn('The cats could not load',error);}
