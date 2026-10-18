@@ -1,4 +1,4 @@
-import { Vector2, Vector3, Raycaster, type PerspectiveCamera } from 'three';
+import { Vector2, Vector3, Raycaster, type PerspectiveCamera, type Ray } from 'three';
 import { Gestures } from './gestures.ts';
 import { DoubleTap } from './double-tap.ts';
 import { INTERACTION_REACH, raycastProxies, withinReach, type ProxyHit, type ProxyTarget } from '../interaction/proxies.ts';
@@ -9,7 +9,7 @@ import type { EventBus } from '../core/events.ts';
 import type { Player } from '../scenes/player.ts';
 import type { Settings } from './settings.ts';
 import controls from '../../data/interaction.json' with { type: 'json' };
-export function installPointer(canvas: HTMLCanvasElement,camera: PerspectiveCamera,player: Player,targets: readonly ProxyTarget[],bus: EventBus,holding: HoldDrag,water: TapFill,settings: Settings): { step(dt:number):void; hit():ProxyHit|null; interact(target:string,action:string):boolean; active(value:boolean):void; dispose():void } {
+export function installPointer(canvas: HTMLCanvasElement,camera: PerspectiveCamera,player: Player,targets: readonly ProxyTarget[],bus: EventBus,holding: HoldDrag,water: TapFill,settings: Settings,onTap?: (ray: Ray) => boolean): { step(dt:number):void; hit():ProxyHit|null; interact(target:string,action:string):boolean; active(value:boolean):void; dispose():void } {
   const gestures=new Gestures(),doubleTap=new DoubleTap(),raycaster=new Raycaster(),ndc=new Vector2(),carryPoint=new Vector3(),tapPoint=new Vector3(),rate={yaw:0,pitch:0};
   const tapTarget=targets.find(item=>item.id==='tap');
   const pointers=new Map<number,{x:number;y:number;startX:number;startY:number}>(),progressEvent={progress:0};
@@ -59,7 +59,7 @@ export function installPointer(canvas: HTMLCanvasElement,camera: PerspectiveCame
     if(!enabled)return;const wasDown=gestures.down,state=gestures.state,moved=gestures.moved;pointers.delete(e.pointerId);pinch=0;radialX=radialY=0;gestures.release();
     if(pointers.size===0&&wasDown&&state!=='look'){
       if(state==='hold'&&holding.id&&!latched)release();
-      else if(moved<=controls.dragThresholdPx){if(hit?.target.kind==='floor'){if(doubleTap.tap(x,y,e.timeStamp/1000)){hideMenu();/* Jump to the first tap's point: on a slow frame that tap may already have started a walk. */if(!player.jumpTo(tapPoint.x,tapPoint.z))bus.emit('notice',{text:`Choose a clear floor spot within ${controls.jumpMaxMeters} metres.`});}else{pendingFloorTap=true;tapReachable=reachable();tapPoint.copy(hit.point);}}else if(hit)showMenu();}
+      else if(moved<=controls.dragThresholdPx){if(onTap?.(raycaster.ray)){doubleTap.reset();hideMenu();}else if(hit?.target.kind==='floor'){if(doubleTap.tap(x,y,e.timeStamp/1000)){hideMenu();/* Jump to the first tap's point: on a slow frame that tap may already have started a walk. */if(!player.jumpTo(tapPoint.x,tapPoint.z))bus.emit('notice',{text:`Choose a clear floor spot within ${controls.jumpMaxMeters} metres.`});}else{pendingFloorTap=true;tapReachable=reachable();tapPoint.copy(hit.point);}}else if(hit)showMenu();}
       else doubleTap.reset();
     }
     if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);

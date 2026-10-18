@@ -8,6 +8,9 @@ export interface GameEvents {
   'chore:progress': { progress: number };
   'chore:done': { id: string };
   'player': { x: number; z: number };
+  'radial': { title: string; items: readonly { id: string; label: string; disabled?: boolean; hold?: boolean }[] } | null;
+  'radial:select': { id: string };
+  'radial:hold': { id: string; down: boolean };
 }
 export class EventBus<Events extends object = GameEvents> {
   #listeners = new Map<keyof Events, Set<(value: never) => void>>();

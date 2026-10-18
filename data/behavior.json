@@ -20,5 +20,7 @@
     { "id": "tree-low", "from": { "x": 2.86, "z": -2.2 }, "x": 3.55, "z": -2.2, "y": 0.47, "yaw": 1.5708, "height": "low" },
     { "id": "tree-high", "from": { "x": 2.86, "z": -2.0 }, "x": 3.7, "z": -2.2, "y": 1.25, "yaw": 1.5708, "height": "high" }
   ],
+  "petting": { "rise": 0.12, "drain": 0.15, "bondRate": 0.05, "stopBonus": 0.01, "overLoss": 0.03, "avoidSeconds": 60,
+    "zones": { "cheeks": 0.5, "chin": 0.5, "head": 0.5, "back": 1, "belly": 3, "tailBase": 3 } },
   "pairs": { "mochi|waffles": "friendly", "pepper|biscuit": "friendly", "clementine|duchess": "friendly", "mochi|clementine": "friendly", "juniper|pixel": "tense", "waffles|juniper": "tense" }
 }

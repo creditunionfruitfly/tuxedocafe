@@ -24,6 +24,8 @@ const PAIRS = behavior.pairs as Record<string, string>;
 export const pairOf = (a: string, b: string): string => PAIRS[`${a}|${b}`] ?? PAIRS[`${b}|${a}`] ?? 'neutral';
 const GOALS = ['rest', 'eat', 'drink', 'litter', 'groom', 'explore', 'window', 'perch', 'play', 'zoomies', 'seekPlayer', 'avoidPlayer', 'socialize', 'scratch'] as const;
 export type Goal = (typeof GOALS)[number];
+export type Zone = keyof typeof behavior.petting.zones;
+export type Reaction = 'content' | 'warning' | 'over';
 const C = (name: string): string => `cat.${name}`;
 const COMMITTED = new Set<Goal>(['window', 'perch', 'litter']);
 const RESTING = new Set(['rest.sit_idle', 'rest.loaf', 'rest.lie_side', 'rest.sprawl', 'rest.sleep_curl'].map(C));
@@ -40,6 +42,8 @@ export class Brain {
   action: string | null = null; actionId = 0; layers: readonly string[] = []; pulses: string[] = [];
   #plan: Step[] = []; #fresh = true; #time = 0; #think: number; #from = { x: 0, z: 0, y: 0 }; #turn = 0;
   #cooldown: Record<string, number> = {}; #playerDistance = Infinity; #committed = false;
+  /** Close-up state: the cat chose to stay with the patron, and its overstimulation meter (README). */
+  engaged = false; meter = 0; #petting = false; #extra: string[] = []; #queued: string[] = [];
   readonly id: string; readonly rng: Rng; readonly scale: number;
   constructor(id: string, rng: Rng, start: Waypoint, scale = 1) {
     this.id = id; this.rng = rng; this.scale = scale;
@@ -57,16 +61,58 @@ export class Brain {
     this.#committed = COMMITTED.has(goal) || plan.some(step => step.kind === 'clip' && step.clip === C('rest.sleep_curl'));
   }
   step(dt: number, world: World): void {
-    this.mover.begin(); this.pulses = [];
+    this.mover.begin(); this.pulses = this.#queued; this.#queued = [];
     for (const need of NEEDS) this.needs[need] = Math.min(1, this.needs[need] + behavior.needRise[need] * dt);
     for (const key in this.#cooldown) this.#cooldown[key]! -= dt;
-    const free = !this.busy && !(this.#committed && this.#plan.length);
+    const free = !this.busy && !(this.#committed && this.#plan.length) && !this.engaged;
     if (free) this.#react(world, dt);
     if ((this.#think -= dt) <= 0) {
       this.#think = this.rng.range(behavior.rethinkSeconds[0]!, behavior.rethinkSeconds[1]!);
       if (free) this.#rethink(world);
     }
     this.#run(dt);
+    if (!this.#petting) this.meter = Math.max(0, this.meter - behavior.petting.drain * dt);
+    if (this.engaged) this.layers = [...this.layers, ...this.#extra];
+    this.#petting = false; this.#extra = [];
+  }
+  /** A patron came close for a close-up. The cat decides, on its own terms, whether to stay. */
+  engage(patron: Waypoint): boolean {
+    if (this.busy || (this.#committed && this.#plan.length) || (this.#cooldown.avoidHand ?? 0) > 0) { if (!this.busy && !this.#committed) this.interrupt(this.#away(patron), 'avoidPlayer'); return false; }
+    const chance = Math.min(.95, Math.max(.1, this.affinity / this.cap * .5 + this.affinity * .5 + this.traits.sociability * .3 - .15));
+    if (this.rng.next() > chance) { this.interrupt(this.#away(patron), 'avoidPlayer'); return false; }
+    this.engaged = true; this.meter = 0;
+    this.interrupt([{ kind: 'face', yaw: faceTo(this.mover, patron) }, { kind: 'clip', clip: C('rest.sit_down') }, { kind: 'clip', clip: C('rest.sit_idle'), seconds: 1e9, layers: [C('layer.tail_up')] }], 'seekPlayer');
+    return true;
+  }
+  disengage(): void { if (this.engaged) { this.engaged = false; this.interrupt([]); } }
+  /** One fixed step of stroking a zone; returns how the cat feels about it. */
+  pet(zone: Zone, dt: number, patron: Waypoint): Reaction {
+    const p = behavior.petting, factor = zone === 'belly' && this.traits.sociability > .85 ? 1 : p.zones[zone];
+    this.#petting = true; this.meter += p.rise * this.traits.touchSensitivity * factor * dt;
+    if (this.meter >= 1) {
+      this.affinity = Math.max(0, this.affinity - p.overLoss); this.#cooldown.avoidHand = p.avoidSeconds; this.engaged = false;
+      const swat: Step[] = this.traits.boldness > .6 ? [{ kind: 'clip', clip: C('react.swat'), layers: [C('layer.ears_back')] }] : [];
+      this.interrupt([...swat, ...this.#away(patron)], 'avoidPlayer');
+      return 'over';
+    }
+    if (this.meter >= .6) { this.#extra = [C('layer.tail_lash'), C('layer.ears_back')]; if (this.rng.next() < dt * 2) this.#queued.push(C('layer.skin_twitch')); return 'warning'; }
+    this.affinity += p.bondRate * (1 / factor) * (this.cap - this.affinity) * dt;
+    this.#extra = [C('layer.purr_breath'), C('layer.lean_in')];
+    if (this.rng.next() < dt / 6) this.#queued.push(C('social.slow_blink'));
+    return 'content';
+  }
+  /** The hand left: stopping in the warning band earns a little trust (README). */
+  stopPetting(): void { if (this.meter >= .6 && this.meter < 1) this.affinity = Math.min(this.cap, this.affinity + behavior.petting.stopBonus); }
+  /** A slow blink from the patron; a trusting cat returns it. */
+  slowBlink(): boolean {
+    if (this.affinity < this.cap * .3) return false;
+    this.#queued.push(C('social.slow_blink')); this.affinity = Math.min(this.cap, this.affinity + .005); return true;
+  }
+  /** A short play bout with the patron's hand, then back to sitting with them. */
+  playWith(): void {
+    const plan: Step[] = [C('play.bat_left'), C('play.pounce'), C('play.bat_right')].map(clip => ({ kind: 'clip', clip, layers: [C('layer.ears_forward')], satisfy: { play: .15 } }));
+    this.interrupt([...plan, { kind: 'clip', clip: C('rest.sit_idle'), seconds: 1e9, layers: [C('layer.tail_up')] }], 'seekPlayer');
+    this.affinity = Math.min(this.cap, this.affinity + .01);
   }
   score(goal: Goal, world: World): number {
     const n = this.needs, t = this.traits, near = world.player ? Math.hypot(world.player.x - this.mover.x, world.player.z - this.mover.z) : Infinity;
