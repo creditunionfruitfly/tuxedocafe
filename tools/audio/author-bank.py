@@ -215,7 +215,126 @@ def nearest(pitch, tones):
     return min((t + 12 * o for t in tones for o in range(-3, 4)), key=lambda c: abs(c - pitch))
 
 
+def evening_cue(spec):
+    """Two original after-hours forms; the established five-cue recipe stays byte-for-byte intact."""
+    reggae = spec['arrangement'] == 'reggae'
+    # Relative to G or F. The reggae form moves through IV and vi; the jazz
+    # form delays its return to I with a quiet ii–V turnaround.
+    form = ([(0, 'maj9'), (5, 'maj7#11'), (2, 'm7'), (7, '7sus'),
+             (9, 'm7'), (4, 'm7'), (5, 'maj9'), (7, '7sus'),
+             (0, 'maj9'), (5, 'maj7#11'), (2, 'm7'), (4, 'm7'),
+             (9, 'm7'), (5, 'maj9'), (2, 'm7'), (7, '7sus')]
+            if reggae else
+            [(0, 'maj9'), (5, 'maj7#11'), (4, 'm7'), (9, 'm7'),
+             (2, 'm7'), (7, '7sus'), (0, 'maj9'), (7, '7sus'),
+             (0, 'maj9'), (5, 'maj7#11'), (4, 'm7'), (9, 'm7'),
+             (5, 'maj9'), (2, 'm7'), (7, '7sus'), (7, '7sus')])
+    # (eighth, pitch relative to tonic at octave 4, duration in eighths).
+    lead = (
+        [[(1, 4, 2), (4, 7, 1), (6, 9, 1)], [(0, 7, 2), (3, 4, 1), (6, 2, 1)],
+         [(1, 0, 1), (3, 2, 1), (5, 4, 2)], [(0, 2, 2), (3, 0, 1), (6, -1, 1)],
+         [(1, 4, 1), (3, 7, 2), (6, 9, 1)], [(0, 7, 2), (4, 4, 1)],
+         [(1, 5, 2), (4, 7, 1), (6, 9, 1)], [(0, 7, 1), (3, 5, 1), (6, 2, 1)],
+         [(1, 4, 2), (4, 7, 1), (6, 11, 1)], [(0, 9, 2), (4, 7, 1)],
+         [(1, 5, 1), (3, 4, 1), (5, 2, 2)], [(0, 4, 2), (4, 7, 1)],
+         [(1, 7, 2), (4, 4, 1), (6, 2, 1)], [(0, 5, 2), (3, 4, 1)],
+         [(1, 2, 1), (3, 4, 1), (5, 5, 2)], [(0, 2, 2), (4, 0, 2)]]
+        if reggae else
+        [[(0, 4, 2), (3, 7, 1), (5, 11, 2)], [(1, 9, 2), (4, 7, 2)],
+         [(0, 7, 1), (2, 9, 2), (5, 7, 2)], [(1, 5, 2), (4, 4, 1), (6, 2, 1)],
+         [(0, 2, 2), (3, 5, 1), (5, 9, 2)], [(1, 7, 2), (4, 5, 2)],
+         [(0, 4, 1), (2, 7, 2), (5, 11, 2)], [(1, 7, 2), (5, 4, 1)],
+         [(0, 4, 2), (3, 7, 1), (5, 12, 2)], [(1, 11, 2), (4, 9, 2)],
+         [(0, 7, 1), (2, 9, 2), (5, 7, 2)], [(1, 5, 2), (4, 4, 1)],
+         [(0, 2, 2), (3, 5, 1), (5, 9, 2)], [(1, 7, 2), (4, 5, 1), (6, 2, 1)],
+         [(0, 5, 2), (3, 4, 1), (5, 2, 2)], [(1, 4, 2), (4, 0, 2)]])
+    parts = {}
+
+    def at(bar, eighth):
+        beat, half = divmod(eighth, 2)
+        return (bar * 4 + beat) * PPQ + (round(PPQ * (0.51 if reggae else 0.54)) if half else 0)
+
+    def note(ch, tick, pitch, length, velocity):
+        parts.setdefault(ch, []).extend([(tick, 2, bytes([144 + ch, pitch, velocity])),
+                                         (tick + length, 1, bytes([128 + ch, pitch, 0]))])
+
+    for bar, (root, quality) in enumerate(form):
+        tones = QUALITY[quality]
+        base = spec['key'] + root
+        bass = spec['key'] - 12 + root
+        if bass < 40:
+            bass += 12
+        for eighth, degree, length in lead[bar]:
+            note(0, at(bar, eighth), spec['key'] + 12 + degree,
+                 length * PPQ // 2 - 35, (54 if reggae else 48) + (bar % 4 == 0) * 3)
+        if reggae:
+            # Clipped nylon upstrokes exclusively between beats. The Rhodes
+            # answers sparsely; neither instrument masks the one-drop.
+            shell = [base + tones[i] for i in (1, 3, -1)]
+            for eighth in (1, 3, 5, 7):
+                for pitch in shell:
+                    note(1, at(bar, eighth), pitch, 125, 39 + (eighth == 5) * 4)
+            for eighth in (0, 4) if bar % 2 == 0 else (2, 6):
+                for pitch in (base + tones[1] + 12, base + tones[3]):
+                    note(3, at(bar, eighth), pitch, 195, 29)
+            fifth = bass + 7 if bass + 7 <= 53 else bass - 5
+            for eighth, pitch, length, vel in [(0, bass, 440, 62), (3, fifth, 195, 48),
+                                                (4, bass + 12, 360, 56), (7, fifth, 155, 43)]:
+                note(2, at(bar, eighth), pitch, length, vel)
+            note(9, at(bar, 4), 36, 110, 48)
+            note(9, at(bar, 4), 38, 125, 39)
+            for eighth in range(8):
+                note(9, at(bar, eighth), 70, 38, 17 + (eighth % 2) * 7)
+            if bar % 4 == 3:
+                note(9, at(bar, 7), 76, 55, 22)
+        else:
+            shell = [base + tones[i] for i in (1, 2, 3, -1)]
+            for eighth, length, vel in [(0, 650, 34), (5, 400, 31)]:
+                for pitch in shell:
+                    note(1, at(bar, eighth), pitch, length, vel)
+            fifth = bass + 7 if bass + 7 <= 53 else bass - 5
+            for eighth, pitch, length, vel in [(0, bass, 710, 51), (3, fifth, 260, 40),
+                                                (6, bass + 12, 275, 41)]:
+                note(2, at(bar, eighth), pitch, length, vel)
+            for eighth in (2, 6):
+                note(9, at(bar, eighth), 38, 125, 26)
+            for eighth in (0, 4):
+                note(9, at(bar, eighth), 36, 95, 24)
+            for eighth in (1, 3, 5, 7):
+                note(9, at(bar, eighth), 70, 40, 16)
+
+    conductor = [(0, 0, meta(3, spec['title'])),
+                 (0, 0, meta(81, round(60_000_000 / spec['bpm']).to_bytes(3, 'big'))),
+                 (0, 0, meta(88, bytes([4, 2, 24, 8]))),
+                 (0, 0, meta(6, 'loopStart')), (END, 0, meta(6, 'loopEnd'))]
+    tracks = [conductor]
+    for ch, events in sorted(parts.items()):
+        program, volume, pan, reverb, chorus = spec['mix'][str(ch)]
+        head = [(0, 0, bytes([176 + ch, control, value])) for control, value in
+                [(7, volume), (10, pan), (91, reverb), (93, chorus)]]
+        if ch != 9:
+            head.append((0, 0, bytes([192 + ch, program])))
+        tracks.append(head + events)
+
+    def encode_track(events):
+        data, last = b'', 0
+        for tick, _, event in sorted(events, key=lambda e: (e[0], e[1])):
+            data += vlq(tick - last) + event
+            last = tick
+        data += vlq(max(0, END - last)) + meta(47, b'')
+        return b'MTrk' + struct.pack('>I', len(data)) + data
+
+    midi = b'MThd' + struct.pack('>IHHH', 6, 1, len(tracks), PPQ) + b''.join(map(encode_track, tracks))
+    (OUT / spec['file']).write_bytes(midi)
+    source = ROOT / 'audio/cues' / spec['file']
+    source.write_bytes(midi)
+    source.with_name(source.name + '.prov.yaml').write_text(PROV.format(what=spec['title'] + ' MIDI source'))
+
+
 def cue(spec):
+    if spec.get('arrangement') in ('reggae', 'late_jazz'):
+        evening_cue(spec)
+        return
     key, swing = spec['key'], spec['swing']
     def at(bar, eighth):
         beat, half = divmod(eighth, 2)
