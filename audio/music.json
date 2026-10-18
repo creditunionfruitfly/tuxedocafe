@@ -3,11 +3,248 @@
   "notes": "First composer pass (README Audio and music spec; Town Theme style guide). Mix rows are channel: [program, volume, pan, reverb, chorus]. Keys stay neighbours (G, C, F) so hour crossfades never clash.",
   "bank": "audio/cafe_bank.sf3",
   "tracks": [
-    { "id": "morning", "title": "Morning Light", "mood": "Gentle wake-up", "file": "morning.mid", "bpm": 72, "key": 55, "swing": 0.5, "leadOctave": 1, "leadVel": 58, "chordVel": 40, "comp": "arp", "bass": "long", "pad": true,
-      "mix": { "0": [10, 92, 70, 70, 20], "1": [24, 84, 60, 40, 10], "2": [32, 80, 64, 10, 0], "4": [89, 52, 64, 90, 60] } },
-    { "id": "day", "title": "Sparkling Counter", "mood": "Fresh and sparkling", "file": "day.mid", "bpm": 90, "key": 60, "swing": 0.56, "leadOctave": 1, "leadVel": 62, "chordVel": 44, "comp": "offbeat", "bass": "hop", "sparkle": true, "drums": true, "jingle": true,
-      "mix": { "0": [11, 96, 66, 60, 30], "1": [4, 78, 64, 30, 30], "2": [32, 86, 64, 0, 0], "3": [12, 70, 44, 50, 10], "9": [0, 64, 64, 10, 0] } },
-    { "id": "night", "title": "Cozy Night", "mood": "Cozy night", "file": "night.mid", "bpm": 68, "key": 53, "swing": 0.5, "leadOctave": 2, "leadVel": 52, "chordVel": 36, "comp": "long", "bass": "long", "pad": true,
-      "mix": { "0": [8, 90, 70, 80, 30], "1": [4, 74, 64, 60, 30], "2": [32, 70, 64, 20, 0], "4": [89, 48, 64, 100, 60] } }
+    {
+      "id": "morning",
+      "title": "Morning Light",
+      "mood": "Gentle wake-up",
+      "file": "morning.mid",
+      "bpm": 72,
+      "key": 55,
+      "swing": 0.5,
+      "leadOctave": 1,
+      "leadVel": 58,
+      "chordVel": 40,
+      "comp": "arp",
+      "bass": "long",
+      "pad": true,
+      "mix": {
+        "0": [
+          10,
+          92,
+          70,
+          70,
+          20
+        ],
+        "1": [
+          24,
+          84,
+          60,
+          40,
+          10
+        ],
+        "2": [
+          32,
+          80,
+          64,
+          10,
+          0
+        ],
+        "4": [
+          89,
+          52,
+          64,
+          90,
+          60
+        ]
+      }
+    },
+    {
+      "id": "day",
+      "title": "Sparkling Counter",
+      "mood": "Fresh and sparkling",
+      "file": "day.mid",
+      "bpm": 90,
+      "key": 60,
+      "swing": 0.56,
+      "leadOctave": 1,
+      "leadVel": 62,
+      "chordVel": 44,
+      "comp": "offbeat",
+      "bass": "hop",
+      "sparkle": true,
+      "drums": true,
+      "jingle": true,
+      "mix": {
+        "0": [
+          11,
+          96,
+          66,
+          60,
+          30
+        ],
+        "1": [
+          4,
+          78,
+          64,
+          30,
+          30
+        ],
+        "2": [
+          32,
+          86,
+          64,
+          0,
+          0
+        ],
+        "3": [
+          12,
+          70,
+          44,
+          50,
+          10
+        ],
+        "9": [
+          0,
+          64,
+          64,
+          10,
+          0
+        ]
+      }
+    },
+    {
+      "id": "bossa",
+      "title": "Golden Bossa",
+      "mood": "Golden and mellow",
+      "file": "bossa.mid",
+      "bpm": 84,
+      "key": 62,
+      "swing": 0.5,
+      "leadOctave": 1,
+      "leadVel": 60,
+      "chordVel": 44,
+      "comp": "bossa",
+      "bass": "bossa",
+      "drums": "bossa",
+      "mix": {
+        "0": [
+          73,
+          92,
+          70,
+          60,
+          20
+        ],
+        "1": [
+          24,
+          88,
+          58,
+          30,
+          10
+        ],
+        "2": [
+          32,
+          86,
+          64,
+          0,
+          0
+        ],
+        "9": [
+          0,
+          60,
+          64,
+          10,
+          0
+        ]
+      }
+    },
+    {
+      "id": "samba",
+      "title": "Afternoon Samba",
+      "mood": "Lively afternoon",
+      "file": "samba.mid",
+      "bpm": 100,
+      "key": 55,
+      "swing": 0.53,
+      "leadOctave": 1,
+      "leadVel": 64,
+      "chordVel": 46,
+      "comp": "samba",
+      "bass": "surdo",
+      "drums": "samba",
+      "sparkle": true,
+      "busyLead": true,
+      "mix": {
+        "0": [
+          71,
+          94,
+          68,
+          40,
+          20
+        ],
+        "1": [
+          24,
+          86,
+          58,
+          20,
+          10
+        ],
+        "2": [
+          32,
+          90,
+          64,
+          0,
+          0
+        ],
+        "3": [
+          12,
+          66,
+          44,
+          30,
+          10
+        ],
+        "9": [
+          0,
+          72,
+          64,
+          10,
+          0
+        ]
+      }
+    },
+    {
+      "id": "night",
+      "title": "Cozy Night",
+      "mood": "Cozy night",
+      "file": "night.mid",
+      "bpm": 68,
+      "key": 53,
+      "swing": 0.5,
+      "leadOctave": 2,
+      "leadVel": 52,
+      "chordVel": 36,
+      "comp": "long",
+      "bass": "long",
+      "pad": true,
+      "mix": {
+        "0": [
+          8,
+          90,
+          70,
+          80,
+          30
+        ],
+        "1": [
+          4,
+          74,
+          64,
+          60,
+          30
+        ],
+        "2": [
+          32,
+          70,
+          64,
+          20,
+          0
+        ],
+        "4": [
+          89,
+          48,
+          64,
+          100,
+          60
+        ]
+      }
+    }
   ]
 }

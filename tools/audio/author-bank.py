@@ -226,7 +226,7 @@ def cue(spec):
     for bar in range(BARS):
         tones, phrase = chord_tones(key, bar), bar // 2
         lift = 2 if phrase % 4 == 3 else 0
-        if bar % 2 == 0:
+        if bar % 2 == 0 or spec.get('busyLead'):
             for eighth, degree, length in MOTIF:
                 d = degree + lift
                 pitch = key + 12 * spec['leadOctave'] + SCALE[d % 7] + 12 * (d // 7)
@@ -242,6 +242,16 @@ def cue(spec):
             for eighth in [1, 4, 7]:
                 for p in voicing:
                     note(1, at(bar, eighth), p, PPQ // 2, spec['chordVel'])
+        elif spec['comp'] == 'bossa':
+            # Bossa guitar: syncopated chord hits that answer across each two-bar cell.
+            for eighth in ([0, 3, 6] if bar % 2 == 0 else [2, 5]):
+                for p in voicing:
+                    note(1, at(bar, eighth), p, PPQ * 3 // 4, spec['chordVel'])
+        elif spec['comp'] == 'samba':
+            # Partido-alto style comping: short, offbeat-heavy stabs.
+            for eighth in [1, 3, 4, 6]:
+                for p in voicing:
+                    note(1, at(bar, eighth), p, PPQ // 3, spec['chordVel'] + (6 if eighth == 3 else 0))
         elif spec['comp'] == 'arp':
             for i in range(8):
                 note(1, at(bar, i), voicing[i % len(voicing)], PPQ, spec['chordVel'])
@@ -253,6 +263,11 @@ def cue(spec):
         if spec['bass'] == 'hop':
             note(2, at(bar, 0), bass, PPQ - 60, 58); note(2, at(bar, 3), bass + 7, PPQ // 2, 46); note(2, at(bar, 4), bass + 7, PPQ - 60, 54)
             note(2, at(bar, 7), bass + 12, PPQ // 3, 42)
+        elif spec['bass'] == 'bossa':
+            fifth = bass + 7 if bass + 7 <= 52 else bass - 5
+            note(2, at(bar, 0), bass, PPQ * 3 // 2 - 40, 56); note(2, at(bar, 3), fifth, PPQ * 5 // 2 - 40, 50)
+        elif spec['bass'] == 'surdo':
+            note(2, at(bar, 0), bass, PPQ // 2, 46); note(2, at(bar, 3), bass - 5, PPQ // 4, 38); note(2, at(bar, 4), bass, PPQ - 40, 62)
         else:
             note(2, at(bar, 0), bass, PPQ * 4 - 60, 50)
         if spec.get('pad'):
@@ -261,7 +276,23 @@ def cue(spec):
         if spec.get('sparkle') and bar % 4 == 2:
             for i, p in enumerate(sorted(tones)[:4]):
                 note(3, at(bar, 4 + i), p + 24, PPQ // 2, 40)
-        if spec.get('drums'):
+        drums = spec.get('drums')
+        if drums == 'bossa':
+            for eighth in ([0, 3, 6] if bar % 2 == 0 else [2, 4]):
+                note(9, at(bar, eighth), 76, 50, 34)
+            for eighth in range(8):
+                note(9, at(bar, eighth), 70, 40, 18 + 6 * (eighth % 2))
+            for eighth in [0, 4]:
+                note(9, at(bar, eighth), 36, 120, 30)
+        elif drums == 'samba':
+            for eighth in range(8):
+                note(9, at(bar, eighth), 70, 40, 26 + 10 * (eighth % 2))
+            for eighth in [0, 2, 3, 5, 7]:
+                note(9, at(bar, eighth), 76, 40, 36)
+            for eighth in [2, 6]:
+                note(9, at(bar, eighth), 36, 120, 44)
+            note(9, at(bar, 4), 38, 120, 22)
+        elif drums:
             for beat in [1, 3]:
                 note(9, at(bar, beat * 2), 39, 60, 44)
             for eighth in range(8):
