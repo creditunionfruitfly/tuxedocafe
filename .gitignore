@@ -26,3 +26,5 @@ public/assets/art/cats/cat_master_qa.json*
 art/cats/master/cat_master_source.bin*
 art/cats/master/notes/*.png*
 art/cats/master/notes/screenshots/
+public/assets/audio/*
+!public/assets/audio/.gitkeep

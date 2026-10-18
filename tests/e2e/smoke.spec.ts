@@ -34,6 +34,11 @@ test('boots the café with no console errors', async ({ page }, testInfo) => {
   await expect(page.locator('body')).toHaveAttribute('data-bake-resolution', '2048');
   await expect(page.locator('body')).toHaveAttribute('data-live-version', /^(ok|newer)$/);
   await expect(page.locator('#build-stamp')).toHaveText(/\S+ · \S+/);
+  await expect(page.locator('#music-pill')).toContainText('Morning Light');
+  // The pill starts the synth on a real gesture; the worklet, bank and cue must load without errors.
+  await page.locator('#music-pill [data-toggle]').click();
+  await expect(page.locator('#music-pill [data-toggle]')).toHaveAttribute('aria-label', 'Pause music');
+  await page.waitForTimeout(1500);
 
   await page.screenshot({ path: testInfo.outputPath('cafe.png') });
   expect(problems).toEqual([]);

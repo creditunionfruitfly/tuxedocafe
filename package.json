@@ -19,6 +19,7 @@
     "sim:economy": "node tools/engine/sim-economy.ts"
   },
   "dependencies": {
+    "spessasynth_lib": "4.3.14",
     "three": "0.186.1"
   },
   "devDependencies": {

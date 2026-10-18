@@ -6,3 +6,8 @@ execFileSync('python3', ['tools/audio/author-placeholder.py'], {
   cwd: fileURLToPath(new URL('../../', import.meta.url)),
   stdio: 'inherit',
 });
+// The café bank and style-guide cues are generated into public/assets/audio/ for the runtime.
+execFileSync('python3', ['tools/audio/author-bank.py'], {
+  cwd: fileURLToPath(new URL('../../', import.meta.url)),
+  stdio: 'inherit',
+});
