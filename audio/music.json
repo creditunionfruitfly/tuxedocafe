@@ -276,6 +276,39 @@
         "2": [32, 76, 64, 12, 0],
         "9": [0, 48, 64, 28, 0]
       }
+    },
+    {
+      "id": "cafe_garage",
+      "title": "Cafe Garage",
+      "mood": "Buoyant two-step with warm late-cafe keys",
+      "file": "cafe_garage.mid",
+      "bpm": 130,
+      "key": 53,
+      "arrangement": "uk_garage",
+      "mix": {
+        "0": [12, 82, 76, 36, 12],
+        "1": [4, 78, 55, 35, 18],
+        "2": [32, 92, 64, 4, 0],
+        "3": [8, 56, 42, 60, 30],
+        "9": [0, 68, 64, 12, 0]
+      }
+    },
+    {
+      "id": "cat_lounge",
+      "title": "Cat Lounge",
+      "mood": "Weightless space-age pop and chillout",
+      "file": "cat_lounge.mid",
+      "bpm": 92,
+      "key": 55,
+      "arrangement": "space_lounge",
+      "mix": {
+        "0": [11, 80, 75, 88, 35],
+        "1": [4, 70, 55, 66, 32],
+        "2": [32, 68, 64, 20, 0],
+        "3": [8, 55, 38, 85, 42],
+        "4": [89, 43, 72, 100, 56],
+        "9": [0, 39, 64, 35, 0]
+      }
     }
   ]
 }
