@@ -8,6 +8,7 @@ import json
 import math
 from pathlib import Path
 import random
+import runpy
 import struct
 import subprocess
 import sys
@@ -332,6 +333,9 @@ def evening_cue(spec):
 
 
 def cue(spec):
+    if spec.get('arrangement') in ('uk_garage', 'space_lounge'):
+        runpy.run_path(str(ROOT / 'tools/audio/author-extra-cues.py'))['author'](spec, ROOT, OUT)
+        return
     if spec.get('arrangement') in ('reggae', 'late_jazz'):
         evening_cue(spec)
         return

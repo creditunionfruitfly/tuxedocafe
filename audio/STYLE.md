@@ -33,3 +33,9 @@ The SoundFont sidecar lists every sample and its original license.
 
 Cat sounds are owner-supplied only. `sfx/cat/manifest.json` is the delivery
 checklist; pending entries remain silent. Never generate substitute cat audio.
+
+Later optional cues extend the first-cue pulse without altering its recipe:
+"Cafe Garage" runs at 130 BPM with a shuffled sixteenth-note two-step, skipping
+kicks, clipped offbeat keys and a broken bass line. "Cat Lounge" runs at 92 BPM;
+two-bar suspended pads, airy vibraphone, little celesta reflections and a sparse
+backbeat make its space-age pop/chillout arc. Both use only the existing bank.

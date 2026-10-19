@@ -16,6 +16,16 @@ it('cycles the style-guide cues and drives the engine without loading it before 
   await jukebox.setVolume(2); expect(engine.volume).toHaveBeenLastCalledWith(1);
   expect(load).toHaveBeenCalledTimes(1);
 });
-it('keeps every cue inside the style guide tempo range and on neighbouring keys', () => {
-  for (const track of music.tracks) { expect(track.bpm).toBeGreaterThanOrEqual(68); expect(track.bpm).toBeLessThanOrEqual(100); expect([53, 55, 60, 62]).toContain(track.key); }
+it('appends Cafe Garage and Cat Lounge after Late Night Jazz', () => {
+  const lateNight = music.tracks.findIndex((track) => track.id === 'late_night_jazz');
+  expect(lateNight).toBeGreaterThanOrEqual(0);
+  expect(music.tracks.slice(lateNight + 1).map((track) => track.id)).toEqual(['cafe_garage', 'cat_lounge']);
+});
+it('keeps the lounge tempo range with an explicit UK garage arrangement exception and neighbouring keys', () => {
+  for (const track of music.tracks) {
+    expect(track.bpm).toBeGreaterThanOrEqual(track.arrangement === 'uk_garage' ? 128 : 68);
+    expect(track.bpm).toBeLessThanOrEqual(track.arrangement === 'uk_garage' ? 132 : 100);
+    if (track.arrangement === 'uk_garage') expect(track.id).toBe('cafe_garage');
+    expect([53, 55, 60, 62]).toContain(track.key);
+  }
 });
