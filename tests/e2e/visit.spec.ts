@@ -10,15 +10,14 @@ async function screenPoint(page:Page,x:number,y:number,z:number):Promise<{x:numb
  const size=page.viewportSize()!,position=(await page.locator('body').getAttribute('data-player'))!.split(',').map(Number),look=(await page.locator('body').getAttribute('data-look'))!.split(',').map(Number);
  const camera=new PerspectiveCamera(61,size.width/size.height,.04,60);camera.position.set(position[0]!,1.6,position[1]!);camera.rotation.set(look[1]!,look[0]!,0,'YXZ');camera.position.add(new Vector3(0,0,-look[2]!).applyEuler(camera.rotation));camera.updateMatrixWorld();const point=new Vector3(x,y,z).project(camera);return{x:(point.x+1)*size.width/2,y:(1-point.y)*size.height/2};
 }
-async function lookAt(page:Page,isMobile:boolean,x:number,y:number,z:number):Promise<void>{
+async function lookAt(page:Page,_isMobile:boolean,x:number,y:number,z:number):Promise<void>{
  const position=(await page.locator('body').getAttribute('data-player'))!.split(',').map(Number),look=(await page.locator('body').getAttribute('data-look'))!.split(',').map(Number);
- const yaw=Math.atan2(position[0]!-x,position[1]!-z),pitch=Math.atan2(y-1.6,Math.hypot(position[0]!-x,position[1]!-z));const rate=isMobile?controls.lookTouchRadPerPx:controls.lookMouseRadPerPx;let dx=-Math.atan2(Math.sin(yaw-look[0]!),Math.cos(yaw-look[0]!))/rate,dy=-(pitch-look[1]!)/rate;
- const size=page.viewportSize()!,start={x:size.width*.65,y:size.height*.45},session=isMobile?await page.context().newCDPSession(page):null;
+ const yaw=Math.atan2(position[0]!-x,position[1]!-z),pitch=Math.atan2(y-1.6,Math.hypot(position[0]!-x,position[1]!-z));// Touch has no fine aim (one finger turns at a rate, two fingers walk), so every project aims with a right-drag.
+ const rate=controls.lookMouseRadPerPx;let dx=-Math.atan2(Math.sin(yaw-look[0]!),Math.cos(yaw-look[0]!))/rate,dy=-(pitch-look[1]!)/rate;
+ const size=page.viewportSize()!,start={x:size.width*.65,y:size.height*.45};
  while(Math.abs(dx)>.5||Math.abs(dy)>.5){const mx=Math.max(-160,Math.min(160,dx)),my=Math.max(-100,Math.min(100,dy));
-  if(session){await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[start,{x:start.x+60,y:start.y}]});await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:start.x+mx,y:start.y+my},{x:start.x+60+mx,y:start.y+my}]});await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
-  else{await page.mouse.move(start.x,start.y);await page.mouse.down({button:'right'});await page.mouse.move(start.x+mx,start.y+my);await page.mouse.up({button:'right'});}dx-=mx;dy-=my;
+  await page.mouse.move(start.x,start.y);await page.mouse.down({button:'right'});await page.mouse.move(start.x+mx,start.y+my);await page.mouse.up({button:'right'});dx-=mx;dy-=my;
  }
- await session?.detach();
  // Let camera interpolation and the public render stamp settle after the UI gesture.
  await expect.poll(async()=>Number((await page.locator('body').getAttribute('data-look'))!.split(',')[1])).toBeCloseTo(pitch,1);
 }
@@ -42,9 +41,9 @@ test('walk, proxy hover action and room collision stay playable',async({page,isM
   const keyLook=await page.locator('body').getAttribute('data-look');await page.keyboard.down('ArrowLeft');await expect(page.locator('body')).not.toHaveAttribute('data-look',keyLook!);await page.keyboard.up('ArrowLeft');}
  else {await tapPoint(page,isMobile,0,0,.8);await walkedTo(page,0,.8);}
  const lookBefore=await page.locator('body').getAttribute('data-look');
- if(!isMobile){await page.mouse.move(600,300);await page.mouse.down({button:'right'});await page.mouse.move(660,320);await page.mouse.up({button:'right'});await page.mouse.wheel(0,-60);}
- else{const cdp=await page.context().newCDPSession(page);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:400,y:150},{x:460,y:150}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:430,y:170},{x:510,y:170}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
- await expect(page.locator('body')).not.toHaveAttribute('data-look',lookBefore!);
+ if(!isMobile){await page.mouse.move(600,300);await page.mouse.down({button:'right'});await page.mouse.move(660,320);await page.mouse.up({button:'right'});await page.mouse.wheel(0,-60);await expect(page.locator('body')).not.toHaveAttribute('data-look',lookBefore!);}
+ // A held two-finger drag is a walking stick: dragging up walks forward without turning.
+ else{const walkFrom=await page.locator('body').getAttribute('data-player'),cdp=await page.context().newCDPSession(page);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:400,y:200},{x:460,y:200}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:400,y:120},{x:460,y:120}]});await expect(page.locator('body')).not.toHaveAttribute('data-player',walkFrom!);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();expect(await page.locator('body').getAttribute('data-look')).toBe(lookBefore);}
  await page.screenshot({path:info.outputPath('cafe-play.png')});
  await info.attach('render-metrics',{body:JSON.stringify(await page.locator('body').evaluate(body=>({tier:body.dataset.tier,drawCalls:body.dataset.drawCalls,triangles:body.dataset.triangles,softwareFrameMs:body.dataset.frameMs}))),contentType:'application/json'});
  expect(Number(await page.locator('body').getAttribute('data-draw-calls'))).toBeLessThanOrEqual(80);
