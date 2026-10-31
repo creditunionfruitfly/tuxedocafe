@@ -9,7 +9,7 @@ const ZONES: readonly { id: Zone; label: string }[] = [{ id: 'cheeks', label: 'C
 const PERKS = ['Catnip', 'Laser', 'Feather wand', 'Harness walk'];
 const MAIN: readonly RadialItem[] = [{ id: 'pet', label: 'Pet' }, { id: 'blink', label: 'Slow blink' }, { id: 'play', label: 'Play' }, { id: 'perks', label: 'Perks' }, { id: 'leave', label: 'Leave' }];
 const CAPTION: Record<Reaction, string> = { content: 'Purring, leaning into your hand.', warning: 'Tail lashing, ears turning back. Time to stop.', over: 'A swat! That was too much.' };
-const REACH = 6, EASE = .6;
+const REACH = 6, EASE = .6, SIDE = .2;
 const nameOf = (id: string): string => cats.cats.find(cat => cat.id === id)?.name ?? id;
 
 /**
@@ -18,11 +18,11 @@ const nameOf = (id: string): string => cats.cats.find(cat => cat.id === id)?.nam
  */
 export class CloseUp {
   target: Resident | null = null;
-  readonly #bus: EventBus; readonly #reducedMotion: () => boolean;
+  readonly #bus: EventBus; readonly #reducedMotion: () => boolean; readonly #leftHanded: () => boolean;
   #blend = 0; #leaving = 0; #zone: Zone | null = null; #reaction: Reaction | null = null;
   readonly #sphere = new Sphere(); readonly #hit = new Vector3(); readonly #pos = new Vector3(); readonly #look = new Vector3(); readonly #quat = new Quaternion(); readonly #m = new Matrix4(); readonly #up = new Vector3(0, 1, 0);
-  constructor(bus: EventBus, reducedMotion: () => boolean) {
-    this.#bus = bus; this.#reducedMotion = reducedMotion;
+  constructor(bus: EventBus, reducedMotion: () => boolean, leftHanded: () => boolean = () => false) {
+    this.#bus = bus; this.#reducedMotion = reducedMotion; this.#leftHanded = leftHanded;
     bus.on('radial:select', ({ id }) => this.#select(id));
     bus.on('radial:hold', ({ id, down }) => this.#hold(id as Zone, down));
   }
@@ -53,12 +53,12 @@ export class CloseUp {
     if (reaction !== this.#reaction) { this.#reaction = reaction; this.#bus.emit('notice', { text: CAPTION[reaction] }); }
     if (reaction === 'over') { this.#zone = null; this.#bus.emit('radial', null); this.#leaving = 1.4; }
   }
-  /** Eases the patron's camera toward a low, close view of the cat's face. */
+  /** Eases the patron's camera toward a low, close view of the cat's face, framed off-centre so the round menu sits beside it. */
   apply(camera: PerspectiveCamera): void {
     const cat = this.target ?? null;
     if (this.#blend <= 0 || !cat) return;
     const s = cat.root.scale.x, p = cat.root.position, dx = camera.position.x - p.x, dz = camera.position.z - p.z, d = Math.hypot(dx, dz) || 1, e = this.#blend * this.#blend * (3 - 2 * this.#blend);
-    this.#pos.set(p.x + dx / d * .8 * s, p.y + .48 * s + .08, p.z + dz / d * .8 * s); this.#look.set(p.x, p.y + .24 * s, p.z);
+    this.#pos.set(p.x + dx / d * .8 * s, p.y + .48 * s + .08, p.z + dz / d * .8 * s); const side = (this.#leftHanded() ? -SIDE : SIDE) * s / d; this.#look.set(p.x + dz * side, p.y + .24 * s, p.z - dx * side);
     this.#quat.setFromRotationMatrix(this.#m.lookAt(this.#pos, this.#look, this.#up));
     camera.position.lerp(this.#pos, e); camera.quaternion.slerp(this.#quat, e);
   }

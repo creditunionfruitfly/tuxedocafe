@@ -115,7 +115,7 @@ Each decision was selected from the research knowledge sheet (Nintendogs techniq
 | D10 | Outdoor scene | CC0 HDRI as background and PMREM environment; low-poly sidewalk; painted parallax backdrop | Skybox and envmap with a small download |
 | D11 | Cat AI | Needs plus a utility scorer that picks goals, small behavior trees that carry them out, a hidden affinity cap and an overstimulation meter | Independent cats who choose their own business |
 | D12 | Interaction | The hand rides the surface under the pointer; rays test bone-attached capsules per body region; DOM hover menus; hold-and-drag chores | Cheap, precise, and the region drives the cat's reaction |
-| D13 | Input | Pointer Events for mouse and touch, WASD on desktop, drag-to-move, walk-to-point, right-drag or two-finger look, long-press as hover on touch | One input model for every device |
+| D13 | Input | Pointer Events for mouse and touch, WASD on desktop, drag-to-look, walk-to-point, two-finger walk stick, right-drag fine look, long-press as hover on touch | One input model for every device |
 | D14 | Economy | Chores pay C$1–3; perks cost C$5–20 per use; all numbers in one data file | Balance without code changes |
 | D15 | Music | MIDI cues played live by spessasynth_lib through a custom SF3 SoundFont; Opus renders of each cue as a fallback | Tiny downloads, live arrangement changes, the Wii-era sound |
 | D16 | Assets | glTF (`.glb`) with KTX2 (Basis) textures and meshopt compression | Small downloads, GPU-native textures |
@@ -184,9 +184,10 @@ flowchart LR
   H -->|"dwell 250 ms or long-press"| M["Hover menu"]
   H -->|"press a cat and move"| S["Stroke"]
   H -->|"press an object and drag"| D["Hold and drag"]
-  H -->|"press the floor and drag"| V["Drag to move"]
+  H -->|"press the floor and drag"| L["Look"]
+  H -->|"two-finger drag"| V["Walk stick"]
   H -->|"quick click or tap the floor"| W["Walk to point"]
-  H -->|"right-drag or two fingers"| L["Look"]
+  H -->|"right-drag"| L
 ```
 
 Every gesture starts from Hover, and releasing (or finishing the action) returns to it.
@@ -196,9 +197,9 @@ Every gesture starts from Hover, and releasing (or finishing the action) returns
 | Hover menu | Rest the pointer on a cat or object for 250 ms; keys 1–4 pick actions | Long-press |
 | Stroke | Press on a cat and move | One finger on a cat |
 | Hold and drag | Press on an object and drag | Press, hold and drag |
-| Move | Drag on the floor, or WASD | Drag on the floor |
+| Move | WASD | Two-finger drag (a joystick: direction and pace) |
 | Walk to a spot | Quick click on the floor | Tap the floor |
-| Look | Right-drag | Two-finger drag |
+| Look | Drag on the floor, or right-drag for fine aim | One-finger drag on the floor |
 | Lean in or out | Scroll wheel | Pinch |
 
 - **The hand:** a rigged mesh in the chosen skin tone and sleeve, parented to the camera. IK places the palm on the hit point along the surface normal, with a small offset toward the camera so it never sinks into fur. Poses: open, stroke, grab, point (laser), cup (coffee), wand (feather), leash grip.
