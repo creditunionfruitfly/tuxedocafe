@@ -17,6 +17,7 @@
   "radialMaxRadPerSecondMouse": 2.4,
   "radialMaxRadPerSecondTouch": 3.2,
   "radialCurve": 1.6,
+  "moveFullPxTouch": 70,
   "keyLookRadPerSecond": 1.8,
   "reducedMotionLookScale": 0.57
 }

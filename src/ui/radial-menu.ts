@@ -1,7 +1,7 @@
 import type { EventBus } from '../core/events.ts';
 import type { RadialItem } from '../interaction/closeup.ts';
 
-/** A round Frutiger Aero menu centred on the screen; hold items report press and release (or toggle in hold-toggle mode). */
+/** A round, see-through Frutiger Aero menu beside the close-up cat (mirrored for left hands); hold items report press and release (or toggle in hold-toggle mode). */
 export function mountRadialMenu(bus: EventBus, toggle: () => boolean): { readonly open: boolean; select(index: number): void } {
   const element = document.querySelector<HTMLElement>('#radial-menu')!;
   let items: readonly RadialItem[] = [], held = '';
@@ -20,7 +20,7 @@ export function mountRadialMenu(bus: EventBus, toggle: () => boolean): { readonl
       const button = document.createElement('button'), angle = -Math.PI / 2 + index * 2 * Math.PI / items.length;
       button.type = 'button'; button.textContent = item.label; button.disabled = false; button.dataset.id = item.id;
       if (item.disabled) button.classList.add('soon');
-      button.style.setProperty('--x', `${Math.cos(angle) * 118}px`); button.style.setProperty('--y', `${Math.sin(angle) * 118}px`);
+      button.style.setProperty('--x', `${Math.cos(angle)}`); button.style.setProperty('--y', `${Math.sin(angle)}`);
       button.title = `${index + 1}`;
       button.onpointerdown = event => { event.stopPropagation(); press(item); };
       button.onpointerup = button.onpointerleave = button.onpointercancel = () => { if (!toggle() && held === item.id) release(); };
