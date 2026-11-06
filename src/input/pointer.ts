@@ -4,13 +4,13 @@ import { DoubleTap } from './double-tap.ts';
 import { INTERACTION_REACH, raycastProxies, withinReach, type ProxyHit, type ProxyTarget } from '../interaction/proxies.ts';
 import { HoldDrag } from '../interaction/hold-drag.ts';
 import { TapFill } from '../interaction/tap-fill.ts';
-import { radialRate } from './radial.ts';
+import { moveStick, radialRate } from './radial.ts';
 import type { EventBus } from '../core/events.ts';
 import type { Player } from '../scenes/player.ts';
 import type { Settings } from './settings.ts';
 import controls from '../../data/interaction.json' with { type: 'json' };
-export function installPointer(canvas: HTMLCanvasElement,camera: PerspectiveCamera,player: Player,targets: readonly ProxyTarget[],bus: EventBus,holding: HoldDrag,water: TapFill,settings: Settings,onTap?: (ray: Ray) => boolean): { step(dt:number):void; hit():ProxyHit|null; interact(target:string,action:string):boolean; active(value:boolean):void; dispose():void } {
-  const gestures=new Gestures(),doubleTap=new DoubleTap(),raycaster=new Raycaster(),ndc=new Vector2(),carryPoint=new Vector3(),tapPoint=new Vector3(),rate={yaw:0,pitch:0};
+export function installPointer(canvas: HTMLCanvasElement,camera: PerspectiveCamera,player: Player,targets: readonly ProxyTarget[],bus: EventBus,holding: HoldDrag,water: TapFill,settings: Settings,onTap?: (ray: Ray) => boolean): { step(dt:number):void; readonly stick:{side:number;forward:number}; hit():ProxyHit|null; interact(target:string,action:string):boolean; active(value:boolean):void; dispose():void } {
+  const gestures=new Gestures(),doubleTap=new DoubleTap(),raycaster=new Raycaster(),ndc=new Vector2(),carryPoint=new Vector3(),tapPoint=new Vector3(),rate={yaw:0,pitch:0},stick={side:0,forward:0},middle={x:0,y:0};
   const tapTarget=targets.find(item=>item.id==='tap');
   const pointers=new Map<number,{x:number;y:number;startX:number;startY:number}>(),progressEvent={progress:0};
   let hit:ProxyHit|null=null,enabled=false,x=innerWidth/2,y=innerHeight/2,lastTarget='',menuShown=false,pinch=0,latched=false,filling=false,lastProgress=-1,pendingFloorTap=false,tapReachable=false,touchMode=false,radialX=0,radialY=0;
@@ -29,7 +29,8 @@ export function installPointer(canvas: HTMLCanvasElement,camera: PerspectiveCame
     const valid=holding.release(surface?hit!.target.id:'invalid',nearHome?1.4:dropX,nearHome?-.7:dropZ,(surface?hit!.point.y:0)+.08);
     filling=false;latched=false;hideMenu();if(valid&&id==='water-bowl'&&water.returnToStation(holding.position.x,holding.position.z))bus.emit('chore:done',{id:'water'});return valid;
   };
-  const cancel=():void=>{if(holding.id&&!latched)holding.release('invalid');pointers.clear();pinch=0;gestures.reset();doubleTap.reset();pendingFloorTap=false;radialX=radialY=0;lastTarget='';hideMenu();};
+  const midpoint=():{x:number;y:number}=>{const values=[...pointers.values()];return {x:(values[0]!.x+values[1]!.x)/2,y:(values[0]!.y+values[1]!.y)/2};};
+  const cancel=():void=>{if(holding.id&&!latched)holding.release('invalid');pointers.clear();stick.side=stick.forward=0;pinch=0;gestures.reset();doubleTap.reset();pendingFloorTap=false;radialX=radialY=0;lastTarget='';hideMenu();};
   const interact=(target:string,action:string):boolean=>{
     if(!enabled)return false;updateHit();const proxy=targets.find(item=>item.id===target);
     if(target==='floor'?hit?.target.id!=='floor'||!reachable():!proxy||!withinReach(player,proxy)){hideMenu();bus.emit('notice',{text:'Move closer to reach this.'});return false;}
@@ -40,24 +41,25 @@ export function installPointer(canvas: HTMLCanvasElement,camera: PerspectiveCame
   };
   const down=(e:PointerEvent):void=>{
     if(!enabled)return;e.preventDefault();touchMode=e.pointerType==='touch';canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY});x=e.clientX;y=e.clientY;updateHit();lastTarget=hit?.target.id??'';pendingFloorTap=false;hideMenu();
-    if(pointers.size===2){const values=[...pointers.values()];pinch=Math.hypot(values[0]!.x-values[1]!.x,values[0]!.y-values[1]!.y);}
+    if(pointers.size===2){const values=[...pointers.values()];pinch=Math.hypot(values[0]!.x-values[1]!.x,values[0]!.y-values[1]!.y);Object.assign(middle,midpoint());}
     const kind=hit?.target.kind??'none';gestures.toggle=settings.holdToggle&&!holding.id;
     gestures.press(kind==='object'&&!reachable()?'none':kind,e.button===2,pointers.size);
-    if(gestures.state==='look'){doubleTap.reset();return;}
+    if(gestures.state==='look'||gestures.state==='move'){doubleTap.reset();return;}
     if(gestures.state==='hold'&&hit&&holding.start(hit.target.id)){latched=true;filling=false;}
   };
   const move=(e:PointerEvent):void=>{
     const previous=pointers.get(e.pointerId);const dx=e.clientX-(previous?.x??e.clientX),dy=e.clientY-(previous?.y??e.clientY);x=e.clientX;y=e.clientY;if(!enabled)return;updateHit();
     if(previous){previous.x=x;previous.y=y;const state=gestures.move(Math.hypot(x-previous.startX,y-previous.startY),pointers.size);
-      if(state==='look'){player.look(dx/pointers.size,dy/pointers.size,touchMode);doubleTap.reset();hideMenu();}
+      if(state==='look'){player.look(dx,dy,touchMode);doubleTap.reset();hideMenu();}
+      else if(state==='move'&&pointers.size===2){const centre=midpoint();moveStick(centre.x-middle.x,centre.y-middle.y,stick);doubleTap.reset();hideMenu();}
       else if(state==='radial'){radialX=x-previous.startX;radialY=y-previous.startY;doubleTap.reset();hideMenu();}
       else if(state==='hold'&&!holding.id&&reachable()){holding.start(lastTarget);latched=settings.holdToggle;}
       if(pointers.size>1){const values=[...pointers.values()],a=values[0]!,b=values[1]!,next=Math.hypot(a.x-b.x,a.y-b.y);if(pinch)player.lean=Math.max(-.2,Math.min(.3,player.lean+(next-pinch)*.001));pinch=next;}
     }
   };
   const up=(e:PointerEvent):void=>{
-    if(!enabled)return;const wasDown=gestures.down,state=gestures.state,moved=gestures.moved;pointers.delete(e.pointerId);pinch=0;radialX=radialY=0;gestures.release();
-    if(pointers.size===0&&wasDown&&state!=='look'){
+    if(!enabled)return;const wasDown=gestures.down,state=gestures.state,moved=gestures.moved;pointers.delete(e.pointerId);pinch=0;radialX=radialY=0;stick.side=stick.forward=0;gestures.release();
+    if(pointers.size===0&&wasDown&&state!=='look'&&state!=='move'){
       if(state==='hold'&&holding.id&&!latched)release();
       else if(moved<=controls.dragThresholdPx){if(onTap?.(raycaster.ray)){doubleTap.reset();hideMenu();}else if(hit?.target.kind==='floor'){if(doubleTap.tap(x,y,e.timeStamp/1000)){hideMenu();/* Jump to the first tap's point: on a slow frame that tap may already have started a walk. */if(!player.jumpTo(tapPoint.x,tapPoint.z))bus.emit('notice',{text:`Choose a clear floor spot within ${controls.jumpMaxMeters} metres.`});}else{pendingFloorTap=true;tapReachable=reachable();tapPoint.copy(hit.point);}}else if(hit)showMenu();}
       else doubleTap.reset();
@@ -67,7 +69,7 @@ export function installPointer(canvas: HTMLCanvasElement,camera: PerspectiveCame
   const wheel=(e:WheelEvent):void=>{if(enabled){e.preventDefault();player.lean=Math.max(-.2,Math.min(.3,player.lean-e.deltaY*.0005));}};
   const context=(e:Event):void=>e.preventDefault();
   canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',cancel);window.addEventListener('blur',cancel);canvas.addEventListener('wheel',wheel,{passive:false});canvas.addEventListener('contextmenu',context);
-  return {hit:()=>hit,interact,active(value){enabled=value;cancel();},step(dt){
+  return {hit:()=>hit,stick,interact,active(value){enabled=value;cancel();},step(dt){
     if(!enabled)return;gestures.holdMs=settings.holdMs;doubleTap.step(dt);updateHit();
     // A single floor tap walks there; while carrying, a reachable floor tap offers Place instead.
     if(pendingFloorTap&&doubleTap.elapsed>controls.doubleTapSeconds){pendingFloorTap=false;if(holding.id&&tapReachable)showMenu();else if(!player.walkTo(tapPoint.x,tapPoint.z))bus.emit('notice',{text:'There is no clear path to that spot.'});}

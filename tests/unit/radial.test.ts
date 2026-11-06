@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { radialRate } from '../../src/input/radial.ts';
+import { moveStick, radialRate } from '../../src/input/radial.ts';
 import controls from '../../data/interaction.json' with { type: 'json' };
 const rate = () => ({ yaw: 0, pitch: 0 });
 it('ignores offsets inside the drag dead zone', () => { expect(radialRate(controls.dragThresholdPx, 0, true, false, rate())).toEqual({ yaw: 0, pitch: 0 }); });
@@ -18,4 +18,9 @@ it('is more sensitive on touch and gentler with reduced motion', () => {
   const touch = -radialRate(60, 0, true, false, rate()).yaw, mouse = -radialRate(60, 0, false, false, rate()).yaw;
   expect(touch).toBeGreaterThan(mouse);
   expect(-radialRate(400, 0, true, true, rate()).yaw).toBeCloseTo(controls.radialMaxRadPerSecondTouch * controls.reducedMotionLookScale, 10);
+});
+it('turns a two-finger drag into a walking stick with a dead zone and full pace',()=>{
+  const out={side:0,forward:0};expect(moveStick(3,4,out)).toEqual({side:0,forward:0});
+  moveStick(0,-200,out);expect(out.forward).toBeCloseTo(1);expect(out.side).toBeCloseTo(0);
+  moveStick(39,0,out);expect(out.side).toBeGreaterThan(0);expect(out.side).toBeLessThan(1);
 });

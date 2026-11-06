@@ -33,7 +33,7 @@ export class Player {
       if (Math.hypot(dx, dz) < .09) { this.target=this.path.shift()??null;dx=dz=0; }
     }
     const length = Math.hypot(dx, dz); if (length > 0) { dx /= length; dz /= length; }
-    const speed=this.target?Math.min(controls.walkMetersPerSecond,length/dt):controls.walkMetersPerSecond;
+    const speed=this.target?Math.min(controls.walkMetersPerSecond,length/dt):controls.walkMetersPerSecond*Math.min(1,Math.hypot(side,forward));
     const smooth = 1 - Math.exp(-dt * 12); this.vx += (dx * speed - this.vx) * smooth; this.vz += (dz * speed - this.vz) * smooth;
     slide(this, this.vx * dt, this.vz * dt);
     if (this.target && Math.abs(this.previousX - this.x) + Math.abs(this.previousZ - this.z) < .0001) this.target = null;

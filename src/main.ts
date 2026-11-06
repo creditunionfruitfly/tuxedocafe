@@ -49,7 +49,7 @@ try {
   const targets=[makeProxy('water-bowl',[1.4,.13,-.7],[.5,.26,.5],['Pick up','Fill']),makeProxy('food-bowl',[1.9,.13,-.7],[.45,.26,.45],['Pick up','Fill']),makeProxy('tap',[-2,1.2,-3.55],[.9,.65,.75],['Fill']),makeProxy('litter-1',[4.25,.2,-3.6],[.8,.4,.55],['Clean']),makeProxy('litter-2',[4.25,.2,-4.3],[.8,.4,.55],['Clean']),makeProxy('scoop',[4.65,.4,-3.9],[.35,.25,.5],['Pick up']),makeProxy('table-1',[-2,.75,-.6],[1.3,.12,1.3],['Place']),makeProxy('table-2',[.5,.75,-3.1],[1.3,.12,1.3],['Place'])];
   const targetMap=new Map(targets.map(target=>[target.id,target]));
   const menu=mountHoverMenu(bus),radial=mountRadialMenu(bus,()=>visit.settings.holdToggle),keyboard=installKeys(index=>radial.open?radial.select(index):menu.select(index));
-  const closeup=new CloseUp(bus,()=>visit.settings.reducedMotion);let cast:Cast|undefined;
+  const closeup=new CloseUp(bus,()=>visit.settings.reducedMotion,()=>visit.settings.leftHanded);let cast:Cast|undefined;
   // Any tap on a cat opens its close-up; a tap elsewhere during one steps back out.
   const tapCat=(ray:Parameters<CloseUp['pick']>[0]):boolean=>{if(closeup.target){closeup.exit();return true;}const cat=cast&&closeup.pick(ray,cast.residents);if(!cat)return false;closeup.enter(cat,{x:player.x,z:player.z});return true;};
   const pointer=installPointer(canvas,camera,player,targets,bus,holding,water,visit.settings,tapCat),hand=createHand(camera);
@@ -60,7 +60,7 @@ try {
   const loop=new FixedLoop(dt=>{
     cast?.step(dt,playing?{x:player.x,z:player.z}:null);closeup.step(dt,{x:player.x,z:player.z});body.dataset.closeup=closeup.target?.id??'';
     if(!playing)return;
-    const k=keyboard.keys;if(!closeup.target)player.step(dt,Number(k.has('d'))-Number(k.has('a')),Number(k.has('w'))-Number(k.has('s')));player.steer(dt,Number(k.has('arrowleft'))-Number(k.has('arrowright')),Number(k.has('arrowup'))-Number(k.has('arrowdown')));
+    const k=keyboard.keys;const stick=pointer.stick;if(!closeup.target)player.step(dt,Math.max(-1,Math.min(1,Number(k.has('d'))-Number(k.has('a'))+stick.side)),Math.max(-1,Math.min(1,Number(k.has('w'))-Number(k.has('s'))+stick.forward)));player.steer(dt,Number(k.has('arrowleft'))-Number(k.has('arrowright')),Number(k.has('arrowup'))-Number(k.has('arrowdown')));
     pointer.step(dt);hand.step(dt);bus.emit('player',{x:player.x,z:player.z});body.dataset.player=`${player.x.toFixed(2)},${player.z.toFixed(2)}`;
     body.dataset.carry=holding.id??'';body.dataset.look=`${player.yaw.toFixed(3)},${player.pitch.toFixed(3)},${player.lean.toFixed(3)}`;
     for(const [id,placed] of holding.placements){
