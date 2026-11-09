@@ -27,6 +27,7 @@ export async function makeCafe() {
   const scene = doc.createScene('Tuxedo Cafe · conservatory');
   const materials = await createCafeMaterials(doc);
   const groups = new Map<string, Map<Color, BufferGeometry[]>>();
+  const retiredTrees: { color: Color; start: number; count: number }[] = [];
   let group = 'architecture';
   const add = (geo: BufferGeometry, color: Color, pos: P, rot: P = [0, 0, 0]) => {
     if (geo.index) { const expanded = geo.toNonIndexed(); geo.dispose(); geo = expanded; }
@@ -53,6 +54,12 @@ export async function makeCafe() {
     const geo = new CylinderGeometry(radius, radius, direction.length(), 16);
     geo.applyQuaternion(new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), direction.normalize()));
     return add(geo, color, start.add(end).multiplyScalar(.5).toArray() as P);
+  };
+  const taperedBough = (a: P, b: P, base: number, tip: number, color: Color, sides = 5) => {
+    const start = new Vector3(...a), end = new Vector3(...b), direction = end.clone().sub(start);
+    const geo = new CylinderGeometry(tip, base, direction.length(), sides, 1);
+    geo.applyQuaternion(new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), direction.normalize()));
+    add(geo, color, start.add(end).multiplyScalar(.5).toArray() as P);
   };
 
   // Real gaps, beveled profiles and staggered plank lengths catch grazing light.
@@ -285,17 +292,59 @@ export async function makeCafe() {
     }
   };
   for (const [x, y, z, s] of [[-4.4, 0, 1.4, 1.5], [4.4, 0, 1.5, 1.7], [3.6, .87, -4.8, .6], [.3, .87, -4.8, .5], [-4.35, 2.14, -4.7, .45], [-2, .8, -.6, .3]]) plant(x!, y!, z!, s!);
+  // The original trees share the room's baked architecture primitive. Keep their
+  // source corners only through bake validation, then retire precisely those
+  // corners; unchanged room UV1 remains aligned to the authored Cycles atlas.
+  const retired = (color: Color, make: () => BufferGeometry) => {
+    const before = groups.get('architecture')!.get(color) ?? [];
+    const start = before.reduce((n, geo) => n + geo.getAttribute('position').count, 0);
+    const geo = make();
+    retiredTrees.push({ color, start, count: geo.getAttribute('position').count });
+  };
   for (const x of [.8, 3.1]) {
     plant(x, 0, -6.6, 1.3);
-    cyl(.035, 1.4, 'oakDark', [x, .7, -7.1]);
-    ball([.47, .6, .38], 'leaf', [x, 1.5, -7.1]);
-    ball([.35, .43, .32], 'leafLight', [x + .16, 1.62, -6.96]);
+    retired('oakDark', () => cyl(.035, 1.4, 'oakDark', [x, .7, -7.1]));
+    retired('leaf', () => ball([.47, .6, .38], 'leaf', [x, 1.5, -7.1]));
+    retired('leafLight', () => ball([.35, .43, .32], 'leafLight', [x + .16, 1.62, -6.96]));
   }
   // Raised original feline medallion above the counter.
   cyl(.34, .025, 'oakLight', [-2.4, 2.62, -4.84], .34, [Math.PI / 2, 0, 0]);
   ball([.17, .15, .025], 'charcoal', [-2.4, 2.62, -4.8]);
   for (const x of [-2.51, -2.29]) ball([.055, .10, .02], 'charcoal', [x, 2.76, -4.8], [0, 0, x < -2.4 ? .3 : -.3]);
   ball([.08, .08, .015], 'cream', [-2.4, 2.56, -4.765]);
+
+  group = 'exterior-pines';
+  for (const [tree, x] of [.8, 3.1].entries()) {
+    const z = -7.1, height = tree ? 2.9 : 3.35;
+    // Different lean, phase and uneven whorls give each tree its own silhouette.
+    const lean = tree ? -.10 : .07;
+    const center = (y: number): P => [x + lean * y / height, y, z + .035 * Math.sin(y * 2 + tree)];
+    for (let i = 0; i < 5; i++) {
+      const low = height * i / 5, high = height * (i + 1) / 5;
+      taperedBough(center(low), center(high), .086 * (1 - i / 6), .086 * (1 - (i + 1) / 6), 'oakDark', 7);
+    }
+    for (let tier = 0; tier < 8; tier++) {
+      const y = .48 + tier * (height - .67) / 8 + .035 * Math.sin(tier * 4 + tree);
+      const radius = (.70 - .065 * tier) * (tree ? .88 : 1);
+      const spokes = tier < 5 ? 8 : 6;
+      for (let j = 0; j < spokes; j++) {
+        const angle = j * Math.PI * 2 / spokes + tier * 1.17 + tree * .48;
+        const reach = radius * (.81 + .18 * Math.sin(j * 3.7 + tier * 2.4 + tree));
+        const dx = Math.cos(angle), dz = Math.sin(angle), root = center(y);
+        const end: P = [root[0] + dx * reach, y - .09 + tier * .018, root[2] + dz * reach];
+        taperedBough(root, end, .033 - tier * .002, .004, 'oakDark');
+        for (let spray = 1; spray <= 3; spray++) {
+          const t = spray / 3, side = spray % 2 ? 1 : -1;
+          const a: P = [root[0] + dx * reach * (t - .24), y - .07 * t, root[2] + dz * reach * (t - .24)];
+          const spread = (.16 - tier * .009) * (spray === 3 ? .8 : 1);
+          const b: P = [root[0] + dx * reach * (t + .17) - dz * spread * side,
+            y + .15 + .07 * Math.sin(angle * 3 + spray), root[2] + dz * reach * (t + .17) + dx * spread * side];
+          taperedBough(a, b, .066 - tier * .004, 0, (tier + j + spray) % 5 === 0 ? 'leafLight' : 'leaf', 5);
+        }
+      }
+    }
+    taperedBough(center(height - .2), center(height + .045), .06, 0, 'leaf', 6);
+  }
 
   // Standing eye points: spawn, both entry corners and the far side of the room.
   assertEnclosed([...groups.values()].flatMap(map => [...map.values()].flat()),
@@ -322,5 +371,26 @@ export async function makeCafe() {
     scene.addChild(node);
   }
   await applyCafeLightBake(doc);
+  if (retiredTrees.length !== 6) throw new Error('Expected exactly two retired outdoor sphere trees');
+  const architecture = doc.getRoot().listMeshes().find(mesh => mesh.getName() === 'architecture')!;
+  for (const [i, color] of [...groups.get('architecture')!.keys()].entries()) {
+    const ranges = retiredTrees.filter(item => item.color === color);
+    if (!ranges.length) continue;
+    const prim = architecture.listPrimitives()[i]!;
+    const originalCorners = prim.getAttribute('POSITION')!.getCount();
+    if (ranges.some(({ start, count }) => start < 0 || count % 3 || start + count > originalCorners))
+      throw new Error(`Retired tree corner range invalid for ${color}`);
+    for (const semantic of prim.listSemantics()) {
+      const accessor = prim.getAttribute(semantic)!, size = accessor.getElementSize(), values = accessor.getArray()!;
+      const kept: number[] = [];
+      for (let corner = 0; corner < accessor.getCount(); corner++) {
+        if (ranges.some(({ start, count }) => corner >= start && corner < start + count)) continue;
+        for (let k = 0; k < size; k++) kept.push(values[corner * size + k]!);
+      }
+      accessor.setArray(new Float32Array(kept));
+    }
+    if (prim.getAttribute('POSITION')!.getCount() !== originalCorners - ranges.reduce((n, item) => n + item.count, 0))
+      throw new Error(`Retired tree corner count invalid for ${color}`);
+  }
   return saveAsset(doc, 'public/assets/art/env_cafe.glb', 150000);
 }

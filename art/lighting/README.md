@@ -7,6 +7,13 @@ into `sources/lightmap-*.json` chunks of at most one million characters so
 normal builds reproduce the exact authoring result without installing Blender.
 `applyCafeLightBake` rejects stale geometry, mean material albedo, or emission.
 Movable water/food bowls and the scoop are excluded from the static bake.
+The two exterior pines are also excluded and use direct light plus room probes.
+Their predecessor's sphere-tree corners are validated against the original
+signature and removed from the exported architecture primitive after UV1 is
+applied. Thus the room's baked UVs and irradiance are preserved without
+rendering the old trees or binding the atlas to the pines. The retained atlas
+can still contain the predecessor trees' indirect contribution outdoors;
+rebake when changing the exterior lighting or surrounding architecture.
 
 ## Reproduce
 

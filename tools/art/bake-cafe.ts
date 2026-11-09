@@ -6,7 +6,7 @@ import { Accessor, type Document, type Primitive } from '@gltf-transform/core';
 
 const SOURCE = 'art/lighting/cafe-daylight.json';
 // Movable props and the probe-lit entry wall stay out of the static atlas.
-const UNBAKED = new Set(['water-bowl', 'food-bowl', 'scoop', 'entry']);
+const UNBAKED = new Set(['water-bowl', 'food-bowl', 'scoop', 'entry', 'exterior-pines']);
 interface Record { key: string; matrix: number[]; positions: number[]; normals: number[]; indices: number[]; color: number[]; emission: number[] }
 interface Bake {
   signature: string; resolution: number; exposure: number; excluded: string[];
