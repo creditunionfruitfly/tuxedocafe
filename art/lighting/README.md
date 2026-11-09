@@ -15,6 +15,16 @@ rendering the old trees or binding the atlas to the pines. The retained atlas
 can still contain the predecessor trees' indirect contribution outdoors;
 rebake when changing the exterior lighting or surrounding architecture.
 
+For the next full bake, first remove the temporary `retiredTrees` array,
+`retired(...)` helper and its three calls per old tree from
+`art/env/cafe/generate.ts`. Keep the outdoor `plant(...)` calls if those pots
+are still wanted, and delete the post-`applyCafeLightBake` corner-removal loop.
+Leave `exterior-pines` in `UNBAKED` in `tools/art/bake-cafe.ts`: these detailed
+needles remain probe/direct lit and receive no static atlas slots. Then run the
+commands below from this clean source and commit the new manifest and PNG
+chunks. The new bake signature covers only the actual room and pots; it cannot
+accidentally incorporate the retired spheres.
+
 ## Reproduce
 
 Use official Blender 4.0.2 or a compatible later release with Cycles CPU.

@@ -324,22 +324,32 @@ export async function makeCafe() {
       taperedBough(center(low), center(high), .086 * (1 - i / 6), .086 * (1 - (i + 1) / 6), 'oakDark', 7);
     }
     for (let tier = 0; tier < 8; tier++) {
-      const y = .48 + tier * (height - .67) / 8 + .035 * Math.sin(tier * 4 + tree);
-      const radius = (.70 - .065 * tier) * (tree ? .88 : 1);
+      const y = .48 + tier * (height - .67) / 8 + .065 * Math.sin(tier * 4 + tree);
+      const radius = (.76 - .068 * tier) * (tree ? .88 : 1);
       const spokes = tier < 5 ? 8 : 6;
       for (let j = 0; j < spokes; j++) {
         const angle = j * Math.PI * 2 / spokes + tier * 1.17 + tree * .48;
-        const reach = radius * (.81 + .18 * Math.sin(j * 3.7 + tier * 2.4 + tree));
-        const dx = Math.cos(angle), dz = Math.sin(angle), root = center(y);
-        const end: P = [root[0] + dx * reach, y - .09 + tier * .018, root[2] + dz * reach];
-        taperedBough(root, end, .033 - tier * .002, .004, 'oakDark');
-        for (let spray = 1; spray <= 3; spray++) {
-          const t = spray / 3, side = spray % 2 ? 1 : -1;
-          const a: P = [root[0] + dx * reach * (t - .24), y - .07 * t, root[2] + dz * reach * (t - .24)];
-          const spread = (.16 - tier * .009) * (spray === 3 ? .8 : 1);
-          const b: P = [root[0] + dx * reach * (t + .17) - dz * spread * side,
-            y + .15 + .07 * Math.sin(angle * 3 + spray), root[2] + dz * reach * (t + .17) + dx * spread * side];
-          taperedBough(a, b, .066 - tier * .004, 0, (tier + j + spray) % 5 === 0 ? 'leafLight' : 'leaf', 5);
+        const reach = radius * (.72 + .30 * Math.sin(j * 3.7 + tier * 2.4 + tree));
+        const dx = Math.cos(angle), dz = Math.sin(angle);
+        const branchY = y + .085 * Math.sin(j * 4.3 + tier * 2.7 + tree);
+        const root = center(branchY), droop = .10 + .065 * Math.sin(j * 2.1 + tier);
+        const elbow: P = [root[0] + dx * reach * .72, branchY - droop, root[2] + dz * reach * .72];
+        const end: P = [root[0] + dx * reach, branchY - droop + .085, root[2] + dz * reach];
+        taperedBough(root, elbow, .033 - tier * .002, .012, 'oakDark');
+        taperedBough(elbow, end, .012, .002, 'oakDark');
+        for (let spray = 0; spray < 5; spray++) for (const side of [-1, 1]) {
+          const t = .23 + spray * .17 + .035 * Math.sin(j + spray * 4 + tier);
+          const offset = side * (.055 + .02 * Math.sin(spray * 3 + j));
+          const a: P = [root[0] + dx * reach * t - dz * offset, branchY - droop * t,
+            root[2] + dz * reach * t + dx * offset];
+          const span = (.15 + .035 * Math.sin(j * 5 + spray + tier)) * (1 - tier * .045);
+          const tip = t + (spray === 4 ? .15 : .24);
+          const b: P = [root[0] + dx * reach * tip - dz * (offset + side * span),
+            branchY - droop * Math.min(1, tip) + (spray === 4 ? .09 : .025) + .03 * Math.sin(angle * 3 + spray),
+            root[2] + dz * reach * tip + dx * (offset + side * span)];
+          // Fine lateral needles overlap the drooping bough; outer tips turn up.
+          taperedBough(a, b, (.047 - tier * .002) * (spray === 4 ? .75 : 1), 0,
+            (tier + j * 2 + spray + side) % 7 === 0 ? 'leafLight' : 'leaf', 5);
         }
       }
     }
