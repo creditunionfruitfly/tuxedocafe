@@ -4,14 +4,13 @@ import { TIER_CONFIG, parseTier, needsTierReload, type Tier } from '../core/tier
 export function createRenderer(canvas: HTMLCanvasElement) {
   const initial = parseTier(new URLSearchParams(location.search).get('tier'));
   const mobile = initial === 'phone' || initial === 'low' || (!initial && matchMedia('(pointer: coarse)').matches);
-  const renderer = new WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+  const renderer = new WebGLRenderer({ canvas, antialias: false, depth: false, powerPreference: 'high-performance' });
   renderer.toneMapping = NeutralToneMapping; renderer.shadowMap.type = PCFSoftShadowMap;
   const output = createSceneOutput(renderer);
   let tier: Tier = initial ?? (mobile ? 'phone' : 'desktop'); let scale = TIER_CONFIG[tier].max as number; let average = 16.7; let frames = 0;
   const resize = (): void => {
-    renderer.setPixelRatio(Math.min(devicePixelRatio, mobile ? 1.5 : 2) * scale);
-    renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-    output.resize();
+    output.resize(Math.max(1, canvas.clientWidth), Math.max(1, canvas.clientHeight),
+      Math.min(devicePixelRatio, mobile ? 1.5 : 2) * scale);
   };
   const configure = (value: Tier): boolean => {
     if (needsTierReload(!mobile, value)) {

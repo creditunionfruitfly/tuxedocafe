@@ -8,9 +8,19 @@ import { outputFragment, outputVertex } from './shaders/scene-output.ts';
 export function planAntialiasing(requested: number, color: ArrayLike<number>, depth: ArrayLike<number>, limit: number) {
   const availableDepth = Array.from(depth);
   const native = Array.from(color).reduce((best, n) =>
-    n <= requested && n <= limit && availableDepth.includes(n) ? Math.max(best, n) : best, 0);
+    n > 1 && n <= requested && n <= limit && availableDepth.includes(n) ? Math.max(best, n) : best, 0);
   const ratio = Math.sqrt(requested / Math.max(1, native));
   return { native, ratio: ratio > 2 ? 3 : ratio };
+}
+
+export function limitOutputPixelRatio(width: number, height: number, requested: number,
+  plan: ReturnType<typeof planAntialiasing>, hdr: boolean, desktop: boolean, sizeLimit: number): number {
+  const budget = (desktop ? 320 : 64) * 1024 ** 2;
+  // Count resolved color/depth plus the native color/depth renderbuffers, if any.
+  const bytesPerPixel = (hdr ? 12 : 8) * (1 + plan.native);
+  const memoryRatio = Math.sqrt(budget / (width * height * bytesPerPixel));
+  const roundedRatio = memoryRatio - 1 / Math.min(width, height); // Reserve room for ceil() on both axes.
+  return Math.min(requested, roundedRatio / plan.ratio, sizeLimit / (Math.max(width, height) * plan.ratio));
 }
 
 export function supportsHdrTarget(renderer: WebGLRenderer): boolean {
@@ -24,7 +34,9 @@ export function createSceneOutput(renderer: WebGLRenderer) {
     gl.getInternalformatParameter(gl.RENDERBUFFER, format, gl.SAMPLES) as Int32Array;
   const colorSamples = samples(hdr ? gl.RGBA16F : gl.RGBA8);
   const depthSamples = samples(gl.DEPTH_COMPONENT24);
-  const sizeLimit = Math.min(gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) as number, renderer.capabilities.maxTextureSize);
+  const viewportLimit = gl.getParameter(gl.MAX_VIEWPORT_DIMS) as Int32Array;
+  const sizeLimit = Math.min(gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) as number,
+    renderer.capabilities.maxTextureSize, ...viewportLimit);
   const scene = new Scene(), camera = new Camera(), geometry = new BufferGeometry();
   geometry.setAttribute('position', new Float32BufferAttribute([-1, 3, 0, -1, -1, 0, 3, -1, 0], 3));
   geometry.setAttribute('uv', new Float32BufferAttribute([0, 2, 0, 0, 2, 0], 2));
@@ -73,17 +85,20 @@ export function createSceneOutput(renderer: WebGLRenderer) {
 
   return {
     configure,
-    resize() {
+    resize(width: number, height: number, pixelRatio: number) {
+      renderer.setDrawingBufferSize(width, height,
+        limitOutputPixelRatio(width, height, pixelRatio, plan, hdr, optics, sizeLimit));
       const output = renderer.getDrawingBufferSize(uniforms.outputSize.value);
       output.set(Math.max(1, output.x), Math.max(1, output.y));
       const ratio = Math.min(plan.ratio, sizeLimit / Math.max(output.x, output.y));
-      const width = Math.ceil(output.x * ratio), height = Math.ceil(output.y * ratio);
-      target.setSize(width, height);
-      uniforms.sceneSize.value.set(width, height);
+      const targetWidth = Math.min(sizeLimit, Math.ceil(output.x * ratio));
+      const targetHeight = Math.min(sizeLimit, Math.ceil(output.y * ratio));
+      target.setSize(targetWidth, targetHeight);
+      uniforms.sceneSize.value.set(targetWidth, targetHeight);
       const diagnostic = document.body.dataset;
       diagnostic.aaRequested = String(requested);
       diagnostic.aaNative = String(plan.native);
-      diagnostic.aaDensity = (width / output.x * height / output.y * Math.max(1, plan.native)).toFixed(2);
+      diagnostic.aaDensity = (targetWidth / output.x * targetHeight / output.y * Math.max(1, plan.native)).toFixed(2);
       diagnostic.aaResolve = ratio < 1 ? 'size-limited' : plan.ratio > 1 ? 'supersample' : 'native';
       diagnostic.optics = optics ? 'depth-and-highlight' : 'off';
     },

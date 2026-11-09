@@ -9,7 +9,9 @@ integrates the covered texel area. Four native samples on a grid with twice
 the pixel area therefore provide at least eight coverage samples per output
 pixel at normal target sizes. This is supersampling plus MSAA, not native 8×
 MSAA; the diagnostic attributes report both native count and actual density.
-GPU texture/renderbuffer limits can reduce density at extreme window sizes.
+Before allocating, cap output DPR against GPU dimensions and a 320 MiB
+desktop / 64 MiB phone target budget. This counts resolved and native color
+and depth and keeps coverage density while shrinking unusually large buffers.
 
 The scene is rendered once into linear RGBA16F. The output triangle resolves
 coverage, applies Neutral tone mapping, and converts to sRGB. Desktop alone
@@ -25,3 +27,8 @@ Without renderable half float, use linear RGBA8 and Three r186's
 before quantization. The final pass then applies only the display transfer.
 The optional half-float room reflection map is omitted on those devices;
 the baked atlas, room probes and key light still run.
+
+Register PBR extensions with `addMaterialPatch(material, { key, apply })`.
+Patches run in registration order after the original hook. Use a stable key
+that includes structural GLSL variants, and use uniforms for changing values.
+The RGBM bake and probe patches both leave three.js's specular lighting in place.
