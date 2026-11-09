@@ -14,13 +14,13 @@ export function planAntialiasing(requested: number, color: ArrayLike<number>, de
 }
 
 export function limitOutputPixelRatio(width: number, height: number, requested: number,
-  plan: ReturnType<typeof planAntialiasing>, hdr: boolean, desktop: boolean, sizeLimit: number): number {
+  plan: ReturnType<typeof planAntialiasing>, hdr: boolean, desktop: boolean, sizeLimit: number, adaptiveScale = 1): number {
   const budget = (desktop ? 320 : 64) * 1024 ** 2;
   // Count resolved color/depth plus the native color/depth renderbuffers, if any.
   const bytesPerPixel = (hdr ? 12 : 8) * (1 + plan.native);
   const memoryRatio = Math.sqrt(budget / (width * height * bytesPerPixel));
   const roundedRatio = memoryRatio - 1 / Math.min(width, height); // Reserve room for ceil() on both axes.
-  return Math.min(requested, roundedRatio / plan.ratio, sizeLimit / (Math.max(width, height) * plan.ratio));
+  return adaptiveScale * Math.min(requested, roundedRatio / plan.ratio, sizeLimit / (Math.max(width, height) * plan.ratio));
 }
 
 export function supportsHdrTarget(renderer: WebGLRenderer): boolean {
@@ -85,9 +85,9 @@ export function createSceneOutput(renderer: WebGLRenderer) {
 
   return {
     configure,
-    resize(width: number, height: number, pixelRatio: number) {
+    resize(width: number, height: number, pixelRatio: number, adaptiveScale = 1) {
       renderer.setDrawingBufferSize(width, height,
-        limitOutputPixelRatio(width, height, pixelRatio, plan, hdr, optics, sizeLimit));
+        limitOutputPixelRatio(width, height, pixelRatio, plan, hdr, optics, sizeLimit, adaptiveScale));
       const output = renderer.getDrawingBufferSize(uniforms.outputSize.value);
       output.set(Math.max(1, output.x), Math.max(1, output.y));
       const ratio = Math.min(plan.ratio, sizeLimit / Math.max(output.x, output.y));

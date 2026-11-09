@@ -12,6 +12,7 @@ MSAA; the diagnostic attributes report both native count and actual density.
 Before allocating, cap output DPR against GPU dimensions and a 320 MiB
 desktop / 64 MiB phone target budget. This counts resolved and native color
 and depth and keeps coverage density while shrinking unusually large buffers.
+Adaptive scaling can still reduce resolution below that capped maximum.
 
 The scene is rendered once into linear RGBA16F. The output triangle resolves
 coverage, applies Neutral tone mapping, and converts to sRGB. Desktop alone

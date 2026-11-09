@@ -9,8 +9,9 @@ export function createRenderer(canvas: HTMLCanvasElement) {
   const output = createSceneOutput(renderer);
   let tier: Tier = initial ?? (mobile ? 'phone' : 'desktop'); let scale = TIER_CONFIG[tier].max as number; let average = 16.7; let frames = 0;
   const resize = (): void => {
+    const max = TIER_CONFIG[tier].max;
     output.resize(Math.max(1, canvas.clientWidth), Math.max(1, canvas.clientHeight),
-      Math.min(devicePixelRatio, mobile ? 1.5 : 2) * scale);
+      Math.min(devicePixelRatio, mobile ? 1.5 : 2) * max, scale / max);
   };
   const configure = (value: Tier): boolean => {
     if (needsTierReload(!mobile, value)) {

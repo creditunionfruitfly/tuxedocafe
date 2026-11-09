@@ -16,6 +16,7 @@ it('caps target memory by lowering output DPR while preserving coverage density'
   expect(limitOutputPixelRatio(1920, 1080, 1, desktop, true, true, 16384)).toBe(1);
   const desktopRatio = limitOutputPixelRatio(3840, 2160, 2, desktop, true, true, 16384);
   expect(desktopRatio).toBeLessThan(1);
+  expect(limitOutputPixelRatio(3840, 2160, 2, desktop, true, true, 16384, .85)).toBeCloseTo(desktopRatio * .85);
   const targetBytes = (w: number, h: number, dpr: number, scale: number, samples: number) =>
     Math.ceil(w * dpr * scale) * Math.ceil(h * dpr * scale) * 12 * (samples + 1);
   expect(targetBytes(3840, 2160, desktopRatio, desktop.ratio, desktop.native)).toBeLessThanOrEqual(320 * 1024 ** 2);
