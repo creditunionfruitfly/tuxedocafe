@@ -56,7 +56,7 @@ try {
   let playing=false,paused=false,benchmarkDone=false,contextReloadPending=false,previous=0,drawFrames=0,frameSum=0,tierPreference=visit.settings.tier;
   const probe=probeDevice(display.renderer.getContext() as WebGL2RenderingContext),benchmark=new TierBenchmark();
   const override=parseTier(new URLSearchParams(location.search).get('tier'));if(override){benchmarkDone=display.configure(override);contextReloadPending=!benchmarkDone;}
-  const forwardVector=new Vector3();
+  const forwardVector=new Vector3(),focusPoint=new Vector3();
   const loop=new FixedLoop(dt=>{
     cast?.step(dt,playing?{x:player.x,z:player.z}:null);closeup.step(dt,{x:player.x,z:player.z});body.dataset.closeup=closeup.target?.id??'';
     if(!playing)return;
@@ -72,7 +72,10 @@ try {
     camera.position.set(player.previousX+(player.x-player.previousX)*alpha,1.6,player.previousZ+(player.z-player.previousZ)*alpha);player.orientation(camera.quaternion);
     // Leaning never pushes the near plane through a wall when the patron faces it.
     forwardVector.set(0,0,-player.lean).applyQuaternion(camera.quaternion);camera.position.add(forwardVector);camera.position.x=Math.max(ROOM.minX+.1,Math.min(ROOM.maxX-.1,camera.position.x));camera.position.z=Math.max(ROOM.minZ+.1,Math.min(ROOM.maxZ-.1,camera.position.z));closeup.apply(camera);camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();camera.updateMatrixWorld();
-    hand.update(playing,!!holding.id,visit.settings.leftHanded);for(const cat of cast?.residents??[])cat.render(alpha);display.renderer.render(scene,camera);
+    hand.update(playing,!!holding.id,visit.settings.leftHanded);for(const cat of cast?.residents??[])cat.render(alpha);
+    const subject=closeup.target?.root;
+    if(subject){focusPoint.copy(subject.position);focusPoint.y+=.24*subject.scale.x;focusPoint.applyMatrix4(camera.matrixWorldInverse);}
+    display.render(scene,camera,subject?-focusPoint.z:undefined);
     if(benchmarkDone&&!contextReloadPending&&body.dataset.ready!=='true'){const start=document.querySelector<HTMLButtonElement>('#start')!;start.disabled=false;start.setAttribute('aria-busy','false');body.dataset.ready='true';}body.dataset.drawCalls=String(display.renderer.info.render.calls);body.dataset.triangles=String(display.renderer.info.render.triangles);body.dataset.shaderPrograms=String(display.renderer.info.programs?.length??0);
     if(++drawFrames%60===0){body.dataset.frameMs=(frameSum/60).toFixed(1);frameSum=0;}
   });
@@ -95,11 +98,11 @@ try {
   if(flags.has('cats'))try{cast=await loadCast(override??(probe.mobile?'phone':'desktop'),createRng('cafe'));for(const cat of cast.residents){scene.add(cat.root);cat.render(0);}body.dataset.cats=cast.residents.map(cat=>cat.id).join(',');}catch(error){console.warn('The cats could not load',error);}
   // The first render skips the hidden hand. Compile every scene material before
   // input starts so the first reach cannot stall hover dwell or a floor tap.
-  await display.renderer.compileAsync(scene,camera);
+  await display.compileAsync(scene,camera);
   // render() submits work; a fence also waits for the first GPU pipeline/draw.
   // Otherwise a fast click can enter play while that first frame is still cold.
   camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();
-  display.renderer.render(scene,camera);await waitForGpu(display.renderer.getContext() as WebGL2RenderingContext);body.dataset.gpuReady='true';
+  display.render(scene,camera);await waitForGpu(display.renderer.getContext() as WebGL2RenderingContext);body.dataset.gpuReady='true';
   display.renderer.setAnimationLoop(time=>{
     if(!benchmarkDone&&!contextReloadPending){const result=benchmark.update(time);if(result!==null){benchmarkDone=display.configure(chooseTier(probe,result));contextReloadPending=!benchmarkDone;body.dataset.benchmarkMs=result.toFixed(1);}}
     const elapsed=previous?time-previous:16.7;frameSum+=elapsed;if(previous)display.adapt(elapsed);previous=time;loop.frame(time);

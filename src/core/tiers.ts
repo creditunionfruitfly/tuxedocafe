@@ -1,12 +1,12 @@
 export type Tier = 'high' | 'desktop' | 'phone' | 'low';
 export interface Probe { mobile: boolean; memory: number; cores: number; samples: number }
 export const TIER_CONFIG = {
-  high: { min: 1, max: 1, target: 60, shadows: true },
-  desktop: { min: .85, max: 1, target: 60, shadows: true },
-  phone: { min: .7, max: .9, target: 60, shadows: false },
-  low: { min: .6, max: .75, target: 30, shadows: false },
+  high: { min: 1, max: 1, target: 60, shadows: true, aa: 8, optics: true },
+  desktop: { min: .85, max: 1, target: 60, shadows: true, aa: 8, optics: true },
+  phone: { min: .7, max: .9, target: 60, shadows: false, aa: 2, optics: false },
+  low: { min: .6, max: .75, target: 30, shadows: false, aa: 2, optics: false },
 } as const;
-export function needsTierReload(antialias: boolean, tier: Tier): boolean { return antialias !== (tier === 'high' || tier === 'desktop'); }
+export function needsTierReload(desktopProfile: boolean, tier: Tier): boolean { return desktopProfile !== TIER_CONFIG[tier].optics; }
 export function parseTier(value: string | null): Tier | null { return value === 'high' || value === 'desktop' || value === 'phone' || value === 'low' ? value : null; }
 export function chooseTier(probe: Probe, milliseconds: number): Tier {
   if (milliseconds > 25 || probe.memory < 3 || probe.cores < 4) return 'low';
