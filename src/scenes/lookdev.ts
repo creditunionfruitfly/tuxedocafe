@@ -26,5 +26,22 @@ export async function mountLookdev(value:string):Promise<void>{
  }
  const label=document.createElement('aside');label.id='lookdev-status';label.className='glass hud-card';label.style.top='100px';label.textContent=`${asset==='cat'?'65-bone capsule rig diagnostic':asset==='hand'?'Wrist-rigged hand':'Café environment'} · ${document.body.dataset.tier} · drag to inspect`;
  const links=document.createElement('p');for(const name of Object.keys(ASSETS)){const link=document.createElement('a');link.href=siteUrl(`?lookdev=${name}&tier=${document.body.dataset.tier}`);link.textContent=`${name}  `;links.append(link);}label.append(links);document.body.append(label);document.body.dataset.bones=String(bones);
- installOrientation(()=>{});display.renderer.setAnimationLoop(()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();display.render(scene,camera,orbit?.getDistance());document.body.dataset.ready='true';document.body.dataset.drawCalls=String(display.renderer.info.render.calls);document.body.dataset.triangles=String(display.renderer.info.render.triangles);});
+ installOrientation(()=>{});
+ let framePending=false;
+ const redraw=():void=>{
+  if(framePending)return;
+  framePending=true;
+  requestAnimationFrame(()=>{
+   framePending=false;
+   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+   display.render(scene,camera,orbit?.getDistance());
+   document.body.dataset.ready='true';
+   document.body.dataset.drawCalls=String(display.renderer.info.render.calls);
+   document.body.dataset.triangles=String(display.renderer.info.render.triangles);
+  });
+ };
+ window.addEventListener('resize',redraw);
+ orbit?.addEventListener('change',redraw);
+ display.renderer.domElement.addEventListener('webglcontextrestored',redraw);
+ redraw();
 }
