@@ -91,14 +91,28 @@ try {
     const subject=closeup.target?.root;
     if(subject){focusPoint.copy(subject.position);focusPoint.y+=.24*subject.scale.x;focusPoint.applyMatrix4(camera.matrixWorldInverse);}
     if(contextLost)return;
-    // Keep input and the fixed step running when Low has a GPU frame in flight.
+    // Keep input and the fixed step running while the GPU finishes a paced frame.
     if(pendingFrame&&gl.clientWaitSync(pendingFrame,0,0)===gl.TIMEOUT_EXPIRED){redraw=true;return;}
     releaseFrame();
+    if(!benchmarkDone){
+      // Sample completed frames, so queued submissions cannot inflate the benchmark.
+      const result=benchmark.update(frameTime);
+      if(result!==null){
+        const selected=chooseTier(probe,result);
+        body.dataset.benchmarkMs=result.toFixed(1);
+        // Only the loaded cat assets still require a page reload to change profiles.
+        if(cast&&needsTierReload(TIER_CONFIG[tier].optics,selected)){
+          tierReloadPending=true;const url=new URL(location.href);url.searchParams.set('tier',selected);location.replace(url.href);return;
+        }
+        benchmarkDone=true;continuous=playing||!!cast?.residents.length;
+        if(selected!==tier){tier=selected;display.configure(tier);waitForFinalFrame=true;previousDraw=0;}
+      }
+    }
     const elapsed=previousDraw&&continuous?frameTime-previousDraw:0;
     if(elapsed>0)display.adapt(elapsed);
     previousDraw=frameTime;
     display.render(scene,camera,subject?-focusPoint.z:undefined);
-    if(tier==='low'&&playing){
+    if(!benchmarkDone||(tier==='low'&&playing)){
       pendingFrame=gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE,0);
       if(pendingFrame)gl.flush();
     }
@@ -142,19 +156,6 @@ try {
   display.render(scene,camera);await waitForGpu(gl);body.dataset.gpuReady='true';
   display.renderer.setAnimationLoop(time=>{
     if(tierReloadPending)return;
-    if(!benchmarkDone){
-      const result=benchmark.update(time);
-      if(result!==null){
-        const selected=chooseTier(probe,result);
-        body.dataset.benchmarkMs=result.toFixed(1);
-        // Only the loaded cat assets still require a page reload to change profiles.
-        if(cast&&needsTierReload(TIER_CONFIG[tier].optics,selected)){
-          tierReloadPending=true;const url=new URL(location.href);url.searchParams.set('tier',selected);location.replace(url.href);return;
-        }
-        benchmarkDone=true;redraw=true;
-        if(selected!==tier){tier=selected;display.configure(tier);waitForFinalFrame=true;previousDraw=0;}
-      }
-    }
     continuous=!benchmarkDone||playing||!!cast?.residents.length;
     if(!continuous&&!redraw){if(previousDraw){previousDraw=0;loop.reset();}return;}
     redraw=false;frameTime=time;loop.frame(time);
