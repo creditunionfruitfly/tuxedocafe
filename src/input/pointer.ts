@@ -9,7 +9,7 @@ import type { EventBus } from '../core/events.ts';
 import type { Player } from '../scenes/player.ts';
 import type { Settings } from './settings.ts';
 import controls from '../../data/interaction.json' with { type: 'json' };
-export function installPointer(canvas: HTMLCanvasElement,camera: PerspectiveCamera,player: Player,targets: readonly ProxyTarget[],bus: EventBus,holding: HoldDrag,water: TapFill,settings: Settings,onTap?: (ray: Ray) => boolean): { step(dt:number):void; readonly stick:{side:number;forward:number}; hit():ProxyHit|null; interact(target:string,action:string):boolean; active(value:boolean):void; dispose():void } {
+export function installPointer(canvas: HTMLCanvasElement,camera: PerspectiveCamera,player: Player,targets: readonly ProxyTarget[],bus: EventBus,holding: HoldDrag,water: TapFill,settings: Settings,onTap?: (ray: Ray) => boolean,onRightClick?: (ray: Ray) => void): { step(dt:number):void; readonly stick:{side:number;forward:number}; hit():ProxyHit|null; interact(target:string,action:string):boolean; active(value:boolean):void; dispose():void } {
   const gestures=new Gestures(),doubleTap=new DoubleTap(),raycaster=new Raycaster(),ndc=new Vector2(),carryPoint=new Vector3(),tapPoint=new Vector3(),rate={yaw:0,pitch:0},stick={side:0,forward:0},middle={x:0,y:0};
   const tapTarget=targets.find(item=>item.id==='tap');
   const pointers=new Map<number,{x:number;y:number;startX:number;startY:number}>(),progressEvent={progress:0};
@@ -58,6 +58,8 @@ export function installPointer(canvas: HTMLCanvasElement,camera: PerspectiveCame
     }
   };
   const up=(e:PointerEvent):void=>{
+    const start=pointers.get(e.pointerId);
+    const rightClick=e.button===2&&e.pointerType==='mouse'&&pointers.size===1&&!!start&&Math.hypot(e.clientX-start.startX,e.clientY-start.startY)<=controls.dragThresholdPx;
     if(!enabled)return;const wasDown=gestures.down,state=gestures.state,moved=gestures.moved;pointers.delete(e.pointerId);pinch=0;radialX=radialY=0;stick.side=stick.forward=0;gestures.release();
     if(pointers.size===0&&wasDown&&state!=='look'&&state!=='move'){
       if(state==='hold'&&holding.id&&!latched)release();
@@ -65,6 +67,7 @@ export function installPointer(canvas: HTMLCanvasElement,camera: PerspectiveCame
       else doubleTap.reset();
     }
     if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);
+    if(rightClick&&wasDown&&state==='look'&&moved<=controls.dragThresholdPx&&onRightClick){x=e.clientX;y=e.clientY;updateHit();onRightClick(raycaster.ray);}
   };
   const wheel=(e:WheelEvent):void=>{if(enabled){e.preventDefault();player.lean=Math.max(-.2,Math.min(.3,player.lean-e.deltaY*.0005));}};
   const context=(e:Event):void=>e.preventDefault();

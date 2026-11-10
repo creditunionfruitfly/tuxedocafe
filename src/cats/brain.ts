@@ -5,6 +5,7 @@ import type { Rng } from '../core/rng.ts';
 import { ROOM } from '../scenes/collision.ts';
 import { walkable, type Waypoint } from '../scenes/navigation.ts';
 import { Mover, wrap } from './mover.ts';
+import { CatBlink } from './blink.ts';
 
 export type Need = keyof typeof behavior.needRise;
 export type Gait = keyof typeof behavior.gaitSpeed;
@@ -29,6 +30,7 @@ export type Reaction = 'content' | 'warning' | 'over';
 const C = (name: string): string => `cat.${name}`;
 const COMMITTED = new Set<Goal>(['window', 'perch', 'litter']);
 const RESTING = new Set(['rest.sit_idle', 'rest.loaf', 'rest.lie_side', 'rest.sprawl', 'rest.sleep_curl'].map(C));
+const SLOW_BLINK = C('social.slow_blink'), SLEEP = C('rest.sleep_curl'), HOLD_FOR_PATRON = 1e9;
 const faceTo = (from: Waypoint, to: Waypoint): number => Math.atan2(to.x - from.x, to.z - from.z);
 
 /**
@@ -38,6 +40,7 @@ const faceTo = (from: Waypoint, to: Waypoint): number => Math.atan2(to.x - from.
  */
 export class Brain {
   readonly mover: Mover; readonly traits: (typeof cats.cats)[number]['traits']; readonly needs = {} as Record<Need, number>;
+  readonly blink: CatBlink;
   readonly cap: number; affinity: number; goal: Goal = 'rest';
   action: string | null = null; actionId = 0; layers: readonly string[] = []; pulses: string[] = [];
   #plan: Step[] = []; #fresh = true; #time = 0; #think: number; #from = { x: 0, z: 0, y: 0 }; #turn = 0;
@@ -47,6 +50,7 @@ export class Brain {
   readonly id: string; readonly rng: Rng; readonly scale: number;
   constructor(id: string, rng: Rng, start: Waypoint, scale = 1) {
     this.id = id; this.rng = rng; this.scale = scale;
+    this.blink = new CatBlink(rng.fork('eyelids'));
     const cat = cats.cats.find(entry => entry.id === id)!;
     this.traits = cat.traits; this.mover = new Mover(start, rng.range(-Math.PI, Math.PI));
     this.cap = rng.range(cat.maxAffinityRange[0]!, cat.maxAffinityRange[1]!); this.affinity = this.cap * rng.range(.1, .3);
@@ -73,6 +77,8 @@ export class Brain {
     this.#run(dt);
     if (!this.#petting) this.meter = Math.max(0, this.meter - behavior.petting.drain * dt);
     if (this.engaged) this.layers = [...this.layers, ...this.#extra];
+    const relaxed = this.meter < .6 && (this.#petting || (this.action ? RESTING.has(this.action) || this.action === 'cat.social.head_rub' : !this.mover.moving));
+    if (this.blink.step(dt, this.action === SLEEP ? 'asleep' : relaxed ? 'relaxed' : 'alert', this.pulses.includes(SLOW_BLINK))) this.pulses.push(SLOW_BLINK);
     this.#petting = false; this.#extra = [];
   }
   /** A patron came close for a close-up. The cat decides, on its own terms, whether to stay. */
@@ -81,10 +87,17 @@ export class Brain {
     const chance = Math.min(.95, Math.max(.1, this.affinity / this.cap * .5 + this.affinity * .5 + this.traits.sociability * .3 - .15));
     if (this.rng.next() > chance) { this.interrupt(this.#away(patron), 'avoidPlayer'); return false; }
     this.engaged = true; this.meter = 0;
-    this.interrupt([{ kind: 'face', yaw: faceTo(this.mover, patron) }, { kind: 'clip', clip: C('rest.sit_down') }, { kind: 'clip', clip: C('rest.sit_idle'), seconds: 1e9, layers: [C('layer.tail_up')] }], 'seekPlayer');
+    this.interrupt([{ kind: 'face', yaw: faceTo(this.mover, patron) }, { kind: 'clip', clip: C('rest.sit_down') }, { kind: 'clip', clip: C('rest.sit_idle'), seconds: HOLD_FOR_PATRON, layers: [C('layer.tail_up')] }], 'seekPlayer');
     return true;
   }
-  disengage(): void { if (this.engaged) { this.engaged = false; this.interrupt([]); } }
+  disengage(keepPlan = false): void {
+    if (!this.engaged) return;
+    this.engaged = false;
+    if (!keepPlan) { this.interrupt([]); return; }
+    // Finish the current action, but never leave an indefinite interaction sit behind.
+    const last = this.#plan.at(-1);
+    if (last?.kind === 'clip' && last.seconds === HOLD_FOR_PATRON) last.seconds = Math.max(8, this.#plan.length === 1 ? this.#time + 3 : 0);
+  }
   /** One fixed step of stroking a zone; returns how the cat feels about it. */
   pet(zone: Zone, dt: number, patron: Waypoint): Reaction {
     const p = behavior.petting, factor = zone === 'belly' && this.traits.sociability > .85 ? 1 : p.zones[zone];
@@ -98,7 +111,6 @@ export class Brain {
     if (this.meter >= .6) { this.#extra = [C('layer.tail_lash'), C('layer.ears_back')]; if (this.rng.next() < dt * 2) this.#queued.push(C('layer.skin_twitch')); return 'warning'; }
     this.affinity += p.bondRate * (1 / factor) * (this.cap - this.affinity) * dt;
     this.#extra = [C('layer.purr_breath'), C('layer.lean_in')];
-    if (this.rng.next() < dt / 6) this.#queued.push(C('social.slow_blink'));
     return 'content';
   }
   /** The hand left: stopping in the warning band earns a little trust (README). */
@@ -106,12 +118,12 @@ export class Brain {
   /** A slow blink from the patron; a trusting cat returns it. */
   slowBlink(): boolean {
     if (this.affinity < this.cap * .3) return false;
-    this.#queued.push(C('social.slow_blink')); this.affinity = Math.min(this.cap, this.affinity + .005); return true;
+    this.#queued.push(SLOW_BLINK); this.affinity = Math.min(this.cap, this.affinity + .005); return true;
   }
   /** A short play bout with the patron's hand, then back to sitting with them. */
   playWith(): void {
     const plan: Step[] = [C('play.bat_left'), C('play.pounce'), C('play.bat_right')].map(clip => ({ kind: 'clip', clip, layers: [C('layer.ears_forward')], satisfy: { play: .15 } }));
-    this.interrupt([...plan, { kind: 'clip', clip: C('rest.sit_idle'), seconds: 1e9, layers: [C('layer.tail_up')] }], 'seekPlayer');
+    this.interrupt([...plan, { kind: 'clip', clip: C('rest.sit_idle'), seconds: HOLD_FOR_PATRON, layers: [C('layer.tail_up')] }], 'seekPlayer');
     this.affinity = Math.min(this.cap, this.affinity + .01);
   }
   score(goal: Goal, world: World): number {

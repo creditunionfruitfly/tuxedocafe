@@ -8,6 +8,7 @@ export interface RadialItem { id: string; label: string; disabled?: boolean; hol
 const ZONES: readonly { id: Zone; label: string }[] = [{ id: 'cheeks', label: 'Cheeks' }, { id: 'chin', label: 'Chin' }, { id: 'head', label: 'Between the ears' }, { id: 'back', label: 'Back' }, { id: 'belly', label: 'Belly' }, { id: 'tailBase', label: 'Base of the tail' }];
 const PERKS = ['Catnip', 'Laser', 'Feather wand', 'Harness walk'];
 const MAIN: readonly RadialItem[] = [{ id: 'pet', label: 'Pet' }, { id: 'blink', label: 'Slow blink' }, { id: 'play', label: 'Play' }, { id: 'perks', label: 'Perks' }, { id: 'leave', label: 'Leave' }];
+const WATCH: readonly RadialItem[] = [{ id: 'leave', label: 'Leave' }];
 const CAPTION: Record<Reaction, string> = { content: 'Purring, leaning into your hand.', warning: 'Tail lashing, ears turning back. Time to stop.', over: 'A swat! That was too much.' };
 const REACH = 6, EASE = .6, SIDE = .2;
 const nameOf = (id: string): string => cats.cats.find(cat => cat.id === id)?.name ?? id;
@@ -19,16 +20,17 @@ const nameOf = (id: string): string => cats.cats.find(cat => cat.id === id)?.nam
 export class CloseUp {
   target: Resident | null = null;
   readonly #bus: EventBus; readonly #reducedMotion: () => boolean; readonly #leftHanded: () => boolean;
+  readonly #canWatch: () => boolean;
   #blend = 0; #leaving = 0; #zone: Zone | null = null; #reaction: Reaction | null = null;
   readonly #sphere = new Sphere(); readonly #hit = new Vector3(); readonly #pos = new Vector3(); readonly #look = new Vector3(); readonly #quat = new Quaternion(); readonly #m = new Matrix4(); readonly #up = new Vector3(0, 1, 0);
-  constructor(bus: EventBus, reducedMotion: () => boolean, leftHanded: () => boolean = () => false) {
-    this.#bus = bus; this.#reducedMotion = reducedMotion; this.#leftHanded = leftHanded;
+  constructor(bus: EventBus, reducedMotion: () => boolean, leftHanded: () => boolean = () => false, canWatch: () => boolean = () => false) {
+    this.#bus = bus; this.#reducedMotion = reducedMotion; this.#leftHanded = leftHanded; this.#canWatch = canWatch;
     bus.on('radial:select', ({ id }) => this.#select(id));
     bus.on('radial:hold', ({ id, down }) => this.#hold(id as Zone, down));
   }
   /** The nearest resident a tap ray hits, within a few metres. */
-  pick(ray: Ray, residents: readonly Resident[]): Resident | null {
-    let best: Resident | null = null, distance = REACH;
+  pick(ray: Ray, residents: readonly Resident[], reach = REACH): Resident | null {
+    let best: Resident | null = null, distance = reach;
     for (const cat of residents) {
       const s = cat.root.scale.x; this.#sphere.center.copy(cat.root.position).y += .18 * s; this.#sphere.radius = .24 * s;
       if (ray.intersectSphere(this.#sphere, this.#hit)) { const d = this.#hit.distanceTo(ray.origin); if (d < distance) { distance = d; best = cat; } }
@@ -39,9 +41,13 @@ export class CloseUp {
     this.target = cat; this.#leaving = 0; this.#zone = null; this.#reaction = null;
     const name = nameOf(cat.id);
     if (cat.brain.engage(patron)) { this.#bus.emit('notice', { text: `${name} settles down with you.` }); this.#menu(MAIN); }
-    else { this.#bus.emit('notice', { text: `${name} isn't in the mood and wanders off.` }); this.#leaving = 1.6; }
+    else { this.#bus.emit('notice', { text: `${name} isn't in the mood for company.` }); this.#leaving = this.#canWatch() ? 4 : 1.6; if (this.#canWatch()) this.#menu(WATCH); }
   }
-  exit(): void { this.target?.brain.disengage(); this.target = null; this.#zone = null; this.#bus.emit('radial', null); }
+  exit(keepPlan = false): void {
+    this.target?.brain.disengage(keepPlan); this.target = null; this.#zone = null;
+    if (keepPlan) this.#blend = 0;
+    this.#bus.emit('radial', null);
+  }
   step(dt: number, patron: { x: number; z: number }): void {
     this.#blend = this.#reducedMotion() ? (this.target ? 1 : 0) : Math.max(0, Math.min(1, this.#blend + (this.target ? dt : -dt) / EASE));
     const cat = this.target;
@@ -62,7 +68,7 @@ export class CloseUp {
     this.#quat.setFromRotationMatrix(this.#m.lookAt(this.#pos, this.#look, this.#up));
     camera.position.lerp(this.#pos, e); camera.quaternion.slerp(this.#quat, e);
   }
-  #menu(items: readonly RadialItem[]): void { this.#bus.emit('radial', { title: nameOf(this.target?.id ?? ''), items }); }
+  #menu(items: readonly RadialItem[]): void { this.#bus.emit('radial', { title: nameOf(this.target?.id ?? ''), center: this.#canWatch(), items }); }
   #select(id: string): void {
     const brain = this.target?.brain;
     if (!brain) return;

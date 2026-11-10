@@ -1,7 +1,7 @@
-export function installKeys(action: (index: number) => void): { keys: Set<string>; dispose(): void } {
+export function installKeys(action: (index: number) => void, blocked: () => boolean = () => false): { keys: Set<string>; dispose(): void } {
   const keys = new Set<string>();
   const down = (event: KeyboardEvent): void => {
-    if ((event.target as HTMLElement).matches('input,select,textarea,[contenteditable=true]')) return;
+    if (blocked() || (event.target as HTMLElement).matches('input,select,textarea,[contenteditable=true]')) return;
     const key = event.key.toLowerCase(); if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','1','2','3','4'].includes(key)) event.preventDefault();
     keys.add(key); if (/^[1-4]$/.test(key) && !event.repeat) action(Number(key) - 1);
   };

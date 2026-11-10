@@ -1,16 +1,20 @@
+import type { Settings } from '../input/settings.ts';
+
 export interface GameEvents {
   'notice': { text: string };
   'session': { playing: boolean };
   'profile': { name: string; pronouns: string; skin: string; sleeve: string };
-  'settings': { reducedMotion: boolean; leftHanded: boolean; holdToggle: boolean; holdMs: number; captions: boolean; tier: string; music: number; effects: number };
+  'settings': Settings;
   'action': { target: string; action: string };
   'hover': { target: string; x: number; y: number; actions: readonly string[] } | null;
   'chore:progress': { progress: number };
   'chore:done': { id: string };
   'player': { x: number; z: number };
-  'radial': { title: string; items: readonly { id: string; label: string; disabled?: boolean; hold?: boolean }[] } | null;
+  'radial': { title: string; center?: boolean; items: readonly { id: string; label: string; disabled?: boolean; hold?: boolean }[] } | null;
   'radial:select': { id: string };
   'radial:hold': { id: string; down: boolean };
+  'cat-view': { id: string; name: string } | null;
+  'cat-view:exit': undefined;
 }
 export class EventBus<Events extends object = GameEvents> {
   #listeners = new Map<keyof Events, Set<(value: never) => void>>();
