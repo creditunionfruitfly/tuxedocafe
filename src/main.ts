@@ -60,7 +60,13 @@ try {
   const override=parseTier(new URLSearchParams(location.search).get('tier')),requestedTier=parseTier(visit.settings.tier)??override;
   let tier=requestedTier??(probe.mobile?'phone':'desktop');
   if(requestedTier)display.configure(tier);
-  let playing=false,paused=false,benchmarkDone=!!requestedTier,tierReloadPending=false,redraw=true,waitForFinalFrame=false,previous=0,drawFrames=0,frameSum=0,tierPreference=visit.settings.tier;
+  let playing=false,paused=false,benchmarkDone=!!requestedTier,tierReloadPending=false,redraw=true,waitForFinalFrame=false,tierPreference=visit.settings.tier;
+  let frameTime=0,previousDraw=0,drawFrames=0,frameSum=0,continuous=false,contextLost=false;
+  let pendingFrame:WebGLSync|null=null;
+  const releaseFrame=():void=>{
+    if(pendingFrame&&!contextLost)gl.deleteSync(pendingFrame);
+    pendingFrame=null;
+  };
   const markReady=():void=>{
     const start=document.querySelector<HTMLButtonElement>('#start')!;
     start.disabled=false;start.setAttribute('aria-busy','false');body.dataset.ready='true';
@@ -84,9 +90,29 @@ try {
     hand.update(playing,!!holding.id,visit.settings.leftHanded);for(const cat of cast?.residents??[])cat.render(alpha);
     const subject=closeup.target?.root;
     if(subject){focusPoint.copy(subject.position);focusPoint.y+=.24*subject.scale.x;focusPoint.applyMatrix4(camera.matrixWorldInverse);}
+    if(contextLost)return;
+    // Keep input and the fixed step running when Low has a GPU frame in flight.
+    if(pendingFrame&&gl.clientWaitSync(pendingFrame,0,0)===gl.TIMEOUT_EXPIRED){redraw=true;return;}
+    releaseFrame();
+    const elapsed=previousDraw&&continuous?frameTime-previousDraw:0;
+    if(elapsed>0)display.adapt(elapsed);
+    previousDraw=frameTime;
     display.render(scene,camera,subject?-focusPoint.z:undefined);
+    if(tier==='low'&&playing){
+      pendingFrame=gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE,0);
+      if(pendingFrame)gl.flush();
+    }
     body.dataset.drawCalls=String(display.renderer.info.render.calls);body.dataset.triangles=String(display.renderer.info.render.triangles);body.dataset.shaderPrograms=String(display.renderer.info.programs?.length??0);
-    if(++drawFrames%60===0){body.dataset.frameMs=(frameSum/60).toFixed(1);frameSum=0;}
+    if(elapsed>0){
+      frameSum+=elapsed;
+      if(++drawFrames%60===0){body.dataset.frameMs=(frameSum/60).toFixed(1);frameSum=0;}
+    }
+    if(benchmarkDone&&!body.dataset.ready){
+      if(waitForFinalFrame){
+        // The selected tier can submit a different shader and framebuffer on its first draw.
+        body.dataset.ready='warming';void waitForGpu(gl).then(markReady,failBoot);
+      }else markReady();
+    }
   });
   bus.on('session',value=>{playing=value.playing;pointer.active(playing&&!paused);keyboard.keys.clear();redraw=true;});
   bus.on('settings',value=>{if(value.tier!==tierPreference){tierPreference=value.tier;const url=new URL(location.href);if(value.tier==='auto')url.searchParams.delete('tier');else url.searchParams.set('tier',value.tier);void save().then(()=>location.assign(url.href));}player.reducedMotion=value.reducedMotion;redraw=true;});
@@ -100,7 +126,8 @@ try {
     else if(action==='Clean')bus.emit('notice',{text:'This station is tidy. Staff keep every cat comfortable.'});else bus.emit('notice',{text:'A lovely spot for a quiet cup.'});
   });
   installOrientation(value=>{paused=value;loop.paused=value;loop.reset();pointer.active(playing&&!paused);redraw=true;});
-  canvas.addEventListener('webglcontextrestored',()=>{redraw=true;});
+  canvas.addEventListener('webglcontextlost',()=>{contextLost=true;releaseFrame();previousDraw=0;});
+  canvas.addEventListener('webglcontextrestored',()=>{contextLost=false;redraw=true;});
   mountShell(bus,visit,save);mountAbout(buildInfo);
   const jukebox=new Jukebox(visit.settings.music);mountMusicPill(jukebox);bus.on('settings',value=>{void jukebox.setVolume(value.music);});
   await cafe.load();const handLoader=new GLTFLoader();handLoader.setMeshoptDecoder(MeshoptDecoder);const gltf=await handLoader.loadAsync(assetUrl('art/hand.glb'));useRoomProbe(gltf.scene);hand.setModel(gltf.scene,gltf.animations);if(visit.profile)hand.customize(visit.profile.skin,visit.profile.sleeve);
@@ -125,21 +152,14 @@ try {
           tierReloadPending=true;const url=new URL(location.href);url.searchParams.set('tier',selected);location.replace(url.href);return;
         }
         benchmarkDone=true;redraw=true;
-        if(selected!==tier){tier=selected;display.configure(tier);waitForFinalFrame=true;previous=0;}
+        if(selected!==tier){tier=selected;display.configure(tier);waitForFinalFrame=true;previousDraw=0;}
       }
     }
-    const continuous=!benchmarkDone||playing||!!cast?.residents.length;
-    if(!continuous&&!redraw){if(previous){previous=0;loop.reset();}return;}
-    redraw=false;
-    const elapsed=previous?time-previous:16.7;frameSum+=elapsed;if(previous&&continuous)display.adapt(elapsed);previous=time;loop.frame(time);
-    if(benchmarkDone&&!body.dataset.ready){
-      if(waitForFinalFrame){
-        // The selected tier can submit a different shader and framebuffer on its first draw.
-        body.dataset.ready='warming';void waitForGpu(gl).then(markReady,failBoot);
-      }else markReady();
-    }
+    continuous=!benchmarkDone||playing||!!cast?.residents.length;
+    if(!continuous&&!redraw){if(previousDraw){previousDraw=0;loop.reset();}return;}
+    redraw=false;frameTime=time;loop.frame(time);
   });
-  window.addEventListener('pagehide',()=>{void save();});
+  window.addEventListener('pagehide',()=>{releaseFrame();void save();});
 } catch(error) {
   failBoot(error);
 }
