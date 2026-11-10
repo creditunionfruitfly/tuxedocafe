@@ -18,8 +18,11 @@ async function lookAt(page:Page,_isMobile:boolean,x:number,y:number,z:number):Pr
  while(Math.abs(dx)>.5||Math.abs(dy)>.5){const mx=Math.max(-160,Math.min(160,dx)),my=Math.max(-100,Math.min(100,dy));
   await page.mouse.move(start.x,start.y);await page.mouse.down({button:'right'});await page.mouse.move(start.x+mx,start.y+my);await page.mouse.up({button:'right'});dx-=mx;dy-=my;
  }
- // Let camera interpolation and the public render stamp settle after the UI gesture.
- await expect.poll(async()=>Number((await page.locator('body').getAttribute('data-look'))!.split(',')[1])).toBeCloseTo(pitch,1);
+ // The first drag can settle pitch before the final yaw reaches the render stamp.
+ await expect.poll(async()=>{
+  const [actualYaw,actualPitch]=(await page.locator('body').getAttribute('data-look'))!.split(',').map(Number),angle=actualYaw!-yaw;
+  return Math.max(Math.abs(Math.atan2(Math.sin(angle),Math.cos(angle))),Math.abs(actualPitch!-pitch));
+ }).toBeLessThan(.01);
 }
 async function tapPoint(page:Page,isMobile:boolean,x:number,y:number,z:number):Promise<void>{await lookAt(page,isMobile,x,y,z);const point=await screenPoint(page,x,y,z);if(isMobile)await page.touchscreen.tap(point.x,point.y);else await page.mouse.click(point.x,point.y);}
 // Press, drag to an offset and keep holding: a radial drag turns for as long as it is held.
