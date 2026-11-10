@@ -1,5 +1,6 @@
 import { LightProbe, Mesh, MeshStandardMaterial, NoColorSpace, ShaderChunk, TextureLoader, type Object3D, type Texture } from 'three';
 import { assetUrl } from '../core/assets.ts';
+import { addMaterialPatch, type MaterialShaderPatch } from './shaders/material-patches.ts';
 
 type RGB = [number, number, number];
 export interface RoomProbe { position: RGB; sh: RGB[] }
@@ -34,17 +35,21 @@ ${includesDirect ? 'reflectedLight.directDiffuse = vec3( 0.0 );' : ''}
 `);
 }
 
+const roomProbePatch: MaterialShaderPatch = {
+  key: 'cafe-room-probe',
+  apply(shader) {
+    shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_maps>',
+      '#include <lights_fragment_maps>\niblIrradiance = vec3( 0.0 );');
+  },
+};
+
 /** Room probes supply diffuse radiance; the reflection cubemap supplies GGX only. */
 export function useRoomProbe(root: Object3D): void {
   root.traverse(node => {
     if (!(node instanceof Mesh) || node.geometry.userData.bakedDaylight === true) return;
     for (const material of Array.isArray(node.material) ? node.material : [node.material]) {
       if (!(material instanceof MeshStandardMaterial)) continue;
-      material.onBeforeCompile = shader => {
-        shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_maps>',
-          '#include <lights_fragment_maps>\niblIrradiance = vec3( 0.0 );');
-      };
-      material.customProgramCacheKey = () => 'cafe-room-probe'; material.needsUpdate = true;
+      addMaterialPatch(material, roomProbePatch);
     }
   });
 }
@@ -53,6 +58,11 @@ export function useRoomProbe(root: Object3D): void {
 export function bindCafeBake(root: Object3D, lightMap: Texture, bake: CafeBake): () => void {
   lightMap.channel = 1; lightMap.flipY = false; lightMap.colorSpace = NoColorSpace;
   const clones = new Map<MeshStandardMaterial, MeshStandardMaterial>();
+  const direct = bake.metadata.directIncluded;
+  const bakePatch: MaterialShaderPatch = {
+    key: `cafe-bake-${Number(direct)}`,
+    apply(shader) { shader.fragmentShader = bakedDiffuseShader(shader.fragmentShader, direct); },
+  };
   let receivers = 0;
   root.traverse(node => {
     if (!(node instanceof Mesh) || node.geometry.userData.bakedDaylight !== true) return;
@@ -62,9 +72,7 @@ export function bindCafeBake(root: Object3D, lightMap: Texture, bake: CafeBake):
       let copy = clones.get(material);
       if (!copy) {
         copy = material.clone(); copy.lightMap = lightMap; copy.lightMapIntensity = bake.exposure;
-        copy.onBeforeCompile = shader => { shader.fragmentShader = bakedDiffuseShader(shader.fragmentShader, bake.metadata.directIncluded); };
-        copy.customProgramCacheKey = () => `cafe-bake-${Number(bake.metadata.directIncluded)}`;
-        copy.needsUpdate = true; clones.set(material, copy);
+        addMaterialPatch(copy, bakePatch); clones.set(material, copy);
       }
       return copy;
     };

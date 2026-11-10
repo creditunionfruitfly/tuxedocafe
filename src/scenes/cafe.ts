@@ -4,9 +4,16 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { assetUrl } from '../core/assets.ts';
 import { loadCafeBake, useRoomProbe } from '../render/baked-lighting.ts';
+import { supportsHdrTarget } from '../render/scene-output.ts';
 export interface Cafe { scene: Scene; camera: PerspectiveCamera; load(): Promise<void>; object(id:string):Object3D|undefined; updateLighting(x:number,y:number,z:number):void; dispose():void }
 export function createCafe(renderer: WebGLRenderer): Cafe {
-  const scene=new Scene();const environment=new RoomEnvironment();const pmrem=new PMREMGenerator(renderer);const environmentMap=pmrem.fromScene(environment,.04);scene.environment=environmentMap.texture;scene.environmentIntensity=.7;environment.dispose();pmrem.dispose();scene.background=new Color('#d6e9e2');
+  const scene=new Scene();scene.background=new Color('#d6e9e2');
+  let environmentMap:ReturnType<PMREMGenerator['fromScene']>|undefined;
+  if(supportsHdrTarget(renderer)){
+    const environment=new RoomEnvironment(),pmrem=new PMREMGenerator(renderer);
+    environmentMap=pmrem.fromScene(environment,.04);scene.environment=environmentMap.texture;scene.environmentIntensity=.7;
+    environment.dispose();pmrem.dispose();
+  }
   const camera=new PerspectiveCamera(61,1,.04,60);camera.position.set(0,1.6,2.2);camera.lookAt(0,1.25,-3);scene.add(camera);
   const fallback=new Group();scene.add(fallback);
   const floor=new Mesh(new PlaneGeometry(10,8),new MeshStandardMaterial({color:'#c69c74',roughness:.67}));floor.rotation.x=-Math.PI/2;floor.position.z=-1;fallback.add(floor);
@@ -24,5 +31,5 @@ export function createCafe(renderer: WebGLRenderer): Cafe {
     const gltf=await loader.loadAsync(assetUrl('art/env_cafe.glb'));scene.remove(fallback);disposeObject(fallback);scene.add(gltf.scene);
     gltf.scene.traverse(node=>{objects.set(node.name,node);if(node instanceof Mesh){node.receiveShadow=true;node.castShadow=true;}});
     lighting=await loadCafeBake(gltf.scene);scene.add(lighting.probe.light);useRoomProbe(gltf.scene);
-  },dispose(){disposeObject(scene);lighting?.dispose();sun.dispose();environmentMap.dispose();}};
+  },dispose(){disposeObject(scene);lighting?.dispose();sun.dispose();environmentMap?.dispose();}};
 }

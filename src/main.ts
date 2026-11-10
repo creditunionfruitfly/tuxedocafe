@@ -11,7 +11,7 @@ import { EventBus } from './core/events.ts';
 import { parseFlags } from './core/flags.ts';
 import { watchUpdates } from './core/update-check.ts';
 import { SaveStore,browserStorage } from './core/storage.ts';
-import { TierBenchmark,chooseTier,parseTier,probeDevice } from './core/tiers.ts';
+import { TierBenchmark,chooseTier,needsTierReload,parseTier,probeDevice,TIER_CONFIG } from './core/tiers.ts';
 import { createRenderer } from './render/renderer.ts';
 import { waitForGpu } from './render/warmup.ts';
 import { mountLookdev } from './scenes/lookdev.ts';
@@ -43,6 +43,9 @@ const store=new SaveStore(buildInfo.channel,browserStorage(),freshVisit,{},text=
 await store.open();const visit=cleanVisit(await store.load('visit'));const save=():Promise<void>=>store.save('visit',visit);
 watchUpdates(buildInfo,save,reload=>{const button=document.querySelector<HTMLButtonElement>('#update');if(button){button.hidden=false;button.onclick=reload;}});
 let rendererReady=false;
+const failBoot=(error:unknown):void=>{
+  document.querySelector<HTMLElement>('#unsupported')?.removeAttribute('hidden');body.dataset.ready='unsupported';console.warn('Café loading failed',error);if(rendererReady)window.dispatchEvent(new Event('cafe:asset-error'));
+};
 try {
   const canvas=document.querySelector<HTMLCanvasElement>('#view')!,display=createRenderer(canvas),cafe=createCafe(display.renderer),{scene,camera}=cafe;
   rendererReady=true;const player=new Player(),holding=new HoldDrag(),water=new TapFill();water.completed=visit.waterDone;
@@ -53,10 +56,22 @@ try {
   // Any tap on a cat opens its close-up; a tap elsewhere during one steps back out.
   const tapCat=(ray:Parameters<CloseUp['pick']>[0]):boolean=>{if(closeup.target){closeup.exit();return true;}const cat=cast&&closeup.pick(ray,cast.residents);if(!cat)return false;closeup.enter(cat,{x:player.x,z:player.z});return true;};
   const pointer=installPointer(canvas,camera,player,targets,bus,holding,water,visit.settings,tapCat),hand=createHand(camera);
-  let playing=false,paused=false,benchmarkDone=false,contextReloadPending=false,previous=0,drawFrames=0,frameSum=0,tierPreference=visit.settings.tier;
-  const probe=probeDevice(display.renderer.getContext() as WebGL2RenderingContext),benchmark=new TierBenchmark();
-  const override=parseTier(new URLSearchParams(location.search).get('tier'));if(override){benchmarkDone=display.configure(override);contextReloadPending=!benchmarkDone;}
-  const forwardVector=new Vector3();
+  const gl=display.renderer.getContext() as WebGL2RenderingContext,probe=probeDevice(gl),benchmark=new TierBenchmark();
+  const override=parseTier(new URLSearchParams(location.search).get('tier')),requestedTier=parseTier(visit.settings.tier)??override;
+  let tier=requestedTier??(probe.mobile?'phone':'desktop');
+  if(requestedTier)display.configure(tier);
+  let playing=false,paused=false,benchmarkDone=!!requestedTier,tierReloadPending=false,redraw=true,waitForFinalFrame=false,tierPreference=visit.settings.tier;
+  let frameTime=0,previousDraw=0,drawFrames=0,frameSum=0,continuous=false,contextLost=false;
+  let pendingFrame:WebGLSync|null=null;
+  const releaseFrame=():void=>{
+    if(pendingFrame&&!contextLost)gl.deleteSync(pendingFrame);
+    pendingFrame=null;
+  };
+  const markReady=():void=>{
+    const start=document.querySelector<HTMLButtonElement>('#start')!;
+    start.disabled=false;start.setAttribute('aria-busy','false');body.dataset.ready='true';
+  };
+  const forwardVector=new Vector3(),focusPoint=new Vector3();
   const loop=new FixedLoop(dt=>{
     cast?.step(dt,playing?{x:player.x,z:player.z}:null);closeup.step(dt,{x:player.x,z:player.z});body.dataset.closeup=closeup.target?.id??'';
     if(!playing)return;
@@ -72,12 +87,49 @@ try {
     camera.position.set(player.previousX+(player.x-player.previousX)*alpha,1.6,player.previousZ+(player.z-player.previousZ)*alpha);player.orientation(camera.quaternion);
     // Leaning never pushes the near plane through a wall when the patron faces it.
     forwardVector.set(0,0,-player.lean).applyQuaternion(camera.quaternion);camera.position.add(forwardVector);camera.position.x=Math.max(ROOM.minX+.1,Math.min(ROOM.maxX-.1,camera.position.x));camera.position.z=Math.max(ROOM.minZ+.1,Math.min(ROOM.maxZ-.1,camera.position.z));closeup.apply(camera);camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();camera.updateMatrixWorld();
-    hand.update(playing,!!holding.id,visit.settings.leftHanded);for(const cat of cast?.residents??[])cat.render(alpha);display.renderer.render(scene,camera);
-    if(benchmarkDone&&!contextReloadPending&&body.dataset.ready!=='true'){const start=document.querySelector<HTMLButtonElement>('#start')!;start.disabled=false;start.setAttribute('aria-busy','false');body.dataset.ready='true';}body.dataset.drawCalls=String(display.renderer.info.render.calls);body.dataset.triangles=String(display.renderer.info.render.triangles);body.dataset.shaderPrograms=String(display.renderer.info.programs?.length??0);
-    if(++drawFrames%60===0){body.dataset.frameMs=(frameSum/60).toFixed(1);frameSum=0;}
+    hand.update(playing,!!holding.id,visit.settings.leftHanded);for(const cat of cast?.residents??[])cat.render(alpha);
+    const subject=closeup.target?.root;
+    if(subject){focusPoint.copy(subject.position);focusPoint.y+=.24*subject.scale.x;focusPoint.applyMatrix4(camera.matrixWorldInverse);}
+    if(contextLost)return;
+    // Keep input and the fixed step running while the GPU finishes a paced frame.
+    if(pendingFrame&&gl.clientWaitSync(pendingFrame,0,0)===gl.TIMEOUT_EXPIRED){redraw=true;return;}
+    releaseFrame();
+    if(!benchmarkDone){
+      // Sample completed frames, so queued submissions cannot inflate the benchmark.
+      const result=benchmark.update(frameTime);
+      if(result!==null){
+        const selected=chooseTier(probe,result);
+        body.dataset.benchmarkMs=result.toFixed(1);
+        // Only the loaded cat assets still require a page reload to change profiles.
+        if(cast&&needsTierReload(TIER_CONFIG[tier].optics,selected)){
+          tierReloadPending=true;const url=new URL(location.href);url.searchParams.set('tier',selected);location.replace(url.href);return;
+        }
+        benchmarkDone=true;continuous=playing||!!cast?.residents.length;
+        if(selected!==tier){tier=selected;display.configure(tier);waitForFinalFrame=true;previousDraw=0;}
+      }
+    }
+    const elapsed=previousDraw&&continuous?frameTime-previousDraw:0;
+    if(elapsed>0)display.adapt(elapsed);
+    previousDraw=frameTime;
+    display.render(scene,camera,subject?-focusPoint.z:undefined);
+    if(!benchmarkDone||(tier==='low'&&playing)){
+      pendingFrame=gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE,0);
+      if(pendingFrame)gl.flush();
+    }
+    body.dataset.drawCalls=String(display.renderer.info.render.calls);body.dataset.triangles=String(display.renderer.info.render.triangles);body.dataset.shaderPrograms=String(display.renderer.info.programs?.length??0);
+    if(elapsed>0){
+      frameSum+=elapsed;
+      if(++drawFrames%60===0){body.dataset.frameMs=(frameSum/60).toFixed(1);frameSum=0;}
+    }
+    if(benchmarkDone&&!body.dataset.ready){
+      if(waitForFinalFrame){
+        // The selected tier can submit a different shader and framebuffer on its first draw.
+        body.dataset.ready='warming';void waitForGpu(gl).then(markReady,failBoot);
+      }else markReady();
+    }
   });
-  bus.on('session',value=>{playing=value.playing;pointer.active(playing&&!paused);keyboard.keys.clear();});
-  bus.on('settings',value=>{if(value.tier!==tierPreference){tierPreference=value.tier;const url=new URL(location.href);if(value.tier==='auto')url.searchParams.delete('tier');else url.searchParams.set('tier',value.tier);void save().then(()=>location.assign(url.href));}player.reducedMotion=value.reducedMotion;const tier=parseTier(value.tier)??override;if(tier){benchmarkDone=display.configure(tier);contextReloadPending=!benchmarkDone;}else benchmarkDone=false;});
+  bus.on('session',value=>{playing=value.playing;pointer.active(playing&&!paused);keyboard.keys.clear();redraw=true;});
+  bus.on('settings',value=>{if(value.tier!==tierPreference){tierPreference=value.tier;const url=new URL(location.href);if(value.tier==='auto')url.searchParams.delete('tier');else url.searchParams.set('tier',value.tier);void save().then(()=>location.assign(url.href));}player.reducedMotion=value.reducedMotion;redraw=true;});
   bus.on('profile',profile=>hand.customize(profile.skin,profile.sleeve));
   bus.on('player',({x,z})=>cafe.updateLighting(x,1.3,z));
   bus.on('action',({target,action})=>{
@@ -87,26 +139,30 @@ try {
     else if(action==='Fill')bus.emit('notice',{text:target==='tap'&&holding.id==='water-bowl'?'Filling. Stay close to the tap until the bowl is full.':target==='water-bowl'?'Pick up the blue bowl and carry it to the tap.':'The water tap is ready. Bring the blue bowl here.'});
     else if(action==='Clean')bus.emit('notice',{text:'This station is tidy. Staff keep every cat comfortable.'});else bus.emit('notice',{text:'A lovely spot for a quiet cup.'});
   });
-  installOrientation(value=>{paused=value;loop.paused=value;loop.reset();pointer.active(playing&&!paused);});
+  installOrientation(value=>{paused=value;loop.paused=value;loop.reset();pointer.active(playing&&!paused);redraw=true;});
+  canvas.addEventListener('webglcontextlost',()=>{contextLost=true;releaseFrame();previousDraw=0;});
+  canvas.addEventListener('webglcontextrestored',()=>{contextLost=false;redraw=true;});
   mountShell(bus,visit,save);mountAbout(buildInfo);
   const jukebox=new Jukebox(visit.settings.music);mountMusicPill(jukebox);bus.on('settings',value=>{void jukebox.setVolume(value.music);});
   await cafe.load();const handLoader=new GLTFLoader();handLoader.setMeshoptDecoder(MeshoptDecoder);const gltf=await handLoader.loadAsync(assetUrl('art/hand.glb'));useRoomProbe(gltf.scene);hand.setModel(gltf.scene,gltf.animations);if(visit.profile)hand.customize(visit.profile.skin,visit.profile.sleeve);
   // M2: the resident cast strolls the café behind ?flags=cats until the behavior engine lands.
-  if(flags.has('cats'))try{cast=await loadCast(override??(probe.mobile?'phone':'desktop'),createRng('cafe'));for(const cat of cast.residents){scene.add(cat.root);cat.render(0);}body.dataset.cats=cast.residents.map(cat=>cat.id).join(',');}catch(error){console.warn('The cats could not load',error);}
+  if(flags.has('cats'))try{cast=await loadCast(tier,createRng('cafe'));for(const cat of cast.residents){scene.add(cat.root);cat.render(0);}body.dataset.cats=cast.residents.map(cat=>cat.id).join(',');}catch(error){console.warn('The cats could not load',error);}
   // The first render skips the hidden hand. Compile every scene material before
   // input starts so the first reach cannot stall hover dwell or a floor tap.
-  await display.renderer.compileAsync(scene,camera);
+  await display.compileAsync(scene,camera);
   // render() submits work; a fence also waits for the first GPU pipeline/draw.
   // Otherwise a fast click can enter play while that first frame is still cold.
   camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();
-  display.renderer.render(scene,camera);await waitForGpu(display.renderer.getContext() as WebGL2RenderingContext);body.dataset.gpuReady='true';
+  display.render(scene,camera);await waitForGpu(gl);body.dataset.gpuReady='true';
   display.renderer.setAnimationLoop(time=>{
-    if(!benchmarkDone&&!contextReloadPending){const result=benchmark.update(time);if(result!==null){benchmarkDone=display.configure(chooseTier(probe,result));contextReloadPending=!benchmarkDone;body.dataset.benchmarkMs=result.toFixed(1);}}
-    const elapsed=previous?time-previous:16.7;frameSum+=elapsed;if(previous)display.adapt(elapsed);previous=time;loop.frame(time);
+    if(tierReloadPending)return;
+    continuous=!benchmarkDone||playing||!!cast?.residents.length;
+    if(!continuous&&!redraw){if(previousDraw){previousDraw=0;loop.reset();}return;}
+    redraw=false;frameTime=time;loop.frame(time);
   });
-  window.addEventListener('pagehide',()=>{void save();});
+  window.addEventListener('pagehide',()=>{releaseFrame();void save();});
 } catch(error) {
-  document.querySelector<HTMLElement>('#unsupported')?.removeAttribute('hidden');body.dataset.ready='unsupported';console.warn('Café loading failed',error);if(rendererReady)window.dispatchEvent(new Event('cafe:asset-error'));
+  failBoot(error);
 }
 
 }
