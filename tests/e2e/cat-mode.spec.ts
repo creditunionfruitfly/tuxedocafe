@@ -60,7 +60,16 @@ test('watch a resident from their menu, stay parked, and leave even when they fa
   if (isMobile) await exit.tap(); else await exit.click();
   await expect(lids).toBeHidden(); await expect(body).toHaveAttribute('data-player', '0.00,2.20'); await expect(body).toHaveAttribute('data-look', beforeLook);
 
-  await page.locator('.top-settings').click(); await page.getByLabel('Reduced motion').check(); await page.locator('#close-settings').click();
+  const closeSettings = async (): Promise<void> => {
+    const dialog = page.locator('#settings-dialog');
+    await dialog.evaluate(node => {
+      delete node.dataset.closed;
+      node.addEventListener('close', () => { node.dataset.closed = 'true'; }, { once: true });
+    });
+    await page.locator('#close-settings').click();
+    await expect(dialog).toHaveAttribute('data-closed', 'true');
+  };
+  await page.locator('.top-settings').click(); await page.getByLabel('Reduced motion').check(); await closeSettings();
   if (isMobile) await selectCat(); else await page.mouse.click(point.x, point.y, { button: 'right' });
   await expect(body).toHaveAttribute('data-cat-view', 'mochi');
   expect(await lids.evaluate(node => getComputedStyle(node, '::before').transform)).toBe('none');
@@ -72,7 +81,7 @@ test('watch a resident from their menu, stay parked, and leave even when they fa
   } else await page.keyboard.press('Escape');
   await expect(exit).toBeHidden(); await expect(body).toHaveAttribute('data-look', beforeLook);
 
-  await page.locator('.top-settings').click(); await page.getByLabel('Enable cat mode').uncheck(); await page.locator('#close-settings').click();
+  await page.locator('.top-settings').click(); await page.getByLabel('Enable cat mode').uncheck(); await closeSettings();
   if (isMobile) await page.touchscreen.tap(point.x, point.y); else await page.mouse.click(point.x, point.y, { button: 'right' });
   await expect(center).toBeHidden(); await expect(exit).toBeHidden(); expect(errors).toEqual([]);
 });
