@@ -1,4 +1,4 @@
-import { AdditiveAnimationBlendMode, AnimationMixer, AnimationUtils, LoopOnce, LoopRepeat, Mesh, SRGBColorSpace, TextureLoader, type AnimationAction, type AnimationClip, type MeshStandardMaterial, type Object3D, type Texture } from 'three';
+import { AdditiveAnimationBlendMode, AnimationMixer, AnimationUtils, LoopOnce, LoopRepeat, Matrix4, Mesh, Quaternion, SRGBColorSpace, TextureLoader, type AnimationAction, type AnimationClip, type MeshStandardMaterial, type Object3D, type Texture, type Vector3 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
@@ -11,12 +11,13 @@ import type { Tier } from '../core/tiers.ts';
 import { walkable, type Waypoint } from '../scenes/navigation.ts';
 import { Brain, type World } from './brain.ts';
 
-export interface Resident { readonly id: string; readonly root: Object3D; readonly brain: Brain; step(dt: number, world: World): void; render(alpha: number): void }
+export interface Resident { readonly id: string; readonly name: string; readonly root: Object3D; readonly brain: Brain; step(dt: number, world: World): void; render(alpha: number): void; eyes(position: Vector3, orientation: Quaternion): void }
 export interface Cast { readonly residents: readonly Resident[]; step(dt: number, player: { x: number; z: number } | null): void; dispose(): void }
 // Materials that sample the shared body atlas; non-fur texels are white so anatomical tints survive.
 const BODY = new Set(['cat_fur', 'cat_nose_leather', 'cat_paw_pads', 'cat_inner_ear', 'cat_mouth']);
 const SPACING = .8, FADE = .25;
 const CATALOG = new Map(catalog.clips.map(clip => [clip.name, clip]));
+const EYE_FORWARD = new Quaternion(0, 1, 0, 0); // The rig faces +Z; a Three camera looks down -Z.
 /** Bands that pick the base gait clip from real speed (m/s at adult scale). */
 const gaitFor = (speed: number): string => speed < .05 ? 'cat.loco.idle' : speed < 1.15 ? 'cat.loco.walk' : speed < 2.5 ? 'cat.loco.trot' : 'cat.loco.gallop';
 export const residentLod = (tier: Tier): string => tier === 'low' ? 'lod2' : tier === 'phone' ? 'lod1' : 'lod0';
@@ -59,6 +60,7 @@ export async function loadCast(tier: Tier, world: Rng): Promise<Cast> {
     placed.push(start);
     const root = clone(model.scene);
     root.scale.setScalar(scale);
+    const head = root.getObjectByName('head') ?? root, eyeL = head.getObjectByName('eye_L'), eyeR = head.getObjectByName('eye_R'), rotation = new Matrix4();
     root.traverse(node => {
       if (!(node instanceof Mesh)) return;
       node.castShadow = true; node.frustumCulled = false;
@@ -85,7 +87,16 @@ export async function loadCast(tier: Tier, world: Rng): Promise<Cast> {
       weights.set(target, next); target.setEffectiveWeight(next); if (next > 0 && !target.isRunning()) target.play();
     };
     return {
-      id: cat.id, root, brain,
+      id: cat.id, name: cat.name, root, brain,
+      eyes(position, orientation) {
+        head.updateWorldMatrix(true, false);
+        if (eyeL?.parent === head && eyeR?.parent === head) position.copy(eyeL.position).lerp(eyeR.position, .5);
+        else if (head === root) position.set(0, .29, .29); // Standing placeholder without a head joint.
+        else position.set(0, .0215, .0535);
+        position.z += .025; // Behind the eyes' centers is inside the skinned face.
+        position.applyMatrix4(head.matrixWorld);
+        orientation.setFromRotationMatrix(rotation.extractRotation(head.matrixWorld)).multiply(EYE_FORWARD);
+      },
       step(dt, shared) {
         brain.step(dt, shared);
         for (const pulse of brain.pulses) {

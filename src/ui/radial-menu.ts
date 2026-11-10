@@ -15,7 +15,13 @@ export function mountRadialMenu(bus: EventBus, toggle: () => boolean): { readonl
   bus.on('radial', value => {
     release(); element.replaceChildren(); element.hidden = !value; items = value?.items ?? [];
     if (!value) return;
-    const title = document.createElement('strong'); title.textContent = value.title; element.append(title);
+    const title = document.createElement(value.center ? 'button' : 'strong'); title.textContent = value.title; element.append(title);
+    if (title instanceof HTMLButtonElement) {
+      title.type = 'button'; title.className = 'radial-center'; title.dataset.id = 'cat-view';
+      title.setAttribute('aria-label', `See through ${value.title}’s eyes`);
+      const label = document.createElement('small'); label.textContent = 'Cat mode'; title.append(label);
+      title.onclick = () => press({ id: 'cat-view', label: 'Cat mode' });
+    }
     items.forEach((item, index) => {
       const button = document.createElement('button'), angle = -Math.PI / 2 + index * 2 * Math.PI / items.length;
       button.type = 'button'; button.textContent = item.label; button.disabled = false; button.dataset.id = item.id;

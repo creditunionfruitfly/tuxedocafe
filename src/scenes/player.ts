@@ -10,6 +10,8 @@ export class Player {
   target: { x: number; z: number } | null = null;
   private path: Waypoint[] = [];
   reducedMotion = false;
+  /** Cancel queued motion while leaving the patron's location and facing untouched. */
+  park(): void { this.previousX=this.x;this.previousZ=this.z;this.vx=this.vz=0;this.target=null;this.path.length=0; }
   walkTo(x: number, z: number): boolean { this.path=route(this,{x,z});this.target=this.path.shift()??null;return !!this.target; }
   jumpTo(x:number,z:number):boolean {
     if(Math.hypot(x-this.x,z-this.z)>controls.jumpMaxMeters||!route(this,{x,z}).length)return false;

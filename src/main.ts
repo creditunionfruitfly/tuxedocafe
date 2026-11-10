@@ -6,7 +6,7 @@ import { Vector3 } from 'three';
 import { formatStamp } from './core/build-info.ts';
 import { assetUrl } from './core/assets.ts';
 import { useRoomProbe } from './render/baked-lighting.ts';
-import { FixedLoop } from './core/loop.ts';
+import { FixedLoop,FIXED_STEP } from './core/loop.ts';
 import { EventBus } from './core/events.ts';
 import { parseFlags } from './core/flags.ts';
 import { watchUpdates } from './core/update-check.ts';
@@ -17,6 +17,7 @@ import { waitForGpu } from './render/warmup.ts';
 import { mountLookdev } from './scenes/lookdev.ts';
 import { createCafe } from './scenes/cafe.ts';
 import { Player } from './scenes/player.ts';
+import { CatView } from './scenes/cat-view.ts';
 import { ROOM } from './scenes/collision.ts';
 import { installOrientation } from './input/orientation.ts';
 import { installKeys } from './input/keys.ts';
@@ -30,11 +31,12 @@ import { mountShell } from './ui/shell.ts';
 import { mountHoverMenu } from './ui/hover-menu.ts';
 import { freshVisit,cleanVisit } from './save/visit.ts';
 import { createRng } from './core/rng.ts';
-import { loadCast,type Cast } from './cats/resident.ts';
+import { loadCast,type Cast,type Resident } from './cats/resident.ts';
 import { CloseUp } from './interaction/closeup.ts';
 import { mountRadialMenu } from './ui/radial-menu.ts';
 import { Jukebox } from './audio/music.ts';
 import { mountMusicPill } from './ui/music-pill.ts';
+import { mountCatView } from './ui/cat-view.ts';
 async function boot():Promise<void>{
 const body=document.body,bus=new EventBus();
 const stamp=document.querySelector<HTMLElement>('#build-stamp');if(stamp)stamp.textContent=formatStamp(buildInfo);
@@ -51,17 +53,34 @@ try {
   rendererReady=true;const player=new Player(),holding=new HoldDrag(),water=new TapFill();water.completed=visit.waterDone;
   const targets=[makeProxy('water-bowl',[1.4,.13,-.7],[.5,.26,.5],['Pick up','Fill']),makeProxy('food-bowl',[1.9,.13,-.7],[.45,.26,.45],['Pick up','Fill']),makeProxy('tap',[-2,1.2,-3.55],[.9,.65,.75],['Fill']),makeProxy('litter-1',[4.25,.2,-3.6],[.8,.4,.55],['Clean']),makeProxy('litter-2',[4.25,.2,-4.3],[.8,.4,.55],['Clean']),makeProxy('scoop',[4.65,.4,-3.9],[.35,.25,.5],['Pick up']),makeProxy('table-1',[-2,.75,-.6],[1.3,.12,1.3],['Place']),makeProxy('table-2',[.5,.75,-3.1],[1.3,.12,1.3],['Place'])];
   const targetMap=new Map(targets.map(target=>[target.id,target]));
-  const menu=mountHoverMenu(bus),radial=mountRadialMenu(bus,()=>visit.settings.holdToggle),keyboard=installKeys(index=>radial.open?radial.select(index):menu.select(index));
-  const closeup=new CloseUp(bus,()=>visit.settings.reducedMotion,()=>visit.settings.leftHanded);let cast:Cast|undefined;
+  const catView=new CatView(camera),updateLids=mountCatView(bus);
+  const menu=mountHoverMenu(bus),radial=mountRadialMenu(bus,()=>visit.settings.holdToggle),keyboard=installKeys(index=>radial.open?radial.select(index):menu.select(index),()=>!!catView.target);
+  const closeup=new CloseUp(bus,()=>visit.settings.reducedMotion,()=>visit.settings.leftHanded,()=>visit.settings.catMode);let cast:Cast|undefined;
   // Any tap on a cat opens its close-up; a tap elsewhere during one steps back out.
   const tapCat=(ray:Parameters<CloseUp['pick']>[0]):boolean=>{if(closeup.target){closeup.exit();return true;}const cat=cast&&closeup.pick(ray,cast.residents);if(!cat)return false;closeup.enter(cat,{x:player.x,z:player.z});return true;};
-  const pointer=installPointer(canvas,camera,player,targets,bus,holding,water,visit.settings,tapCat),hand=createHand(camera);
+  const pointer=installPointer(canvas,camera,player,targets,bus,holding,water,visit.settings,tapCat,ray=>{
+    const cat=cast&&closeup.pick(ray,cast.residents,Infinity);if(cat)enterCatView(cat);
+  }),hand=createHand(camera);
   const gl=display.renderer.getContext() as WebGL2RenderingContext,probe=probeDevice(gl),benchmark=new TierBenchmark();
   const override=parseTier(new URLSearchParams(location.search).get('tier')),requestedTier=parseTier(visit.settings.tier)??override;
   let tier=requestedTier??(probe.mobile?'phone':'desktop');
   if(requestedTier)display.configure(tier);
   let playing=false,paused=false,benchmarkDone=!!requestedTier,tierReloadPending=false,redraw=true,waitForFinalFrame=false,tierPreference=visit.settings.tier;
-  let frameTime=0,previousDraw=0,drawFrames=0,frameSum=0,continuous=false,contextLost=false;
+  let frameTime=0,frameDelta=0,previousDraw=0,drawFrames=0,frameSum=0,continuous=false,contextLost=false;
+  let submittedView=false,presentedView=false;
+  const syncInput=():void=>{pointer.active(playing&&!paused&&!catView.target);keyboard.keys.clear();redraw=true;};
+  const enterCatView=(cat:Resident):void=>{
+    if(!playing||paused||catView.target||!visit.settings.catMode)return;
+    closeup.exit(true);player.park();catView.enter(cat);syncInput();
+    bus.emit('cat-view',cat);updateLids(1,cat.brain.blink.sleeping);
+  };
+  const leaveCatView=():void=>{
+    if(!catView.target)return;
+    catView.exit();submittedView=presentedView=false;delete body.dataset.catViewReady;bus.emit('cat-view',null);syncInput();
+    if(playing)canvas.focus({preventScroll:true});
+  };
+  bus.on('radial:select',({id})=>{if(id==='cat-view'&&closeup.target)enterCatView(closeup.target);});
+  bus.on('cat-view:exit',leaveCatView);
   let pendingFrame:WebGLSync|null=null;
   const releaseFrame=():void=>{
     if(pendingFrame&&!contextLost)gl.deleteSync(pendingFrame);
@@ -74,7 +93,7 @@ try {
   const forwardVector=new Vector3(),focusPoint=new Vector3();
   const loop=new FixedLoop(dt=>{
     cast?.step(dt,playing?{x:player.x,z:player.z}:null);closeup.step(dt,{x:player.x,z:player.z});body.dataset.closeup=closeup.target?.id??'';
-    if(!playing)return;
+    if(!playing||catView.target)return;
     const k=keyboard.keys;const stick=pointer.stick;if(!closeup.target)player.step(dt,Math.max(-1,Math.min(1,Number(k.has('d'))-Number(k.has('a'))+stick.side)),Math.max(-1,Math.min(1,Number(k.has('w'))-Number(k.has('s'))+stick.forward)));player.steer(dt,Number(k.has('arrowleft'))-Number(k.has('arrowright')),Number(k.has('arrowup'))-Number(k.has('arrowdown')));
     pointer.step(dt);hand.step(dt);bus.emit('player',{x:player.x,z:player.z});body.dataset.player=`${player.x.toFixed(2)},${player.z.toFixed(2)}`;
     body.dataset.carry=holding.id??'';body.dataset.look=`${player.yaw.toFixed(3)},${player.pitch.toFixed(3)},${player.lean.toFixed(3)}`;
@@ -84,16 +103,33 @@ try {
       if(model){const follow=holding.id===id?1:.35;model.position.x+=(p.x-model.position.x)*follow;model.position.y+=(p.y-.08-model.position.y)*follow;model.position.z+=(p.z-model.position.z)*follow;}
     }
   },alpha=>{
-    camera.position.set(player.previousX+(player.x-player.previousX)*alpha,1.6,player.previousZ+(player.z-player.previousZ)*alpha);player.orientation(camera.quaternion);
-    // Leaning never pushes the near plane through a wall when the patron faces it.
-    forwardVector.set(0,0,-player.lean).applyQuaternion(camera.quaternion);camera.position.add(forwardVector);camera.position.x=Math.max(ROOM.minX+.1,Math.min(ROOM.maxX-.1,camera.position.x));camera.position.z=Math.max(ROOM.minZ+.1,Math.min(ROOM.maxZ-.1,camera.position.z));closeup.apply(camera);camera.aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);camera.updateProjectionMatrix();camera.updateMatrixWorld();
-    hand.update(playing,!!holding.id,visit.settings.leftHanded);for(const cat of cast?.residents??[])cat.render(alpha);
+    for(const cat of cast?.residents??[])cat.render(alpha);
+    const watched=catView.target,aspect=canvas.clientWidth/Math.max(canvas.clientHeight,1);
+    const blink=watched?.brain.blink,closed=blink?.closed(alpha*FIXED_STEP)??0;
+    if(watched){
+      catView.render(frameDelta,aspect,visit.settings.reducedMotion);
+      const eyes=catView.camera.position;cafe.updateLighting(eyes.x,eyes.y,eyes.z);
+      updateLids(presentedView?closed:1,watched.brain.blink.sleeping);
+    }else{
+      camera.position.set(player.previousX+(player.x-player.previousX)*alpha,1.6,player.previousZ+(player.z-player.previousZ)*alpha);player.orientation(camera.quaternion);
+      // Leaning never pushes the near plane through a wall when the patron faces it.
+      forwardVector.set(0,0,-player.lean).applyQuaternion(camera.quaternion);camera.position.add(forwardVector);camera.position.x=Math.max(ROOM.minX+.1,Math.min(ROOM.maxX-.1,camera.position.x));camera.position.z=Math.max(ROOM.minZ+.1,Math.min(ROOM.maxZ-.1,camera.position.z));closeup.apply(camera);camera.aspect=aspect;camera.updateProjectionMatrix();camera.updateMatrixWorld();
+    }
+    hand.update(playing&&!watched,!!holding.id,visit.settings.leftHanded);
     const subject=closeup.target?.root;
     if(subject){focusPoint.copy(subject.position);focusPoint.y+=.24*subject.scale.x;focusPoint.applyMatrix4(camera.matrixWorldInverse);}
     if(contextLost)return;
     // Keep input and the fixed step running while the GPU finishes a paced frame.
     if(pendingFrame&&gl.clientWaitSync(pendingFrame,0,0)===gl.TIMEOUT_EXPIRED){redraw=true;return;}
     releaseFrame();
+    if(watched&&blink?.sleeping&&closed===1){
+      // A fully closed eye doesn't need a world draw; simulation keeps running behind it.
+      submittedView=presentedView=false;delete body.dataset.catViewReady;previousDraw=0;return;
+    }
+    if(watched&&submittedView&&!presentedView){
+      // Do not reveal the patron's last framebuffer during a paced camera handoff.
+      presentedView=true;body.dataset.catViewReady='true';updateLids(closed,watched.brain.blink.sleeping);
+    }
     if(!benchmarkDone){
       // Sample completed frames, so queued submissions cannot inflate the benchmark.
       const result=benchmark.update(frameTime);
@@ -111,8 +147,10 @@ try {
     const elapsed=previousDraw&&continuous?frameTime-previousDraw:0;
     if(elapsed>0)display.adapt(elapsed);
     previousDraw=frameTime;
-    display.render(scene,camera,subject?-focusPoint.z:undefined);
-    if(!benchmarkDone||(tier==='low'&&playing)){
+    display.render(scene,watched?catView.camera:camera,watched?1.8:subject?-focusPoint.z:undefined);
+    if(watched)submittedView=true;
+    // Keep the cast (including its title-screen idle) from queuing draws ahead of input.
+    if(!benchmarkDone||cast?.residents.length||(tier==='low'&&playing)){
       pendingFrame=gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE,0);
       if(pendingFrame)gl.flush();
     }
@@ -128,8 +166,8 @@ try {
       }else markReady();
     }
   });
-  bus.on('session',value=>{playing=value.playing;pointer.active(playing&&!paused);keyboard.keys.clear();redraw=true;});
-  bus.on('settings',value=>{if(value.tier!==tierPreference){tierPreference=value.tier;const url=new URL(location.href);if(value.tier==='auto')url.searchParams.delete('tier');else url.searchParams.set('tier',value.tier);void save().then(()=>location.assign(url.href));}player.reducedMotion=value.reducedMotion;redraw=true;});
+  bus.on('session',value=>{playing=value.playing;if(!playing)leaveCatView();syncInput();});
+  bus.on('settings',value=>{if(!value.catMode)leaveCatView();if(value.tier!==tierPreference){tierPreference=value.tier;const url=new URL(location.href);if(value.tier==='auto')url.searchParams.delete('tier');else url.searchParams.set('tier',value.tier);void save().then(()=>location.assign(url.href));}player.reducedMotion=value.reducedMotion;redraw=true;});
   bus.on('profile',profile=>hand.customize(profile.skin,profile.sleeve));
   bus.on('player',({x,z})=>cafe.updateLighting(x,1.3,z));
   bus.on('action',({target,action})=>{
@@ -139,8 +177,8 @@ try {
     else if(action==='Fill')bus.emit('notice',{text:target==='tap'&&holding.id==='water-bowl'?'Filling. Stay close to the tap until the bowl is full.':target==='water-bowl'?'Pick up the blue bowl and carry it to the tap.':'The water tap is ready. Bring the blue bowl here.'});
     else if(action==='Clean')bus.emit('notice',{text:'This station is tidy. Staff keep every cat comfortable.'});else bus.emit('notice',{text:'A lovely spot for a quiet cup.'});
   });
-  installOrientation(value=>{paused=value;loop.paused=value;loop.reset();pointer.active(playing&&!paused);redraw=true;});
-  canvas.addEventListener('webglcontextlost',()=>{contextLost=true;releaseFrame();previousDraw=0;});
+  installOrientation(value=>{paused=value;loop.paused=value;loop.reset();syncInput();});
+  canvas.addEventListener('webglcontextlost',()=>{contextLost=true;releaseFrame();submittedView=presentedView=false;delete body.dataset.catViewReady;previousDraw=0;});
   canvas.addEventListener('webglcontextrestored',()=>{contextLost=false;redraw=true;});
   mountShell(bus,visit,save);mountAbout(buildInfo);
   const jukebox=new Jukebox(visit.settings.music);mountMusicPill(jukebox);bus.on('settings',value=>{void jukebox.setVolume(value.music);});
@@ -158,7 +196,7 @@ try {
     if(tierReloadPending)return;
     continuous=!benchmarkDone||playing||!!cast?.residents.length;
     if(!continuous&&!redraw){if(previousDraw){previousDraw=0;loop.reset();}return;}
-    redraw=false;frameTime=time;loop.frame(time);
+    redraw=false;frameDelta=frameTime&&!paused?Math.min(.1,Math.max(0,(time-frameTime)/1000)):0;frameTime=time;loop.frame(time);
   });
   window.addEventListener('pagehide',()=>{releaseFrame();void save();});
 } catch(error) {
