@@ -1,0 +1,6 @@
+source: "art/cats/textures/sources.json#mochi/flow-1024.ktx2"
+tool: "Khronos KTX-Software 4.4.2 and deterministic texture authoring"
+date: "2026-11-12"
+license: "original"
+author_role: "artist"
+notes: "Linear RGB encodes unit tangent direction in rest-space +X/+Y/+Z. Sample, unpack to [-1,1] and normalize before skinning."

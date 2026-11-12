@@ -1,0 +1,6 @@
+source: "art/cats/textures/sources.json#mochi/strand-256.ktx2"
+tool: "Khronos KTX-Software 4.4.2 and deterministic texture authoring"
+date: "2026-11-12"
+license: "original"
+author_role: "artist"
+notes: "Periodic linear strand density with fibers aligned to V. Sample R."

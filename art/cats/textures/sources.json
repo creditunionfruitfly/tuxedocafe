@@ -9,12 +9,17 @@
         "sources/mochi__eye.png/003.json",
         "sources/mochi__eye.png/004.json"
       ],
-      "bytes": 197511,
-      "sha256": "1e9a5fcf54d472b5f05f5711c42f5838a2ec0210f9c41856b326d67ee96ff687",
+      "bytes": 222356,
+      "sha256": "99a6534bb4389d8b503c36f6fae8e5a11b816e505b844dfc270a20f2d4b10b13",
       "width": 512,
       "height": 512,
       "mimeType": "image/png",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Deterministic iris pigment authoring",
+        "date": "2026-11-12",
+        "notes": "Centered radial iris, limbus radius 0.42, slit pupil. Olive #B8B33A and limbus #5E6B2A. Cornea geometry supplies catchlights."
+      }
     },
     "mochi/body-2048.jpg": {
       "chunks": [
@@ -26,47 +31,54 @@
         "sources/mochi__body-2048.jpg/005.json",
         "sources/mochi__body-2048.jpg/006.json",
         "sources/mochi__body-2048.jpg/007.json",
-        "sources/mochi__body-2048.jpg/008.json",
-        "sources/mochi__body-2048.jpg/009.json",
-        "sources/mochi__body-2048.jpg/010.json",
-        "sources/mochi__body-2048.jpg/011.json",
-        "sources/mochi__body-2048.jpg/012.json",
-        "sources/mochi__body-2048.jpg/013.json"
+        "sources/mochi__body-2048.jpg/008.json"
       ],
-      "bytes": 599650,
-      "sha256": "8099e10c77302b298e8be896d4100bdcbf69af5211f207426c6b7fbb41f89e76",
+      "bytes": 371427,
+      "sha256": "cabf17d79a1d90d9e72627b3c55e5f083e467041b0316b75f6512d139676a83b",
       "width": 2048,
       "height": 2048,
       "mimeType": "image/jpeg",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Deterministic rest-space paint and UV rasterization",
+        "date": "2026-11-12",
+        "notes": "Current master UV0 atlas SHA-256 8a3776396efb036ea9efa74e57790e1af66cc278e40637f392ea38d9793afe07. Blackie reference photo_2026-11-07_19-22-15.jpg (SHA-256 120775882d8555afb9967c3aeb47793636781f81866b7d1e45f6976963ac5771). The photo guides placement. Mochi has a tapered white blaze, two small muzzle spots and a rose split on the existing charcoal nose leather."
+      }
     },
     "mochi/body-1024.jpg": {
       "chunks": [
         "sources/mochi__body-1024.jpg/000.json",
         "sources/mochi__body-1024.jpg/001.json",
-        "sources/mochi__body-1024.jpg/002.json",
-        "sources/mochi__body-1024.jpg/003.json",
-        "sources/mochi__body-1024.jpg/004.json"
+        "sources/mochi__body-1024.jpg/002.json"
       ],
-      "bytes": 193449,
-      "sha256": "b6659943f580b8f0f469e8e902d5dfd1ba6d16636ac996087502987ff94e5a90",
+      "bytes": 126034,
+      "sha256": "3aad0cd581e1c200eaeac83bdb0d1645dd2842e1ce6fdee6dd365a22129fbc64",
       "width": 1024,
       "height": 1024,
       "mimeType": "image/jpeg",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Deterministic rest-space paint and UV rasterization",
+        "date": "2026-11-12",
+        "notes": "Current master UV0 atlas SHA-256 8a3776396efb036ea9efa74e57790e1af66cc278e40637f392ea38d9793afe07. Blackie reference photo_2026-11-07_19-22-15.jpg (SHA-256 120775882d8555afb9967c3aeb47793636781f81866b7d1e45f6976963ac5771). The photo guides placement. Mochi has a tapered white blaze, two small muzzle spots and a rose split on the existing charcoal nose leather."
+      }
     },
     "mochi/coat.png": {
       "chunks": [
         "sources/mochi__coat.png/000.json",
-        "sources/mochi__coat.png/001.json",
-        "sources/mochi__coat.png/002.json"
+        "sources/mochi__coat.png/001.json"
       ],
-      "bytes": 123308,
-      "sha256": "54f3f019ab112785cf639bf3fa84145eb936c9ef182a15282df6b1a00fe4059e",
+      "bytes": 51157,
+      "sha256": "9d54267e47f8c9a6459abe18dc70adcf4d730f30070a71e76dd9782fa79312ee",
       "width": 1024,
       "height": 1024,
       "mimeType": "image/png",
-      "colorSpace": "linear"
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Deterministic rest-space paint and UV rasterization",
+        "date": "2026-11-12",
+        "notes": "Linear straight RGBA. R white spotting, G stripes or rosettes, B orange/black partition and A fur length divided by 35 mm. Mochi has zero G/B."
+      }
     },
     "waffles/eye.png": {
       "chunks": [
@@ -618,6 +630,147 @@
       "height": 256,
       "mimeType": "image/png",
       "colorSpace": "linear"
+    },
+    "mochi/body-2048.ktx2": {
+      "chunks": [
+        "sources/mochi__body-2048.ktx2/000.json",
+        "sources/mochi__body-2048.ktx2/001.json",
+        "sources/mochi__body-2048.ktx2/002.json",
+        "sources/mochi__body-2048.ktx2/003.json",
+        "sources/mochi__body-2048.ktx2/004.json",
+        "sources/mochi__body-2048.ktx2/005.json",
+        "sources/mochi__body-2048.ktx2/006.json"
+      ],
+      "bytes": 271368,
+      "sha256": "16b6a4854294d88163287eca090644bf5b21ca131d467ee98dcb7f619a5cc72b",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2 and deterministic texture authoring",
+        "date": "2026-11-12",
+        "notes": "Current master UV0 atlas SHA-256 8a3776396efb036ea9efa74e57790e1af66cc278e40637f392ea38d9793afe07. Blackie reference photo_2026-11-07_19-22-15.jpg (SHA-256 120775882d8555afb9967c3aeb47793636781f81866b7d1e45f6976963ac5771). The photo guides placement. Mochi has a tapered white blaze, two small muzzle spots and a rose split on the existing charcoal nose leather."
+      }
+    },
+    "mochi/coat-2048.ktx2": {
+      "chunks": [
+        "sources/mochi__coat-2048.ktx2/000.json",
+        "sources/mochi__coat-2048.ktx2/001.json",
+        "sources/mochi__coat-2048.ktx2/002.json",
+        "sources/mochi__coat-2048.ktx2/003.json"
+      ],
+      "bytes": 164252,
+      "sha256": "5ced0222ae58e5c9b67ae4109f451c05a55c5a325a33f4f59bceb0a88ed9ca88",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2 and deterministic texture authoring",
+        "date": "2026-11-12",
+        "notes": "Linear straight RGBA. R white spotting, G stripes or rosettes, B orange/black partition and A fur length divided by 35 mm. Mochi has zero G/B."
+      }
+    },
+    "mochi/body-1024.ktx2": {
+      "chunks": [
+        "sources/mochi__body-1024.ktx2/000.json",
+        "sources/mochi__body-1024.ktx2/001.json"
+      ],
+      "bytes": 81706,
+      "sha256": "70fcff9a5c92ad50a132c718c5386d077f22b233434e1df9d755a12ac0338400",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2 and deterministic texture authoring",
+        "date": "2026-11-12",
+        "notes": "Current master UV0 atlas SHA-256 8a3776396efb036ea9efa74e57790e1af66cc278e40637f392ea38d9793afe07. Blackie reference photo_2026-11-07_19-22-15.jpg (SHA-256 120775882d8555afb9967c3aeb47793636781f81866b7d1e45f6976963ac5771). The photo guides placement. Mochi has a tapered white blaze, two small muzzle spots and a rose split on the existing charcoal nose leather."
+      }
+    },
+    "mochi/coat-1024.ktx2": {
+      "chunks": [
+        "sources/mochi__coat-1024.ktx2/000.json",
+        "sources/mochi__coat-1024.ktx2/001.json"
+      ],
+      "bytes": 68637,
+      "sha256": "47c07cf0d6682789e0ba4d2f7237b87d505732331ea8638187e5e8253a4bdb9e",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2 and deterministic texture authoring",
+        "date": "2026-11-12",
+        "notes": "Linear straight RGBA. R white spotting, G stripes or rosettes, B orange/black partition and A fur length divided by 35 mm. Mochi has zero G/B."
+      }
+    },
+    "mochi/eye-512.ktx2": {
+      "chunks": [
+        "sources/mochi__eye-512.ktx2/000.json",
+        "sources/mochi__eye-512.ktx2/001.json"
+      ],
+      "bytes": 60195,
+      "sha256": "9359b5ebb3d76e4344b229abe751fb01f71f1426fc97b78e2ba8400abbf5feed",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2 and deterministic texture authoring",
+        "date": "2026-11-12",
+        "notes": "Centered radial iris, limbus radius 0.42, slit pupil. Olive #B8B33A and limbus #5E6B2A. Cornea geometry supplies catchlights."
+      }
+    },
+    "mochi/flow-1024.ktx2": {
+      "chunks": [
+        "sources/mochi__flow-1024.ktx2/000.json",
+        "sources/mochi__flow-1024.ktx2/001.json",
+        "sources/mochi__flow-1024.ktx2/002.json",
+        "sources/mochi__flow-1024.ktx2/003.json",
+        "sources/mochi__flow-1024.ktx2/004.json",
+        "sources/mochi__flow-1024.ktx2/005.json",
+        "sources/mochi__flow-1024.ktx2/006.json",
+        "sources/mochi__flow-1024.ktx2/007.json",
+        "sources/mochi__flow-1024.ktx2/008.json",
+        "sources/mochi__flow-1024.ktx2/009.json",
+        "sources/mochi__flow-1024.ktx2/010.json",
+        "sources/mochi__flow-1024.ktx2/011.json",
+        "sources/mochi__flow-1024.ktx2/012.json",
+        "sources/mochi__flow-1024.ktx2/013.json",
+        "sources/mochi__flow-1024.ktx2/014.json",
+        "sources/mochi__flow-1024.ktx2/015.json",
+        "sources/mochi__flow-1024.ktx2/016.json"
+      ],
+      "bytes": 763641,
+      "sha256": "7e31f64ff105643f5a11afc7f01b209ac2eb8f59099917fa0d84954a2a282f30",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2 and deterministic texture authoring",
+        "date": "2026-11-12",
+        "notes": "Linear RGB encodes unit tangent direction in rest-space +X/+Y/+Z. Sample, unpack to [-1,1] and normalize before skinning."
+      }
+    },
+    "mochi/strand-256.ktx2": {
+      "chunks": [
+        "sources/mochi__strand-256.ktx2/000.json",
+        "sources/mochi__strand-256.ktx2/001.json"
+      ],
+      "bytes": 71071,
+      "sha256": "cc098bc4baf1f82c56fba064dffbbd2543729089f6d97e851aab962a497eb2c9",
+      "width": 256,
+      "height": 256,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2 and deterministic texture authoring",
+        "date": "2026-11-12",
+        "notes": "Periodic linear strand density with fibers aligned to V. Sample R."
+      }
     }
   }
 }

@@ -1,0 +1,6 @@
+source: "art/cats/textures/sources.json#mochi/coat-1024.ktx2"
+tool: "Khronos KTX-Software 4.4.2 and deterministic texture authoring"
+date: "2026-11-12"
+license: "original"
+author_role: "artist"
+notes: "Linear straight RGBA. R white spotting, G stripes or rosettes, B orange/black partition and A fur length divided by 35 mm. Mochi has zero G/B."

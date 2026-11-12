@@ -1,0 +1,6 @@
+source: "art/cats/textures/sources.json#mochi/body-2048.ktx2"
+tool: "Khronos KTX-Software 4.4.2 and deterministic texture authoring"
+date: "2026-11-12"
+license: "original"
+author_role: "artist"
+notes: "Current master UV0 atlas SHA-256 8a3776396efb036ea9efa74e57790e1af66cc278e40637f392ea38d9793afe07. Blackie reference photo_2026-11-07_19-22-15.jpg (SHA-256 120775882d8555afb9967c3aeb47793636781f81866b7d1e45f6976963ac5771). The photo guides placement. Mochi has a tapered white blaze, two small muzzle spots and a rose split on the existing charcoal nose leather."

@@ -1,0 +1,6 @@
+source: "art/cats/textures/sources.json#mochi/eye-512.ktx2"
+tool: "Khronos KTX-Software 4.4.2 and deterministic texture authoring"
+date: "2026-11-12"
+license: "original"
+author_role: "artist"
+notes: "Centered radial iris, limbus radius 0.42, slit pupil. Olive #B8B33A and limbus #5E6B2A. Cornea geometry supplies catchlights."

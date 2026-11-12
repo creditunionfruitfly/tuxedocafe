@@ -8,13 +8,27 @@ resident variables are in `eye-prompts.json`, `body-prompts.json` and
 
 The tool returned 1254 × 1254 native images. The desktop 2048² body copies are
 technical resamples, not native 2K generation. Phone bodies are 1024², irises
-512², shared normals 512², roughness and strand reference 256². There are 35
-runtime maps including both body tiers and the future linear coat masks.
+512², shared normals 512², roughness and strand reference 256².
 Encoded source chunks include byte counts, SHA256 hashes and provenance.
 `generate.ts` verifies and decodes these files without network or Python in CI.
 `prepare.py` is the authoring path; its NumPy/SciPy/Pillow dependencies are not
-runtime dependencies. JPEG/PNG follow accepted ADR 0002; GPU-native KTX2 remains
-an asset-pipeline follow-up.
+runtime dependencies. The café's current material loader follows ADR 0002 and
+uses the JPEG and PNG maps. The build also emits Mochi's GPU-ready KTX2 set.
+
+## Mochi's coat and face
+
+Mochi's body maps use the current master UV0 atlas from
+`art/cats/checkpoints/latest/atlas.json.json`. The white blaze follows the nose
+bridge and tapers between the eyes. White spotting in the red mask channel
+includes the blaze, two small muzzle patches, chin and chest bib, and socks.
+The pink split between the charcoal nose lobes is leather pigment in the albedo.
+
+`mochi/body-{2048,1024}.ktx2` and `mochi/eye-512.ktx2` use sRGB ETC1S.
+`mochi/coat-{2048,1024}.ktx2`, `mochi/flow-1024.ktx2`, and
+`mochi/strand-256.ktx2` use linear UASTC. All have full mip chains. The flow
+map stores a rest-space tangent in RGB. Remap to `[-1, 1]`, normalize and
+skin the direction with the rest of the surface. The strand map tiles in both
+axes with fibers running in V. Sample the red channel for density.
 
 ## UV registration and normals
 
