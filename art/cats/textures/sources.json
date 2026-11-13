@@ -771,6 +771,288 @@
         "date": "2026-11-12",
         "notes": "Periodic linear strand density with fibers aligned to V. Sample R."
       }
+    },
+    "juniper/body-2048.ktx2": {
+      "chunks": [
+        "sources/juniper__body-2048.ktx2/000.json",
+        "sources/juniper__body-2048.ktx2/001.json",
+        "sources/juniper__body-2048.ktx2/002.json",
+        "sources/juniper__body-2048.ktx2/003.json",
+        "sources/juniper__body-2048.ktx2/004.json",
+        "sources/juniper__body-2048.ktx2/005.json",
+        "sources/juniper__body-2048.ktx2/006.json",
+        "sources/juniper__body-2048.ktx2/007.json",
+        "sources/juniper__body-2048.ktx2/008.json",
+        "sources/juniper__body-2048.ktx2/009.json",
+        "sources/juniper__body-2048.ktx2/010.json",
+        "sources/juniper__body-2048.ktx2/011.json"
+      ],
+      "bytes": 535925,
+      "sha256": "f8dec12706f6fd0941d1f62b3b1d6e625e3f74c02359b57ea49899c586fe00c7",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2",
+        "date": "2026-11-12",
+        "notes": "sRGB ETC1S. Full chain of 12 mips. De-lit short tawny pelt with broken rosettes and directional guard-hair pigment. UV0 origin top left."
+      }
+    },
+    "juniper/body-1024.ktx2": {
+      "chunks": [
+        "sources/juniper__body-1024.ktx2/000.json",
+        "sources/juniper__body-1024.ktx2/001.json",
+        "sources/juniper__body-1024.ktx2/002.json",
+        "sources/juniper__body-1024.ktx2/003.json"
+      ],
+      "bytes": 178514,
+      "sha256": "05004c31444fcd70869f047de14d271aeb6a5fa176e6fbc2a9d5afc0da250bfe",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2",
+        "date": "2026-11-12",
+        "notes": "sRGB ETC1S. Full chain of 11 mips. De-lit short tawny pelt with broken rosettes and directional guard-hair pigment. UV0 origin top left."
+      }
+    },
+    "juniper/coat-2048.ktx2": {
+      "chunks": [
+        "sources/juniper__coat-2048.ktx2/000.json",
+        "sources/juniper__coat-2048.ktx2/001.json",
+        "sources/juniper__coat-2048.ktx2/002.json",
+        "sources/juniper__coat-2048.ktx2/003.json",
+        "sources/juniper__coat-2048.ktx2/004.json",
+        "sources/juniper__coat-2048.ktx2/005.json",
+        "sources/juniper__coat-2048.ktx2/006.json",
+        "sources/juniper__coat-2048.ktx2/007.json",
+        "sources/juniper__coat-2048.ktx2/008.json",
+        "sources/juniper__coat-2048.ktx2/009.json",
+        "sources/juniper__coat-2048.ktx2/010.json",
+        "sources/juniper__coat-2048.ktx2/011.json",
+        "sources/juniper__coat-2048.ktx2/012.json",
+        "sources/juniper__coat-2048.ktx2/013.json",
+        "sources/juniper__coat-2048.ktx2/014.json",
+        "sources/juniper__coat-2048.ktx2/015.json",
+        "sources/juniper__coat-2048.ktx2/016.json",
+        "sources/juniper__coat-2048.ktx2/017.json",
+        "sources/juniper__coat-2048.ktx2/018.json",
+        "sources/juniper__coat-2048.ktx2/019.json",
+        "sources/juniper__coat-2048.ktx2/020.json",
+        "sources/juniper__coat-2048.ktx2/021.json",
+        "sources/juniper__coat-2048.ktx2/022.json",
+        "sources/juniper__coat-2048.ktx2/023.json",
+        "sources/juniper__coat-2048.ktx2/024.json",
+        "sources/juniper__coat-2048.ktx2/025.json",
+        "sources/juniper__coat-2048.ktx2/026.json",
+        "sources/juniper__coat-2048.ktx2/027.json"
+      ],
+      "bytes": 1233244,
+      "sha256": "eb72e77d9f99ee5ad302e017aaede7eeb24e8e9f61f86dd2bef40b1c19d672bb",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2",
+        "date": "2026-11-12",
+        "notes": "linear UASTC + Zstandard. Full chain of 12 mips. Linear straight RGBA. R pale spotting; G rosettes and other markings; B zero; A fur length in mm divided by 35."
+      }
+    },
+    "juniper/coat-1024.ktx2": {
+      "chunks": [
+        "sources/juniper__coat-1024.ktx2/000.json",
+        "sources/juniper__coat-1024.ktx2/001.json",
+        "sources/juniper__coat-1024.ktx2/002.json",
+        "sources/juniper__coat-1024.ktx2/003.json",
+        "sources/juniper__coat-1024.ktx2/004.json",
+        "sources/juniper__coat-1024.ktx2/005.json",
+        "sources/juniper__coat-1024.ktx2/006.json",
+        "sources/juniper__coat-1024.ktx2/007.json",
+        "sources/juniper__coat-1024.ktx2/008.json"
+      ],
+      "bytes": 389067,
+      "sha256": "d517ab1f6758acb002e5570f1390b87123908a01206efa1d7f8647f2ec0a50a6",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2",
+        "date": "2026-11-12",
+        "notes": "linear UASTC + Zstandard. Full chain of 11 mips. Linear straight RGBA. R pale spotting; G rosettes and other markings; B zero; A fur length in mm divided by 35."
+      }
+    },
+    "juniper/normal-2048.ktx2": {
+      "chunks": [
+        "sources/juniper__normal-2048.ktx2/000.json",
+        "sources/juniper__normal-2048.ktx2/001.json",
+        "sources/juniper__normal-2048.ktx2/002.json",
+        "sources/juniper__normal-2048.ktx2/003.json",
+        "sources/juniper__normal-2048.ktx2/004.json",
+        "sources/juniper__normal-2048.ktx2/005.json",
+        "sources/juniper__normal-2048.ktx2/006.json",
+        "sources/juniper__normal-2048.ktx2/007.json",
+        "sources/juniper__normal-2048.ktx2/008.json",
+        "sources/juniper__normal-2048.ktx2/009.json",
+        "sources/juniper__normal-2048.ktx2/010.json",
+        "sources/juniper__normal-2048.ktx2/011.json",
+        "sources/juniper__normal-2048.ktx2/012.json",
+        "sources/juniper__normal-2048.ktx2/013.json",
+        "sources/juniper__normal-2048.ktx2/014.json",
+        "sources/juniper__normal-2048.ktx2/015.json",
+        "sources/juniper__normal-2048.ktx2/016.json",
+        "sources/juniper__normal-2048.ktx2/017.json",
+        "sources/juniper__normal-2048.ktx2/018.json",
+        "sources/juniper__normal-2048.ktx2/019.json",
+        "sources/juniper__normal-2048.ktx2/020.json",
+        "sources/juniper__normal-2048.ktx2/021.json",
+        "sources/juniper__normal-2048.ktx2/022.json",
+        "sources/juniper__normal-2048.ktx2/023.json",
+        "sources/juniper__normal-2048.ktx2/024.json",
+        "sources/juniper__normal-2048.ktx2/025.json",
+        "sources/juniper__normal-2048.ktx2/026.json",
+        "sources/juniper__normal-2048.ktx2/027.json",
+        "sources/juniper__normal-2048.ktx2/028.json",
+        "sources/juniper__normal-2048.ktx2/029.json",
+        "sources/juniper__normal-2048.ktx2/030.json",
+        "sources/juniper__normal-2048.ktx2/031.json",
+        "sources/juniper__normal-2048.ktx2/032.json",
+        "sources/juniper__normal-2048.ktx2/033.json",
+        "sources/juniper__normal-2048.ktx2/034.json",
+        "sources/juniper__normal-2048.ktx2/035.json",
+        "sources/juniper__normal-2048.ktx2/036.json",
+        "sources/juniper__normal-2048.ktx2/037.json",
+        "sources/juniper__normal-2048.ktx2/038.json",
+        "sources/juniper__normal-2048.ktx2/039.json",
+        "sources/juniper__normal-2048.ktx2/040.json",
+        "sources/juniper__normal-2048.ktx2/041.json",
+        "sources/juniper__normal-2048.ktx2/042.json",
+        "sources/juniper__normal-2048.ktx2/043.json",
+        "sources/juniper__normal-2048.ktx2/044.json",
+        "sources/juniper__normal-2048.ktx2/045.json"
+      ],
+      "bytes": 2060548,
+      "sha256": "0e47ac26924c8009925fb97236487a1d0fb932b0e9e725cd07ea282bc6b8986f",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2",
+        "date": "2026-11-12",
+        "notes": "linear UASTC + Zstandard. Full chain of 12 mips. Estimated linear OpenGL tangent-space microrelief follows fur growth. No macro lighting."
+      }
+    },
+    "juniper/normal-1024.ktx2": {
+      "chunks": [
+        "sources/juniper__normal-1024.ktx2/000.json",
+        "sources/juniper__normal-1024.ktx2/001.json",
+        "sources/juniper__normal-1024.ktx2/002.json",
+        "sources/juniper__normal-1024.ktx2/003.json",
+        "sources/juniper__normal-1024.ktx2/004.json",
+        "sources/juniper__normal-1024.ktx2/005.json",
+        "sources/juniper__normal-1024.ktx2/006.json",
+        "sources/juniper__normal-1024.ktx2/007.json",
+        "sources/juniper__normal-1024.ktx2/008.json",
+        "sources/juniper__normal-1024.ktx2/009.json",
+        "sources/juniper__normal-1024.ktx2/010.json"
+      ],
+      "bytes": 478348,
+      "sha256": "c1880193198cd1e0501e58fca87f76475103d72867e16a541711d0c15c63bcb0",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2",
+        "date": "2026-11-12",
+        "notes": "linear UASTC + Zstandard. Full chain of 11 mips. Estimated linear OpenGL tangent-space microrelief follows fur growth. No macro lighting."
+      }
+    },
+    "juniper/flow-1024.ktx2": {
+      "chunks": [
+        "sources/juniper__flow-1024.ktx2/000.json",
+        "sources/juniper__flow-1024.ktx2/001.json",
+        "sources/juniper__flow-1024.ktx2/002.json",
+        "sources/juniper__flow-1024.ktx2/003.json",
+        "sources/juniper__flow-1024.ktx2/004.json",
+        "sources/juniper__flow-1024.ktx2/005.json",
+        "sources/juniper__flow-1024.ktx2/006.json",
+        "sources/juniper__flow-1024.ktx2/007.json",
+        "sources/juniper__flow-1024.ktx2/008.json",
+        "sources/juniper__flow-1024.ktx2/009.json",
+        "sources/juniper__flow-1024.ktx2/010.json",
+        "sources/juniper__flow-1024.ktx2/011.json",
+        "sources/juniper__flow-1024.ktx2/012.json",
+        "sources/juniper__flow-1024.ktx2/013.json",
+        "sources/juniper__flow-1024.ktx2/014.json",
+        "sources/juniper__flow-1024.ktx2/015.json"
+      ],
+      "bytes": 693273,
+      "sha256": "8eacbe1209c25845d852f94dc4ee82af6dc4705a83fddf36bebd5f4a4607487b",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2",
+        "date": "2026-11-12",
+        "notes": "linear UASTC + Zstandard. Full chain of 11 mips. Linear RGB encodes the unit rest-space fur direction. Unpack [-1, 1], normalize, and skin with the surface."
+      }
+    },
+    "juniper/eye-left-512.ktx2": {
+      "chunks": [
+        "sources/juniper__eye-left-512.ktx2/000.json",
+        "sources/juniper__eye-left-512.ktx2/001.json"
+      ],
+      "bytes": 50109,
+      "sha256": "82658270c7466ea1529243f5856c3a162178915a0c65db4f82149b8fcbd2e4b9",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2",
+        "date": "2026-11-12",
+        "notes": "sRGB ETC1S. Full chain of 10 mips. Anatomical left (eye_L), amber #AE7F3F, dark #563F29 limbus, slit pupil. Highlights come from the dome."
+      }
+    },
+    "juniper/eye-right-512.ktx2": {
+      "chunks": [
+        "sources/juniper__eye-right-512.ktx2/000.json",
+        "sources/juniper__eye-right-512.ktx2/001.json"
+      ],
+      "bytes": 49910,
+      "sha256": "2803eeb171f066856224f660e6312dc487294d2a525a4cb27f067bd63c8c8fe7",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2",
+        "date": "2026-11-12",
+        "notes": "sRGB ETC1S. Full chain of 10 mips. Anatomical right (eye_R), ice blue #75AABD, dark #2F4B57 limbus, slit pupil. Highlights come from the dome."
+      }
+    },
+    "juniper/strand-256.ktx2": {
+      "chunks": [
+        "sources/juniper__strand-256.ktx2/000.json",
+        "sources/juniper__strand-256.ktx2/001.json"
+      ],
+      "bytes": 79236,
+      "sha256": "681eb6efab7696c8d0182976e0445b6fe8e413815378a6e8fae3fe2a45a17fdd",
+      "width": 256,
+      "height": 256,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Khronos KTX-Software 4.4.2",
+        "date": "2026-11-12",
+        "notes": "linear UASTC + Zstandard. Full chain of 9 mips. Linear tileable strand density with fibers aligned to V. Sample R."
+      }
     }
   }
 }

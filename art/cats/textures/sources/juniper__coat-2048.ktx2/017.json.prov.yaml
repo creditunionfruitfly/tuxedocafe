@@ -1,0 +1,6 @@
+source: "art/cats/textures/sources.json#juniper/coat-2048.ktx2"
+tool: "Khronos KTX-Software 4.4.2"
+date: "2026-11-12"
+license: "original"
+author_role: "artist"
+notes: "linear UASTC + Zstandard. Full chain of 12 mips. Linear straight RGBA. R pale spotting; G rosettes and other markings; B zero; A fur length in mm divided by 35."

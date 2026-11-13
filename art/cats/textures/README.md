@@ -12,8 +12,8 @@ technical resamples, not native 2K generation. Phone bodies are 1024², irises
 Encoded source chunks include byte counts, SHA256 hashes and provenance.
 `generate.ts` verifies and decodes these files without network or Python in CI.
 `prepare.py` is the authoring path; its NumPy/SciPy/Pillow dependencies are not
-runtime dependencies. The café's current material loader follows ADR 0002 and
-uses the JPEG and PNG maps. The build also emits Mochi's GPU-ready KTX2 set.
+runtime dependencies. The café uses JPEG and PNG maps for the original cast
+and loads Juniper's GPU-ready body, normal and iris maps on demand.
 
 ## Mochi's coat and face
 
@@ -29,6 +29,18 @@ The pink split between the charcoal nose lobes is leather pigment in the albedo.
 map stores a rest-space tangent in RGB. Remap to `[-1, 1]`, normalize and
 skin the direction with the rest of the surface. The strand map tiles in both
 axes with fibers running in V. Sample the red channel for density.
+
+## Juniper's coat and eyes
+
+The ten runtime maps under `juniper/` preserve the current-master and shared
+KTX2 files from `Juniper_Body_Review.zip` byte for byte. The body and estimated
+tangent-space normal use 2048² textures on desktop and 1024² on phones. The
+left iris is amber and the right iris is ice blue, both at 512². The low LOD
+selects the iris from the eye joint on the single batched globe mesh.
+
+Inspect the coat with `?lookdev=cat&cat=juniper` and the face with
+`?lookdev=cat&cat=juniper&view=face`. The RGBA masks, rest-space flow and
+strand density maps are available for the fur renderer.
 
 ## UV registration and normals
 

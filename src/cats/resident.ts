@@ -1,4 +1,4 @@
-import { AdditiveAnimationBlendMode, AnimationMixer, AnimationUtils, LoopOnce, LoopRepeat, Matrix4, Mesh, Quaternion, SRGBColorSpace, TextureLoader, type AnimationAction, type AnimationClip, type MeshStandardMaterial, type Object3D, type Texture, type Vector3 } from 'three';
+import { AdditiveAnimationBlendMode, AnimationMixer, AnimationUtils, LoopOnce, LoopRepeat, Matrix4, Mesh, Quaternion, type AnimationAction, type AnimationClip, type MeshStandardMaterial, type Object3D, type Vector3, type WebGLRenderer } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
@@ -10,11 +10,10 @@ import type { Rng } from '../core/rng.ts';
 import type { Tier } from '../core/tiers.ts';
 import { walkable, type Waypoint } from '../scenes/navigation.ts';
 import { Brain, type World } from './brain.ts';
+import { applyResidentTextures, loadResidentTextures } from './surfaces.ts';
 
 export interface Resident { readonly id: string; readonly name: string; readonly root: Object3D; readonly brain: Brain; step(dt: number, world: World): void; render(alpha: number): void; eyes(position: Vector3, orientation: Quaternion): void }
 export interface Cast { readonly residents: readonly Resident[]; step(dt: number, player: { x: number; z: number } | null): void; dispose(): void }
-// Materials that sample the shared body atlas; non-fur texels are white so anatomical tints survive.
-const BODY = new Set(['cat_fur', 'cat_nose_leather', 'cat_paw_pads', 'cat_inner_ear', 'cat_mouth']);
 const SPACING = .8, FADE = .25;
 const CATALOG = new Map(catalog.clips.map(clip => [clip.name, clip]));
 const EYE_FORWARD = new Quaternion(0, 1, 0, 0); // The rig faces +Z; a Three camera looks down -Z.
@@ -36,13 +35,11 @@ export function startSpot(rng: Rng, taken: readonly Waypoint[]): Waypoint {
 }
 
 /** Every resident on the shared master mesh, each with its own coat, iris, build scale and RNG stream. */
-export async function loadCast(tier: Tier, world: Rng): Promise<Cast> {
+export async function loadCast(tier: Tier, world: Rng, renderer: WebGLRenderer): Promise<Cast> {
   const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
-  const textures = new TextureLoader(), size = tier === 'high' ? 2048 : 1024;
-  const map = (url: string): Promise<Texture> => textures.loadAsync(assetUrl(url)).then(texture => { texture.flipY = false; texture.colorSpace = SRGBColorSpace; return texture; });
-  const [model, anims, ...maps] = await Promise.all([
+  const [model, anims, maps] = await Promise.all([
     loader.loadAsync(assetUrl(`art/cats/cat_master_${residentLod(tier)}.glb`)), loader.loadAsync(assetUrl('art/cats/cat_anims.glb')),
-    ...cats.cats.flatMap(cat => [map(`art/cats/textures/${cat.id}/body-${size}.jpg`), map(`art/cats/textures/${cat.id}/eye.png`)]),
+    Promise.all(cats.cats.map(cat => loadResidentTextures(cat.id, tier, renderer))),
   ]);
   // Additive layers are authored against a reference pose; convert them once for every cat's mixer.
   const clips = new Map<string, AnimationClip>(anims.animations.map(clip => [clip.name, clip]));
@@ -52,7 +49,11 @@ export async function loadCast(tier: Tier, world: Rng): Promise<Cast> {
     AnimationUtils.makeClipAdditive(additive, ref ? Math.round(Number(refSeconds ?? 0) * 30) : 0, ref ?? additive, 30);
     additive.blendMode = AdditiveAnimationBlendMode; clips.set(name, additive);
   }
-  const owned = new Set<{ dispose(): void }>(maps), placed: Waypoint[] = [], brains: Brain[] = [];
+  const owned = new Set<{ dispose(): void }>(), placed: Waypoint[] = [], brains: Brain[] = [];
+  for (const { body, eye, juniper } of maps) {
+    owned.add(body); owned.add(eye);
+    if (juniper) { owned.add(juniper.rightEye); owned.add(juniper.normal); }
+  }
   model.scene.traverse(node => { if (node instanceof Mesh) { owned.add(node.geometry); const m = node.material as MeshStandardMaterial; owned.add(m); if (m.map) owned.add(m.map); } });
   const residents = cats.cats.map((cat, index): Resident => {
     const rng = world.fork(`cat:${cat.id}`), scale = residentScale(cat.id);
@@ -65,8 +66,7 @@ export async function loadCast(tier: Tier, world: Rng): Promise<Cast> {
       if (!(node instanceof Mesh)) return;
       node.castShadow = true; node.frustumCulled = false;
       const material = (node.material as MeshStandardMaterial).clone(); node.material = material; owned.add(material);
-      if (BODY.has(material.name)) material.map = maps[index * 2]!;
-      else if (material.name === 'cat_eye') material.map = maps[index * 2 + 1]!;
+      applyResidentTextures(node, material, maps[index]!);
     });
     const brain = new Brain(cat.id, rng, start, scale), mover = brain.mover, mixer = new AnimationMixer(root), actions = new Map<string, AnimationAction>();
     brains.push(brain);

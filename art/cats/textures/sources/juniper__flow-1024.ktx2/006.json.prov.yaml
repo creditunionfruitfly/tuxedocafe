@@ -1,0 +1,6 @@
+source: "art/cats/textures/sources.json#juniper/flow-1024.ktx2"
+tool: "Khronos KTX-Software 4.4.2"
+date: "2026-11-12"
+license: "original"
+author_role: "artist"
+notes: "linear UASTC + Zstandard. Full chain of 11 mips. Linear RGB encodes the unit rest-space fur direction. Unpack [-1, 1], normalize, and skin with the surface."

@@ -82,6 +82,23 @@ test('placed props can be picked up again and carry survives settings without re
  await tapPoint(page,isMobile,2.4,0,-.4);await page.getByRole('button',{name:'1 Place',exact:true}).click();await expect(page.locator('body')).toHaveAttribute('data-carry','');
 });
 test('lookdev loads the actual 65-bone capsule rig',async({page,isMobile},info)=>{await page.goto(`./?lookdev=cat&tier=${isMobile?'low':'desktop'}`);await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:STARTUP_TIMEOUT});await expect(page.locator('body')).toHaveAttribute('data-bones','65');await expect(page.locator('#lookdev-status')).toContainText('capsule rig diagnostic');await page.screenshot({path:info.outputPath('capsule-lookdev.png')});});
+test('Juniper lookdev loads the coat and both irises on the master rig', async ({ page, isMobile }, info) => {
+ const errors: string[] = [], textures = new Set<string>();
+ page.on('console', message => { if (message.type() === 'error' || message.text().includes('compressed textures could not load')) errors.push(message.text()); });
+ page.on('pageerror', error => errors.push(error.message));
+ page.on('response', response => {
+  const path = new URL(response.url()).pathname;
+  if (response.ok() && path.includes('/textures/juniper/') && path.endsWith('.ktx2')) textures.add(path.split('/').at(-1)!);
+ });
+ await page.goto(`./?lookdev=cat&cat=juniper&view=face&tier=${isMobile ? 'low' : 'desktop'}`);
+ await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: STARTUP_TIMEOUT });
+ await expect(page.locator('body')).toHaveAttribute('data-bones', '65');
+ await expect(page.locator('#lookdev-status')).toContainText('Juniper');
+ const size = isMobile ? 1024 : 2048;
+ expect(textures).toEqual(new Set([`body-${size}.ktx2`, `normal-${size}.ktx2`, 'eye-left-512.ktx2', 'eye-right-512.ktx2']));
+ expect(errors).toEqual([]);
+ await page.screenshot({ path: info.outputPath('juniper-face.png') });
+});
 test('Settings About shows the build and feedback opens a metadata-prefilled draft',async({page})=>{
  await page.goto('./?tier=low');await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:STARTUP_TIMEOUT});await page.locator('.top-settings').click();
  const stamp=await page.locator('#build-stamp').textContent();await expect(page.locator('#about-build')).toContainText(stamp!);await expect(page.locator('#about-flags')).toContainText('Enabled flags:');

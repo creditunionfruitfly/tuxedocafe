@@ -1,0 +1,6 @@
+source: "art/cats/textures/sources.json#juniper/eye-right-512.ktx2"
+tool: "Khronos KTX-Software 4.4.2"
+date: "2026-11-12"
+license: "original"
+author_role: "artist"
+notes: "sRGB ETC1S. Full chain of 10 mips. Anatomical right (eye_R), ice blue #75AABD, dark #2F4B57 limbus, slit pupil. Highlights come from the dome."

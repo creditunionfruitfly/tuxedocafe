@@ -1,0 +1,6 @@
+source: "art/cats/textures/sources.json#juniper/body-2048.ktx2"
+tool: "Khronos KTX-Software 4.4.2"
+date: "2026-11-12"
+license: "original"
+author_role: "artist"
+notes: "sRGB ETC1S. Full chain of 12 mips. De-lit short tawny pelt with broken rosettes and directional guard-hair pigment. UV0 origin top left."

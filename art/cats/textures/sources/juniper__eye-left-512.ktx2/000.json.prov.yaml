@@ -1,0 +1,6 @@
+source: "art/cats/textures/sources.json#juniper/eye-left-512.ktx2"
+tool: "Khronos KTX-Software 4.4.2"
+date: "2026-11-12"
+license: "original"
+author_role: "artist"
+notes: "sRGB ETC1S. Full chain of 10 mips. Anatomical left (eye_L), amber #AE7F3F, dark #563F29 limbus, slit pupil. Highlights come from the dome."
