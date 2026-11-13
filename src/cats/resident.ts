@@ -25,6 +25,21 @@ export const residentScale = (id: string): number => {
   return (builds.builds as Record<string, { scale: number }>)[model.build]!.scale * model.scale;
 };
 
+const biscuitBodyFat = cats.cats.find(cat => cat.id === 'biscuit')!.model.morphs?.bodyFat ?? 0;
+
+export function applyResidentBuild(root: Object3D, id: string): number {
+  const scale = residentScale(id);
+  root.scale.setScalar(scale);
+  if (id === 'biscuit') {
+    root.traverse(node => {
+      if (!(node instanceof Mesh) || !node.morphTargetInfluences) return;
+      const target = node.morphTargetDictionary?.bodyFat;
+      if (target !== undefined) node.morphTargetInfluences[target] = biscuitBodyFat;
+    });
+  }
+  return scale;
+}
+
 /** A spot on open floor away from the cats already placed, from this cat's own stream. */
 export function startSpot(rng: Rng, taken: readonly Waypoint[]): Waypoint {
   for (let tries = 0; tries < 40; tries++) {
@@ -53,11 +68,11 @@ export async function loadCast(tier: Tier, world: Rng, renderer: WebGLRenderer):
   for (const mapsForCat of maps) for (const texture of Object.values(mapsForCat)) if (texture) owned.add(texture);
   model.scene.traverse(node => { if (node instanceof Mesh) { owned.add(node.geometry); const m = node.material as MeshStandardMaterial; owned.add(m); if (m.map) owned.add(m.map); } });
   const residents = cats.cats.map((cat, index): Resident => {
-    const rng = world.fork(`cat:${cat.id}`), scale = residentScale(cat.id);
+    const rng = world.fork(`cat:${cat.id}`);
     const start = cat.id === 'mochi' ? { x: .6, z: -1.5 } : startSpot(rng, placed);
     placed.push(start);
     const root = clone(model.scene);
-    root.scale.setScalar(scale);
+    const scale = applyResidentBuild(root, cat.id);
     const head = root.getObjectByName('head') ?? root, eyeL = head.getObjectByName('eye_L'), eyeR = head.getObjectByName('eye_R'), rotation = new Matrix4();
     root.traverse(node => {
       if (!(node instanceof Mesh)) return;

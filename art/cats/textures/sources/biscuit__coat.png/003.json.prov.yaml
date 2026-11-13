@@ -1,6 +1,6 @@
-source: art/cats/textures/prepare.py
-tool: OpenAI built-in imagegen; deterministic UV and bitmap preparation
-date: '2026-10-17'
+source: art/cats/textures/paint-biscuit.py
+tool: "Original rest-space coat painting"
+date: '2026-11-13'
 license: original
 author_role: artist
-notes: Original anatomical RGBA coat mask; R white, G tabby or rosettes, B orange-black split, A fur length divided by 35mm; linear data, same verified body UV atlas.
+notes: "R cream wash, G orange tabby markings, B zero, A fur length divided by 35 mm."

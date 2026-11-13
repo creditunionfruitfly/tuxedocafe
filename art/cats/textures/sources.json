@@ -235,12 +235,17 @@
         "sources/biscuit__eye.png/003.json",
         "sources/biscuit__eye.png/004.json"
       ],
-      "bytes": 190412,
-      "sha256": "ae28cedcf8454fa233ce3d88a1ff654067f30eb0cab380fff25a8f477f042dfa",
+      "bytes": 218773,
+      "sha256": "45eaff6cc293ab03327cb3428cc0355aa0d0282c69eb25a66a0456e6d22f0014",
       "width": 512,
       "height": 512,
       "mimeType": "image/png",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Original rest-space coat painting",
+        "date": "2026-11-13",
+        "notes": "Registered original Biscuit iris fibers graded to amber #D99A2B, dark limbus #8C5718 and vertical slit."
+      }
     },
     "biscuit/body-2048.jpg": {
       "chunks": [
@@ -251,43 +256,37 @@
         "sources/biscuit__body-2048.jpg/004.json",
         "sources/biscuit__body-2048.jpg/005.json",
         "sources/biscuit__body-2048.jpg/006.json",
-        "sources/biscuit__body-2048.jpg/007.json",
-        "sources/biscuit__body-2048.jpg/008.json",
-        "sources/biscuit__body-2048.jpg/009.json",
-        "sources/biscuit__body-2048.jpg/010.json",
-        "sources/biscuit__body-2048.jpg/011.json",
-        "sources/biscuit__body-2048.jpg/012.json",
-        "sources/biscuit__body-2048.jpg/013.json",
-        "sources/biscuit__body-2048.jpg/014.json",
-        "sources/biscuit__body-2048.jpg/015.json",
-        "sources/biscuit__body-2048.jpg/016.json",
-        "sources/biscuit__body-2048.jpg/017.json",
-        "sources/biscuit__body-2048.jpg/018.json",
-        "sources/biscuit__body-2048.jpg/019.json"
+        "sources/biscuit__body-2048.jpg/007.json"
       ],
-      "bytes": 863566,
-      "sha256": "523ee05b9fe9c701a4d44428cd12b966c22228df7084b67cfb76b33787b46eeb",
+      "bytes": 327384,
+      "sha256": "931bd23369f8ad98cf52de1aa850b6bae75fb375391e7a99c284d42ec8641a63",
       "width": 2048,
       "height": 2048,
       "mimeType": "image/jpeg",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Original rest-space coat painting",
+        "date": "2026-11-13",
+        "notes": "Classic orange tabby on the current master UV0 with low-contrast flank bullseyes, shoulder butterfly, tail rings, cream wash and anatomical leather."
+      }
     },
     "biscuit/body-1024.jpg": {
       "chunks": [
         "sources/biscuit__body-1024.jpg/000.json",
         "sources/biscuit__body-1024.jpg/001.json",
-        "sources/biscuit__body-1024.jpg/002.json",
-        "sources/biscuit__body-1024.jpg/003.json",
-        "sources/biscuit__body-1024.jpg/004.json",
-        "sources/biscuit__body-1024.jpg/005.json",
-        "sources/biscuit__body-1024.jpg/006.json"
+        "sources/biscuit__body-1024.jpg/002.json"
       ],
-      "bytes": 283649,
-      "sha256": "8c1624737a909e38e1e10e5f8cb5bce52b2393b59edf4f7ec40b9f13c8bb0388",
+      "bytes": 105232,
+      "sha256": "bf8c575b9403fd8b8afb08c7b1d18aaf36182bf72a5fa56dc186b342d43805ba",
       "width": 1024,
       "height": 1024,
       "mimeType": "image/jpeg",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Original rest-space coat painting",
+        "date": "2026-11-13",
+        "notes": "Classic orange tabby on the current master UV0 with low-contrast flank bullseyes, shoulder butterfly, tail rings, cream wash and anatomical leather."
+      }
     },
     "biscuit/coat.png": {
       "chunks": [
@@ -297,12 +296,17 @@
         "sources/biscuit__coat.png/003.json",
         "sources/biscuit__coat.png/004.json"
       ],
-      "bytes": 216778,
-      "sha256": "596e3e63fba95ec28a940447df11fb73ae9ae042c4545696d71f1feabde482d5",
+      "bytes": 186012,
+      "sha256": "d3c69685e0a2c9af34c1250d7aa5c58810c2c080febd7af5407ff763cf4a67d4",
       "width": 1024,
       "height": 1024,
       "mimeType": "image/png",
-      "colorSpace": "linear"
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Original rest-space coat painting",
+        "date": "2026-11-13",
+        "notes": "R cream wash, G orange tabby markings, B zero, A fur length divided by 35 mm."
+      }
     },
     "clementine/eye.png": {
       "chunks": [
@@ -1261,6 +1265,226 @@
         "tool": "Deterministic atlas authoring with Python, NumPy and Pillow; Basis Universal 1.16.3",
         "date": "2026-11-12",
         "notes": "Tileable short-fur strand density; read R, fibers along V."
+      }
+    },
+    "biscuit/body-1024.ktx2": {
+      "chunks": [
+        "sources/biscuit__body-1024.ktx2/000.json",
+        "sources/biscuit__body-1024.ktx2/001.json",
+        "sources/biscuit__body-1024.ktx2/002.json"
+      ],
+      "bytes": 110679,
+      "sha256": "ef9f498348890d100c7320608f0dd17b4aaa79e6bbd81940fddb2629213f6666",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Original rest-space coat painting and Basis Universal 1.16.4",
+        "date": "2026-11-13",
+        "notes": "Classic orange tabby on the current master UV0 with low-contrast flank bullseyes, shoulder butterfly, tail rings, cream wash and anatomical leather."
+      }
+    },
+    "biscuit/body-2048.ktx2": {
+      "chunks": [
+        "sources/biscuit__body-2048.ktx2/000.json",
+        "sources/biscuit__body-2048.ktx2/001.json",
+        "sources/biscuit__body-2048.ktx2/002.json",
+        "sources/biscuit__body-2048.ktx2/003.json",
+        "sources/biscuit__body-2048.ktx2/004.json",
+        "sources/biscuit__body-2048.ktx2/005.json",
+        "sources/biscuit__body-2048.ktx2/006.json",
+        "sources/biscuit__body-2048.ktx2/007.json"
+      ],
+      "bytes": 333854,
+      "sha256": "2c3851889296c2ad850f0891e22206ee814d50dbf0639985557d1538baf6623c",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Original rest-space coat painting and Basis Universal 1.16.4",
+        "date": "2026-11-13",
+        "notes": "Classic orange tabby on the current master UV0 with low-contrast flank bullseyes, shoulder butterfly, tail rings, cream wash and anatomical leather."
+      }
+    },
+    "biscuit/coat-1024.ktx2": {
+      "chunks": [
+        "sources/biscuit__coat-1024.ktx2/000.json",
+        "sources/biscuit__coat-1024.ktx2/001.json",
+        "sources/biscuit__coat-1024.ktx2/002.json",
+        "sources/biscuit__coat-1024.ktx2/003.json",
+        "sources/biscuit__coat-1024.ktx2/004.json",
+        "sources/biscuit__coat-1024.ktx2/005.json"
+      ],
+      "bytes": 233705,
+      "sha256": "c0b854ef2f7c76391c408d1fcb4d539446afa8ab4a819e24fe07c9fd2c207a5e",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Original rest-space coat painting and Basis Universal 1.16.4",
+        "date": "2026-11-13",
+        "notes": "R cream wash, G orange tabby markings, B zero, A fur length divided by 35 mm."
+      }
+    },
+    "biscuit/coat-2048.ktx2": {
+      "chunks": [
+        "sources/biscuit__coat-2048.ktx2/000.json",
+        "sources/biscuit__coat-2048.ktx2/001.json",
+        "sources/biscuit__coat-2048.ktx2/002.json",
+        "sources/biscuit__coat-2048.ktx2/003.json",
+        "sources/biscuit__coat-2048.ktx2/004.json",
+        "sources/biscuit__coat-2048.ktx2/005.json",
+        "sources/biscuit__coat-2048.ktx2/006.json",
+        "sources/biscuit__coat-2048.ktx2/007.json",
+        "sources/biscuit__coat-2048.ktx2/008.json",
+        "sources/biscuit__coat-2048.ktx2/009.json",
+        "sources/biscuit__coat-2048.ktx2/010.json",
+        "sources/biscuit__coat-2048.ktx2/011.json",
+        "sources/biscuit__coat-2048.ktx2/012.json",
+        "sources/biscuit__coat-2048.ktx2/013.json",
+        "sources/biscuit__coat-2048.ktx2/014.json",
+        "sources/biscuit__coat-2048.ktx2/015.json"
+      ],
+      "bytes": 690010,
+      "sha256": "c602827a1f023e89d912385b39186e3132f52adefa80ea746fb25a1fec4df3e0",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Original rest-space coat painting and Basis Universal 1.16.4",
+        "date": "2026-11-13",
+        "notes": "R cream wash, G orange tabby markings, B zero, A fur length divided by 35 mm."
+      }
+    },
+    "biscuit/eye-512.ktx2": {
+      "chunks": [
+        "sources/biscuit__eye-512.ktx2/000.json",
+        "sources/biscuit__eye-512.ktx2/001.json"
+      ],
+      "bytes": 55155,
+      "sha256": "3f86a5c544df76e803166210b3d093418d88b45d5c146d483db20c2379b18165",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Original rest-space coat painting and Basis Universal 1.16.4",
+        "date": "2026-11-13",
+        "notes": "Registered original Biscuit iris fibers graded to amber #D99A2B, dark limbus #8C5718 and vertical slit."
+      }
+    },
+    "biscuit/flow-1024.ktx2": {
+      "chunks": [
+        "sources/biscuit__flow-1024.ktx2/000.json",
+        "sources/biscuit__flow-1024.ktx2/001.json",
+        "sources/biscuit__flow-1024.ktx2/002.json",
+        "sources/biscuit__flow-1024.ktx2/003.json",
+        "sources/biscuit__flow-1024.ktx2/004.json",
+        "sources/biscuit__flow-1024.ktx2/005.json",
+        "sources/biscuit__flow-1024.ktx2/006.json",
+        "sources/biscuit__flow-1024.ktx2/007.json",
+        "sources/biscuit__flow-1024.ktx2/008.json",
+        "sources/biscuit__flow-1024.ktx2/009.json"
+      ],
+      "bytes": 439091,
+      "sha256": "8456dd422ae40f4ecb13a074e175b358f30dbf496543e12b8eb67b7e569cd30c",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Original rest-space coat painting and Basis Universal 1.16.4",
+        "date": "2026-11-13",
+        "notes": "RGB encodes a rest-space tangent from [-1,1] to [0,1]."
+      }
+    },
+    "biscuit/normal-1024.ktx2": {
+      "chunks": [
+        "sources/biscuit__normal-1024.ktx2/000.json",
+        "sources/biscuit__normal-1024.ktx2/001.json",
+        "sources/biscuit__normal-1024.ktx2/002.json",
+        "sources/biscuit__normal-1024.ktx2/003.json",
+        "sources/biscuit__normal-1024.ktx2/004.json",
+        "sources/biscuit__normal-1024.ktx2/005.json",
+        "sources/biscuit__normal-1024.ktx2/006.json",
+        "sources/biscuit__normal-1024.ktx2/007.json"
+      ],
+      "bytes": 328221,
+      "sha256": "3d3b92b404f4e9d07c79ae6c8788e92e6c518f5865b6e1e62e909d7f99c37b0d",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Original rest-space coat painting and Basis Universal 1.16.4",
+        "date": "2026-11-13",
+        "notes": "Estimated OpenGL tangent-space microrelief from directional rest-space grain."
+      }
+    },
+    "biscuit/normal-2048.ktx2": {
+      "chunks": [
+        "sources/biscuit__normal-2048.ktx2/000.json",
+        "sources/biscuit__normal-2048.ktx2/001.json",
+        "sources/biscuit__normal-2048.ktx2/002.json",
+        "sources/biscuit__normal-2048.ktx2/003.json",
+        "sources/biscuit__normal-2048.ktx2/004.json",
+        "sources/biscuit__normal-2048.ktx2/005.json",
+        "sources/biscuit__normal-2048.ktx2/006.json",
+        "sources/biscuit__normal-2048.ktx2/007.json",
+        "sources/biscuit__normal-2048.ktx2/008.json",
+        "sources/biscuit__normal-2048.ktx2/009.json",
+        "sources/biscuit__normal-2048.ktx2/010.json",
+        "sources/biscuit__normal-2048.ktx2/011.json",
+        "sources/biscuit__normal-2048.ktx2/012.json",
+        "sources/biscuit__normal-2048.ktx2/013.json",
+        "sources/biscuit__normal-2048.ktx2/014.json",
+        "sources/biscuit__normal-2048.ktx2/015.json",
+        "sources/biscuit__normal-2048.ktx2/016.json",
+        "sources/biscuit__normal-2048.ktx2/017.json",
+        "sources/biscuit__normal-2048.ktx2/018.json",
+        "sources/biscuit__normal-2048.ktx2/019.json",
+        "sources/biscuit__normal-2048.ktx2/020.json",
+        "sources/biscuit__normal-2048.ktx2/021.json",
+        "sources/biscuit__normal-2048.ktx2/022.json",
+        "sources/biscuit__normal-2048.ktx2/023.json",
+        "sources/biscuit__normal-2048.ktx2/024.json",
+        "sources/biscuit__normal-2048.ktx2/025.json",
+        "sources/biscuit__normal-2048.ktx2/026.json",
+        "sources/biscuit__normal-2048.ktx2/027.json",
+        "sources/biscuit__normal-2048.ktx2/028.json",
+        "sources/biscuit__normal-2048.ktx2/029.json"
+      ],
+      "bytes": 1306648,
+      "sha256": "2a47d6adb42a73aee3b70b4cbbd1d868bf30a633cfdf1f16fdcba3c72b09a351",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Original rest-space coat painting and Basis Universal 1.16.4",
+        "date": "2026-11-13",
+        "notes": "Estimated OpenGL tangent-space microrelief from directional rest-space grain."
+      }
+    },
+    "biscuit/strand-256.ktx2": {
+      "chunks": [
+        "sources/biscuit__strand-256.ktx2/000.json",
+        "sources/biscuit__strand-256.ktx2/001.json"
+      ],
+      "bytes": 67307,
+      "sha256": "c50af23b939331094028f1aeb52aef84ab825aafe83f174f56d85e9f4c74993b",
+      "width": 256,
+      "height": 256,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Original rest-space coat painting and Basis Universal 1.16.4",
+        "date": "2026-11-13",
+        "notes": "Tileable strand-density reference with fibers along V."
       }
     }
   }
