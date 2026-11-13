@@ -38,7 +38,7 @@ def archive(path, folder):
     (folder/'atlas.json').write_text(json.dumps({'codec':'gzip-json','sha256':hashlib.sha256(raw).hexdigest(),'chunks':chunks},indent=2)+'\n')
 
 
-def raster(atlas):
+def raster(atlas, surface=0):
     size = atlas['size']
     positions = np.asarray(atlas['positions']).reshape(-1,3)
     triangles = np.asarray(atlas['indices']).reshape(-1,3)
@@ -51,7 +51,7 @@ def raster(atlas):
         hi = np.minimum(np.ceil(np.maximum.reduce((a,b,c))).astype(int)+1,size)
         yy,xx = np.mgrid[lo[1]:hi[1],lo[0]:hi[0]]
         denominator = (b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[1]-c[1])
-        if abs(denominator)<1e-10 or atlas['faceSurface'][face] != 0:
+        if abs(denominator)<1e-10 or (surface is not None and atlas['faceSurface'][face] != surface):
             continue
         u = ((b[1]-c[1])*(xx+.5-c[0])+(c[0]-b[0])*(yy+.5-c[1]))/denominator
         v = ((c[1]-a[1])*(xx+.5-c[0])+(a[0]-c[0])*(yy+.5-c[1]))/denominator

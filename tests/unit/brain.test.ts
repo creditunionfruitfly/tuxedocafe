@@ -1,11 +1,12 @@
 import { expect, it } from 'vitest';
+import { Group, Mesh } from 'three';
 import catalog from '../../data/animation-catalog.json' with { type: 'json' };
 import cats from '../../data/cats.json' with { type: 'json' };
 import { createRng } from '../../src/core/rng.ts';
 import { ROOM } from '../../src/scenes/collision.ts';
 import { walkable } from '../../src/scenes/navigation.ts';
 import { Brain, pairOf } from '../../src/cats/brain.ts';
-import { residentLod, residentScale, startSpot } from '../../src/cats/resident.ts';
+import { applyResidentBuild, residentLod, residentScale, startSpot } from '../../src/cats/resident.ts';
 
 const DT = 1 / 30;
 function simulate(seed: string, minutes: number) {
@@ -47,4 +48,19 @@ it('places the cast apart on open floor and sizes each cat from its build', () =
   const taken: { x: number; z: number }[] = [];
   for (let i = 0; i < 8; i++) { const spot = startSpot(createRng('cafe').fork(`cat:${i}`), taken); expect(walkable(spot.x, spot.z)).toBe(true); expect(taken.every(t => Math.hypot(t.x - spot.x, t.z - spot.z) > .8)).toBe(true); taken.push(spot); }
   expect(residentScale('clementine')).toBeCloseTo(.6); expect(residentScale('waffles')).toBeCloseTo(1.06); expect(residentLod('phone')).toBe('lod1');
+});
+
+it('applies Biscuit’s adult scale and static body shape on each body primitive', () => {
+  const root = new Group();
+  const body = new Mesh();
+  const leather = new Mesh();
+  root.add(body, leather, new Mesh());
+  body.morphTargetDictionary = { bodyFat: 1 };
+  body.morphTargetInfluences = [.4, 0];
+  leather.morphTargetDictionary = { bodyFat: 0 };
+  leather.morphTargetInfluences = [0];
+  expect(applyResidentBuild(root, 'biscuit')).toBeCloseTo(1.04);
+  expect(root.scale.toArray()).toEqual([1.04, 1.04, 1.04]);
+  expect(body.morphTargetInfluences).toEqual([.4, .25]);
+  expect(leather.morphTargetInfluences).toEqual([.25]);
 });

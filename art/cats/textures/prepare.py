@@ -67,10 +67,7 @@ def pack(path, image, kind='PNG', notes=''):
     print(path, len(raw), f'{image.width}x{image.height}')
 
 
-def eye(cat):
-    source = ROOT / 'generated' / 'eyes' / f'{cat}.png'
-    prov(source, f'art/cats/textures/eye-prompts.json#cats/{cat}', 'Original built-in imagegen output, retained without creative editing; runtime copy is UV-registered and resampled.')
-    image = Image.open(source).convert('RGB')
+def register_iris(image):
     rgb = np.asarray(image, dtype=np.float32)
     y, x = np.indices(rgb.shape[:2])
     centre = np.array([(image.width - 1) / 2, (image.height - 1) / 2])
@@ -79,9 +76,15 @@ def eye(cat):
     measured = float(np.quantile(radius[pigment], .9995))
     # Register the generated round limbus to the radial-cap UV convention.
     scale = measured / (.42 * 512)
-    registered = image.transform((512, 512), Image.Transform.AFFINE,
+    return image.transform((512, 512), Image.Transform.AFFINE,
         (scale, 0, centre[0] - scale * 255.5, 0, scale, centre[1] - scale * 255.5),
         Image.Resampling.BICUBIC)
+
+
+def eye(cat):
+    source = ROOT / 'generated' / 'eyes' / f'{cat}.png'
+    prov(source, f'art/cats/textures/eye-prompts.json#cats/{cat}', 'Original built-in imagegen output, retained without creative editing; runtime copy is UV-registered and resampled.')
+    registered = register_iris(Image.open(source).convert('RGB'))
     registered = registered.quantize(colors=256, method=Image.Quantize.MEDIANCUT,
                                      dither=Image.Dither.NONE)
     pack(f'{cat}/eye.png', registered, notes=f'Original generated {cat} iris; radial-cap UV registration to radius 0.42 and 512px resampling; highlights come from the cornea geometry.')

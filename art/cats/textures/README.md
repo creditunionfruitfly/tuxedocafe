@@ -12,8 +12,8 @@ technical resamples, not native 2K generation. Phone bodies are 1024², irises
 Encoded source chunks include byte counts, SHA256 hashes and provenance.
 `generate.ts` verifies and decodes these files without network or Python in CI.
 `prepare.py` is the authoring path; its NumPy/SciPy/Pillow dependencies are not
-runtime dependencies. The café uses JPEG and PNG maps for the original cast
-and loads Juniper and Pixel’s GPU-ready body, normal and iris maps on demand.
+runtime dependencies. The café loads Juniper, Pixel and Biscuit’s GPU-ready
+body, normal and iris maps on demand. JPEG and PNG maps provide fallbacks.
 
 ## Mochi's coat and face
 
@@ -58,6 +58,22 @@ The mask stores zero in R, G and B and 3–5 mm of fur in A, divided by 35.
 Inspect with `?lookdev=cat&cat=pixel`. Add `&view=face` for the eyes or
 `&pose=walk` for a frozen stride on the shared walk clip.
 
+## Biscuit's classic tabby coat
+
+`paint-biscuit.py` paints the shared master in rest space. The #D88A3D base
+carries #B0612A flank bullseyes, a shoulder butterfly and rings along the
+curved tail. A #F2C48D wash fades into the chin and belly. The registered
+iris fibers are graded to #D99A2B with a #8C5718 limbus and a vertical slit.
+The café uses the adult build at 1.04 scale, the 0.25 bodyFat morph and a
+soft grazing sheen at 0.3.
+
+Body and normal maps are 2048² on desktop and 1024² on phones. The RGBA
+mask stores cream wash, tabby markings, zero partition and fur length
+divided by 35. Length blends from 6 mm on the body to 12 mm on the chest,
+11 mm on the cheeks and 9 mm on the tail. Coat, flow and strand maps are
+ready for the fur renderer. Inspect with `?lookdev=cat&cat=biscuit` and
+add `&view=face`, `&view=shoulders` or `&pose=walk`.
+
 ## UV registration and normals
 
 Body UV v increases down the PNG; three.js uses `flipY=false`. Hidden seams,
@@ -68,9 +84,10 @@ retains the original registered coat bitmaps and native generation hashes.
 The final transfer report records source/target identities and measured errors.
 Semantic masks are regenerated from the final rest-position and normal guides.
 
-Three-pixel nearest-surface bleed stays inside the six-pixel atlas gutters.
-Non-fur texels are white, preserving anatomical material/vertex tints when the
-lower LOD merges skin, nose, pads and mouth regions into its body draw.
+The original maps use three-pixel nearest-surface bleed. Their white non-fur
+texels preserve anatomical vertex tints on batched LODs. Biscuit's atlas
+carries its own leather pigment and pads up to eight texels to the nearest
+island edge for mip filtering.
 Iris UVs use a centered radial front cap, limbus radius 0.42, with dark bleed.
 Each eye is separate spherical geometry behind the open eyelid aperture; cornea
 geometry supplies highlights. The images contain no painted corneal glints.

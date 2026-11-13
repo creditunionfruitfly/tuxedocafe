@@ -15,6 +15,8 @@ One line per Codex session (AGENTS.md, Token budget). Shares come from `/status`
 
 | 2026-11-13 | M2-6 Pixel matte coat pass | artist and engine | Codex | A | Not reported | Tuned Pixel’s sheen and checked all three LODs. Account allowance was unavailable. |
 
+| 2026-11-13 | M2-6 Biscuit classic tabby coat | artist and engine | Codex | A | Not reported | Authored Biscuit’s master-atlas coat and reviewed Desktop, Phone and Low. |
+
 ## Running totals
 
 | Week | Planned | Used | Reserve left |
