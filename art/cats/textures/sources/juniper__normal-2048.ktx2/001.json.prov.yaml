@@ -1,0 +1,6 @@
+source: "art/cats/textures/sources.json#juniper/normal-2048.ktx2"
+tool: "Khronos KTX-Software 4.4.2"
+date: "2026-11-12"
+license: "original"
+author_role: "artist"
+notes: "linear UASTC + Zstandard. Full chain of 12 mips. Estimated linear OpenGL tangent-space microrelief follows fur growth. No macro lighting."

@@ -22,7 +22,15 @@ export default defineConfig({
     rolldownOptions: {
       output: {
         // three.js gets its own chunk, so playtesters re-download it only when it changes.
-        codeSplitting: { groups: [{ name: 'three', test: /node_modules[\\/]three[\\/]/ }] },
+        codeSplitting: { groups: [
+          {
+            name: 'ktx2',
+            test: /node_modules[\\/]three[\\/].*[\\/](?:KTX2Loader|WorkerPool|ktx-parse\.module|zstddec\.module|ColorSpaces)\.js$/,
+            priority: 1,
+            includeDependenciesRecursively: false,
+          },
+          { name: 'three', test: /node_modules[\\/]three[\\/]/ },
+        ] },
       },
     },
   },
