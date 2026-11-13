@@ -13,7 +13,7 @@ Encoded source chunks include byte counts, SHA256 hashes and provenance.
 `generate.ts` verifies and decodes these files without network or Python in CI.
 `prepare.py` is the authoring path; its NumPy/SciPy/Pillow dependencies are not
 runtime dependencies. The café uses JPEG and PNG maps for the original cast
-and loads Juniper's GPU-ready body, normal and iris maps on demand.
+and loads Juniper and Pixel’s GPU-ready body, normal and iris maps on demand.
 
 ## Mochi's coat and face
 
@@ -41,6 +41,22 @@ selects the iris from the eye joint on the single batched globe mesh.
 Inspect the coat with `?lookdev=cat&cat=juniper` and the face with
 `?lookdev=cat&cat=juniper&view=face`. The RGBA masks, rest-space flow and
 strand density maps are available for the fur renderer.
+
+## Pixel's coat and eyes
+
+Pixel's solid black coat is authored on the current master atlas by
+`paint-pixel.py`. The black pigment is #0E0D11 with minute rest-space fur
+grain. Nose, pads and inner-ear leather are dark anatomical pigments in the
+atlas. The runtime uses a broad dielectric highlight and a light-dependent rim
+from #3A3542 at 0.75 sheen. The original registered iris fibers are graded to
+copper #C9772A and a dark #7A3E12 limbus. The iris is shared by both eyes at all
+LODs.
+
+The GPU-ready body and normal are 2048² on desktop and 1024² on phones, with
+one 512² iris. Coat masks, rest-space flow and strand density use linear UASTC.
+The mask stores zero in R, G and B and 3–5 mm of fur in A, divided by 35.
+Inspect with `?lookdev=cat&cat=pixel`. Add `&view=face` for the eyes or
+`&pose=walk` for a frozen stride on the shared walk clip.
 
 ## UV registration and normals
 

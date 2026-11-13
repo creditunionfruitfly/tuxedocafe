@@ -11,6 +11,8 @@ One line per Codex session (AGENTS.md, Token budget). Shares come from `/status`
 | 2026-10-16 | R2-0 radial controls | master, artist, engine | Claude Code, not Codex | A | 0% | Owner-requested control optimization; outside the Codex allowance |
 | 2026-10-17 | M2 mesh, animation, IK, resident surfacing and offline viewer | master + artists, dispatched engine | GPT-6.1 Sol / GPT-6 Sol; interrupted Astra mesh pass | A | Not reported | Seventeen original image-generation runs (eight eyes, eight coats, shared fur); existing role work resumed from PRs #28–#30. Exact allowance usage is unavailable; no spend percentage is claimed. |
 
+| 2026-11-12 | M2-6 Pixel coat and copper iris | artist and engine | Codex | A | Not reported | Authored and validated Pixel on all three resident LODs. Account allowance was unavailable. |
+
 ## Running totals
 
 | Week | Planned | Used | Reserve left |

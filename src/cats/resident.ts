@@ -39,7 +39,7 @@ export async function loadCast(tier: Tier, world: Rng, renderer: WebGLRenderer):
   const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
   const [model, anims, maps] = await Promise.all([
     loader.loadAsync(assetUrl(`art/cats/cat_master_${residentLod(tier)}.glb`)), loader.loadAsync(assetUrl('art/cats/cat_anims.glb')),
-    Promise.all(cats.cats.map(cat => loadResidentTextures(cat.id, tier, renderer))),
+    loadResidentTextures(cats.cats.map(cat => cat.id), tier, renderer),
   ]);
   // Additive layers are authored against a reference pose; convert them once for every cat's mixer.
   const clips = new Map<string, AnimationClip>(anims.animations.map(clip => [clip.name, clip]));
@@ -50,10 +50,7 @@ export async function loadCast(tier: Tier, world: Rng, renderer: WebGLRenderer):
     additive.blendMode = AdditiveAnimationBlendMode; clips.set(name, additive);
   }
   const owned = new Set<{ dispose(): void }>(), placed: Waypoint[] = [], brains: Brain[] = [];
-  for (const { body, eye, juniper } of maps) {
-    owned.add(body); owned.add(eye);
-    if (juniper) { owned.add(juniper.rightEye); owned.add(juniper.normal); }
-  }
+  for (const mapsForCat of maps) for (const texture of Object.values(mapsForCat)) if (texture) owned.add(texture);
   model.scene.traverse(node => { if (node instanceof Mesh) { owned.add(node.geometry); const m = node.material as MeshStandardMaterial; owned.add(m); if (m.map) owned.add(m.map); } });
   const residents = cats.cats.map((cat, index): Resident => {
     const rng = world.fork(`cat:${cat.id}`), scale = residentScale(cat.id);
@@ -66,7 +63,7 @@ export async function loadCast(tier: Tier, world: Rng, renderer: WebGLRenderer):
       if (!(node instanceof Mesh)) return;
       node.castShadow = true; node.frustumCulled = false;
       const material = (node.material as MeshStandardMaterial).clone(); node.material = material; owned.add(material);
-      applyResidentTextures(node, material, maps[index]!);
+      applyResidentTextures(node, material, maps[index]!, cat.id);
     });
     const brain = new Brain(cat.id, rng, start, scale), mover = brain.mover, mixer = new AnimationMixer(root), actions = new Map<string, AnimationAction>();
     brains.push(brain);
