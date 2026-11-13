@@ -1053,6 +1053,215 @@
         "date": "2026-11-12",
         "notes": "linear UASTC + Zstandard. Full chain of 9 mips. Linear tileable strand density with fibers aligned to V. Sample R."
       }
+    },
+    "pixel/body-1024.ktx2": {
+      "chunks": [
+        "sources/pixel__body-1024.ktx2/000.json"
+      ],
+      "bytes": 24760,
+      "sha256": "58165f8b00c977faec562b1f65bc741133cabad69846ac1e891d43436b942ecd",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Deterministic atlas authoring with Python, NumPy and Pillow; Basis Universal 1.16.3",
+        "date": "2026-11-12",
+        "notes": "De-lit solid Bombay black #0E0D11 with short rest-space fur grain, dark leather and atlas padding."
+      }
+    },
+    "pixel/body-2048.ktx2": {
+      "chunks": [
+        "sources/pixel__body-2048.ktx2/000.json",
+        "sources/pixel__body-2048.ktx2/001.json",
+        "sources/pixel__body-2048.ktx2/002.json"
+      ],
+      "bytes": 92719,
+      "sha256": "c4a6f8b0949cd7c8f8d3daa3ec4f9936df5fac7d1096265682eecfeaa528a60d",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Deterministic atlas authoring with Python, NumPy and Pillow; Basis Universal 1.16.3",
+        "date": "2026-11-12",
+        "notes": "De-lit solid Bombay black #0E0D11 with short rest-space fur grain, dark leather and atlas padding."
+      }
+    },
+    "pixel/coat-1024.ktx2": {
+      "chunks": [
+        "sources/pixel__coat-1024.ktx2/000.json",
+        "sources/pixel__coat-1024.ktx2/001.json"
+      ],
+      "bytes": 77550,
+      "sha256": "13bb88252018ed7326e371b9075f2635ca1df15c01c8b0445237131df25a92b6",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Deterministic atlas authoring with Python, NumPy and Pillow; Basis Universal 1.16.3",
+        "date": "2026-11-12",
+        "notes": "Unmarked coat: RGB zero. Alpha is millimeters of fur divided by 35 on the shared rest atlas."
+      }
+    },
+    "pixel/coat-2048.ktx2": {
+      "chunks": [
+        "sources/pixel__coat-2048.ktx2/000.json",
+        "sources/pixel__coat-2048.ktx2/001.json",
+        "sources/pixel__coat-2048.ktx2/002.json",
+        "sources/pixel__coat-2048.ktx2/003.json"
+      ],
+      "bytes": 164638,
+      "sha256": "da87bb5d6e400e2f5d7f37c825206add638283598240fe9beab94191d1b8678f",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Deterministic atlas authoring with Python, NumPy and Pillow; Basis Universal 1.16.3",
+        "date": "2026-11-12",
+        "notes": "Unmarked coat: RGB zero. Alpha is millimeters of fur divided by 35 on the shared rest atlas."
+      }
+    },
+    "pixel/eye-512.ktx2": {
+      "chunks": [
+        "sources/pixel__eye-512.ktx2/000.json",
+        "sources/pixel__eye-512.ktx2/001.json"
+      ],
+      "bytes": 59101,
+      "sha256": "2060ea06ca0cf419da7b998e4511200c42950a62d16f986d3802732b820829d6",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Deterministic atlas authoring with Python, NumPy and Pillow; Basis Universal 1.16.3",
+        "date": "2026-11-12",
+        "notes": "Registered original Pixel iris fibers graded to copper #C9772A, limbus #7A3E12 and a centered vertical slit."
+      }
+    },
+    "pixel/flow-1024.ktx2": {
+      "chunks": [
+        "sources/pixel__flow-1024.ktx2/000.json",
+        "sources/pixel__flow-1024.ktx2/001.json",
+        "sources/pixel__flow-1024.ktx2/002.json",
+        "sources/pixel__flow-1024.ktx2/003.json",
+        "sources/pixel__flow-1024.ktx2/004.json",
+        "sources/pixel__flow-1024.ktx2/005.json",
+        "sources/pixel__flow-1024.ktx2/006.json",
+        "sources/pixel__flow-1024.ktx2/007.json",
+        "sources/pixel__flow-1024.ktx2/008.json",
+        "sources/pixel__flow-1024.ktx2/009.json",
+        "sources/pixel__flow-1024.ktx2/010.json",
+        "sources/pixel__flow-1024.ktx2/011.json",
+        "sources/pixel__flow-1024.ktx2/012.json",
+        "sources/pixel__flow-1024.ktx2/013.json",
+        "sources/pixel__flow-1024.ktx2/014.json",
+        "sources/pixel__flow-1024.ktx2/015.json",
+        "sources/pixel__flow-1024.ktx2/016.json",
+        "sources/pixel__flow-1024.ktx2/017.json",
+        "sources/pixel__flow-1024.ktx2/018.json"
+      ],
+      "bytes": 819940,
+      "sha256": "7d490b45446e9e53c5b69516ffaac1c9c7cceb338a1be8123d9660c7f848a040",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Deterministic atlas authoring with Python, NumPy and Pillow; Basis Universal 1.16.3",
+        "date": "2026-11-12",
+        "notes": "Rest-space tangent direction in RGB, encoded from [-1,1] to [0,1] on the current master atlas."
+      }
+    },
+    "pixel/normal-1024.ktx2": {
+      "chunks": [
+        "sources/pixel__normal-1024.ktx2/000.json",
+        "sources/pixel__normal-1024.ktx2/001.json",
+        "sources/pixel__normal-1024.ktx2/002.json",
+        "sources/pixel__normal-1024.ktx2/003.json",
+        "sources/pixel__normal-1024.ktx2/004.json",
+        "sources/pixel__normal-1024.ktx2/005.json",
+        "sources/pixel__normal-1024.ktx2/006.json",
+        "sources/pixel__normal-1024.ktx2/007.json",
+        "sources/pixel__normal-1024.ktx2/008.json"
+      ],
+      "bytes": 380578,
+      "sha256": "1c7614691e59fdc5d97c5f64c0104b2dca3a9e5a6e82fc82d504b6eba62107b1",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Deterministic atlas authoring with Python, NumPy and Pillow; Basis Universal 1.16.3",
+        "date": "2026-11-12",
+        "notes": "Estimated OpenGL tangent-space fur relief derived from the close-lying grain; linear, full mip chain."
+      }
+    },
+    "pixel/normal-2048.ktx2": {
+      "chunks": [
+        "sources/pixel__normal-2048.ktx2/000.json",
+        "sources/pixel__normal-2048.ktx2/001.json",
+        "sources/pixel__normal-2048.ktx2/002.json",
+        "sources/pixel__normal-2048.ktx2/003.json",
+        "sources/pixel__normal-2048.ktx2/004.json",
+        "sources/pixel__normal-2048.ktx2/005.json",
+        "sources/pixel__normal-2048.ktx2/006.json",
+        "sources/pixel__normal-2048.ktx2/007.json",
+        "sources/pixel__normal-2048.ktx2/008.json",
+        "sources/pixel__normal-2048.ktx2/009.json",
+        "sources/pixel__normal-2048.ktx2/010.json",
+        "sources/pixel__normal-2048.ktx2/011.json",
+        "sources/pixel__normal-2048.ktx2/012.json",
+        "sources/pixel__normal-2048.ktx2/013.json",
+        "sources/pixel__normal-2048.ktx2/014.json",
+        "sources/pixel__normal-2048.ktx2/015.json",
+        "sources/pixel__normal-2048.ktx2/016.json",
+        "sources/pixel__normal-2048.ktx2/017.json",
+        "sources/pixel__normal-2048.ktx2/018.json",
+        "sources/pixel__normal-2048.ktx2/019.json",
+        "sources/pixel__normal-2048.ktx2/020.json",
+        "sources/pixel__normal-2048.ktx2/021.json",
+        "sources/pixel__normal-2048.ktx2/022.json",
+        "sources/pixel__normal-2048.ktx2/023.json",
+        "sources/pixel__normal-2048.ktx2/024.json",
+        "sources/pixel__normal-2048.ktx2/025.json",
+        "sources/pixel__normal-2048.ktx2/026.json",
+        "sources/pixel__normal-2048.ktx2/027.json",
+        "sources/pixel__normal-2048.ktx2/028.json",
+        "sources/pixel__normal-2048.ktx2/029.json",
+        "sources/pixel__normal-2048.ktx2/030.json",
+        "sources/pixel__normal-2048.ktx2/031.json"
+      ],
+      "bytes": 1399450,
+      "sha256": "8c55b52b419a3ef71ef24c697eb85c92cf140b9e0fa22dcc878effa2a64424c2",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Deterministic atlas authoring with Python, NumPy and Pillow; Basis Universal 1.16.3",
+        "date": "2026-11-12",
+        "notes": "Estimated OpenGL tangent-space fur relief derived from the close-lying grain; linear, full mip chain."
+      }
+    },
+    "pixel/strand-256.ktx2": {
+      "chunks": [
+        "sources/pixel__strand-256.ktx2/000.json",
+        "sources/pixel__strand-256.ktx2/001.json"
+      ],
+      "bytes": 76602,
+      "sha256": "779dcb4f03fafdcefc138ccae36e5cf81c9b1578a1c73a88c107724733fbf170",
+      "width": 256,
+      "height": 256,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Deterministic atlas authoring with Python, NumPy and Pillow; Basis Universal 1.16.3",
+        "date": "2026-11-12",
+        "notes": "Tileable short-fur strand density; read R, fibers along V."
+      }
     }
   }
 }

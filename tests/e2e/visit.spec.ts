@@ -112,3 +112,26 @@ test('automatic tier boot settles before a patron can begin a draft',async({page
  // The benchmark resolves after two seconds; a draft must survive beyond that boundary.
  await page.waitForTimeout(2300);expect(page.url()).toBe(settledURL);await expect(page.locator('body')).toHaveAttribute('data-phase','create');await expect(page.locator('#patron-name')).toHaveValue('Avery');
 });
+
+test('Pixel loads the glossy black coat and copper iris on every master LOD', async ({ page, isMobile }, info) => {
+ const errors: string[] = [], textures = new Set<string>();
+ page.on('console', message => {
+  if (message.type() === 'error' || message.text().includes('compressed textures could not load')) errors.push(message.text());
+ });
+ page.on('pageerror', error => errors.push(error.message));
+ page.on('response', response => {
+  const path = new URL(response.url()).pathname;
+  if (response.ok() && path.includes('/textures/pixel/')) textures.add(path.split('/').at(-1)!);
+ });
+ for (const tier of isMobile ? ['phone', 'low'] : ['desktop']) {
+  textures.clear();
+  await page.goto(`./?lookdev=cat&cat=pixel&view=face&tier=${tier}`);
+  await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: STARTUP_TIMEOUT });
+  await expect(page.locator('body')).toHaveAttribute('data-bones', '65');
+  await expect(page.locator('#lookdev-status')).toContainText(`Pixel · ${tier}`);
+  const size = tier === 'desktop' ? 2048 : 1024;
+  expect(textures).toEqual(new Set([`body-${size}.ktx2`, `normal-${size}.ktx2`, 'eye-512.ktx2']));
+  expect(errors).toEqual([]);
+  await page.screenshot({ path: info.outputPath(`pixel-${tier}-face.png`) });
+ }
+});

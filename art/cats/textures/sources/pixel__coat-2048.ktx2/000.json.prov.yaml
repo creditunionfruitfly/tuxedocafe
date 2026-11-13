@@ -1,0 +1,6 @@
+source: art/cats/textures/paint-pixel.py
+tool: "Deterministic atlas authoring with Python, NumPy and Pillow; Basis Universal 1.16.3"
+date: "2026-11-12"
+license: original
+author_role: artist
+notes: "Unmarked coat: RGB zero. Alpha is millimeters of fur divided by 35 on the shared rest atlas."

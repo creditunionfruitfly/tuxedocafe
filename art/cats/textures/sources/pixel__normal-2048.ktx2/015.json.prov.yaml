@@ -1,0 +1,6 @@
+source: art/cats/textures/paint-pixel.py
+tool: "Deterministic atlas authoring with Python, NumPy and Pillow; Basis Universal 1.16.3"
+date: "2026-11-12"
+license: original
+author_role: artist
+notes: "Estimated OpenGL tangent-space fur relief derived from the close-lying grain; linear, full mip chain."
