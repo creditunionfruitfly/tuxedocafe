@@ -47,8 +47,8 @@ strand density maps are available for the fur renderer.
 Pixel's solid black coat is authored on the current master atlas by
 `paint-pixel.py`. The black pigment is #0E0D11 with minute rest-space fur
 grain. Nose, pads and inner-ear leather are dark anatomical pigments in the
-atlas. The runtime uses a broad dielectric highlight and a light-dependent rim
-from #3A3542 at 0.75 sheen. The original registered iris fibers are graded to
+atlas. The finish is mostly matte, with a soft upper-coat reflection and faint
+rim from #3A3542 at 0.22 sheen. The original registered iris fibers are graded to
 copper #C9772A and a dark #7A3E12 limbus. The iris is shared by both eyes at all
 LODs.
 
@@ -90,7 +90,7 @@ and hidden seams. These masks are available on demand; the current standard
 material samples the original generated albedo. The next fur renderer should
 sample masks, palette and master flow attributes, add root/tip variation and
 clumped shells/cards, and avoid baking lighting into coat color. Duchess needs
-her long chest/tail ruff; Pixel needs short glossy strands; Juniper needs subtle
+her long chest/tail ruff; Pixel needs short, close-lying strands; Juniper needs subtle
 Bengal glitter. Their geometric scale/proportion and eye parameters remain
 resident data rather than destructive edits to the shared master rig.
 

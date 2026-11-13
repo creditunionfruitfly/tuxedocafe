@@ -20,5 +20,5 @@ prompts in `art/cats/master/notes/PROMPTS.md`.
 | Biscuit | adult, 1.04 | Larger, `bodyFat` 0.25; amber eyes; orange classic tabby |
 | Clementine | kitten | 0.6 scale, `headKitten`, large eyes and ears, short limbs; calico |
 | Juniper | lithe | Long legs and spine, `bodyLean` 0.6; rosetted Bengal with glitter |
-| Pixel | compact | Round head, very short coat, strong sheen; copper eyes |
+| Pixel | compact | Round head, very short coat, subtle sheen; copper eyes |
 | Duchess | senior, 1.02 | Long coat (28–35 mm), ruff and plume; pale blue eyes |

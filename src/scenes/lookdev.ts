@@ -26,7 +26,7 @@ export async function mountLookdev(value:string):Promise<void>{
   scene.add(new HemisphereLight(0xffffff,0x8c7d6a,1.8));const key=new DirectionalLight(0xffefda,2.3);key.position.set(2,4,3);scene.add(key);
   const floor=new Mesh(new PlaneGeometry(6,6),new MeshStandardMaterial({color:'#bacdc1',roughness:.9}));floor.rotation.x=-Math.PI/2;floor.position.y=-.015;scene.add(floor);
   if(resident==='pixel'){
-   const rim=new DirectionalLight(0xdce6ff,2.1);
+   const rim=new DirectionalLight(0xe9edff,1.35);
    rim.position.set(-3,2,-3);scene.add(rim);
    key.position.set(1.6,3,2.7);key.color.set('#fff7ef');
    key.castShadow=true;key.shadow.mapSize.set(1024,1024);

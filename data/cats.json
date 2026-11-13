@@ -170,7 +170,7 @@
     {
       "id": "pixel",
       "name": "Pixel",
-      "coat": "Glossy black Bombay",
+      "coat": "Black Bombay",
       "age": "adult",
       "personality": "Affectionate shadow and homebody; follows you around the café",
       "catnipResponder": true,
@@ -188,8 +188,8 @@
           "pattern": "solid_black",
           "palette": {"base": "#0E0D11", "sheen": "#3A3542"},
           "furLengthMm": {"body": 3, "chest": 5, "cheeks": 5, "tail": 4},
-          "sheen": 0.75,
-          "mask": "R: none; G: none; B: none; A: very short, close-lying patent-leather coat. Separate the silhouette with rim light and broad glossy highlights; the copper eyes are the focal point."
+          "sheen": 0.22,
+          "mask": "R: none; G: none; B: none; A: very short, close-lying black fur. Use a mostly matte finish with a soft highlight along the back and a faint rim. The copper eyes are the focal point."
         }
       }
     },

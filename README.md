@@ -75,7 +75,7 @@ There is no failure state. Ignored chores are done by café staff, and the cats 
 | Biscuit | Orange | Adult | Food-driven, follows the kibble bag | Yes | Yes, once bonded |
 | Clementine | Calico | Kitten | Bossy for her size, climbs everything | No (too young) | No (too young) |
 | Juniper | Brown rosetted Bengal | Adult | Playful, athletic and chatty; paddles in the water bowl | No | Yes, once bonded |
-| Pixel | Glossy black Bombay | Adult | Affectionate shadow and homebody; follows you around the café | Yes | No |
+| Pixel | Black Bombay | Adult | Affectionate shadow and homebody; follows you around the café | Yes | No |
 | Duchess | Cream long-hair | Senior | Dignified, naps 20 hours a day | Yes | No |
 
 Each cat also carries hidden values for sociability, playfulness, boldness, touch sensitivity, chattiness, liked and disliked petting zones, and a **maximum affinity** for the player, plus a `voicePitch` for the shared cat sounds.
@@ -236,7 +236,7 @@ Perks are bought per use from the counter. If a perk needs a willing cat and non
 
 - **Fur shells:** N instanced copies of the skinned mesh pushed out along normals by `length × i / N`, in one draw that includes three.js skinning chunks and reads the shell index from `gl_InstanceID`. A tiling strand-noise texture, an alpha threshold that rises with i, darker roots, lighter tips, a flow map for combing, and gravity and velocity shear in the vertex shader. Draw shells inside-out with depth writes on so early depth tests reject hidden fragments.
 - **Fur cards:** alpha-card tufts at the ears, cheek ruff, chest and tail tip.
-- **Coats:** one RGBA mask per cat (R white spotting, G tabby markings such as stripes or Juniper's rosettes, B orange/black split for calicos and torties, A fur length) plus palette uniforms. Paint stripes along the body's flow; avoid straight high-contrast lines. Juniper's Bengal coat adds a glitter sparkle to the sheen; Pixel's short Bombay coat uses short shells and a stronger sheen.
+- **Coats:** one RGBA mask per cat (R white spotting, G tabby markings such as stripes or Juniper's rosettes, B orange/black split for calicos and torties, A fur length) plus palette uniforms. Paint stripes along the body's flow; avoid straight high-contrast lines. Juniper's Bengal coat adds a glitter sparkle to the sheen; Pixel's close-lying Bombay coat uses short shells and a subtle sheen.
 - **Eyes:** a separate mesh with a cornea dome, iris parallax and a sharp highlight; pupil size driven by light level and emotion; eye shine outdoors at dusk.
 - **Shading:** soft wrap-diffuse ramp and rim light via `onBeforeCompile` on `MeshStandardMaterial`; ear thickness maps so backlit ears glow; a Kajiya–Kay-style sheen along the fur flow on desktop.
 - **Outlines:** inverted hull with a constant pixel width, tinted from the fur color; hover swaps it to the UI accent color.
