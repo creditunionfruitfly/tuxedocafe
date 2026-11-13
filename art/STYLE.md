@@ -29,8 +29,8 @@ Desktop sheen follows flow rather than making the whole animal metallic.
 
 Coat masks: R white spotting, G stripes/rosettes, B orange/black partition,
 A length. Tabby markings follow anatomy, never ruler-straight stripes.
-Juniper has broken rosettes and subtle warm sheen. Pixel has a very short coat
-and broad glossy highlights, with enough fill to separate the black silhouette.
+Juniper has broken rosettes and subtle warm sheen. Pixel has a very short, mostly
+matte black coat with a soft highlight along the back and a faint rim.
 Eyes use independent cornea domes and fine eyelid rings, not painted circles.
 
 ## Interface

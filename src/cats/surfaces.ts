@@ -101,7 +101,7 @@ function applyPixelFinish(mesh: Mesh, material: MeshStandardMaterial): void {
   // On the lower LODs the nose, pads and ears share the body draw.
   const batched = mesh.geometry.hasAttribute('_surface');
   const fur = batched ? '1.0 - smoothstep(0.25, 0.75, pixelSurface)' : '1.0';
-  material.roughness = .51;
+  material.roughness = .76;
   material.onBeforeCompile = shader => {
     shader.uniforms.pixelSheenColor = { value: new Color(pixelCoat.palette.sheen) };
     shader.uniforms.pixelSheen = { value: pixelCoat.sheen };
@@ -112,15 +112,17 @@ function applyPixelFinish(mesh: Mesh, material: MeshStandardMaterial): void {
     const surface = batched ? 'varying float pixelSurface;\n' : '';
     shader.fragmentShader = surface + 'uniform vec3 pixelSheenColor; uniform float pixelSheen;\n' +
       shader.fragmentShader.replace('#include <opaque_fragment>', `
-        // Broad upper-coat reflection and grazing sheen. The incident-light
-        // factor keeps both lobes tied to the room as the cat turns.
+        // Keep enough soft fill to read the black pelt in the shadows.
         float pixelFacing = saturate(dot(nonPerturbedNormal, normalize(vViewPosition)));
-        float pixelRim = pow(1.0 - pixelFacing, 2.25);
+        float pixelRim = pow(1.0 - pixelFacing, 2.8);
         vec3 pixelLuma = vec3(0.2126, 0.7152, 0.0722);
         float pixelLight = saturate(1.25 * dot(totalDiffuse, pixelLuma) / max(dot(diffuseColor.rgb, pixelLuma), 0.001));
-        float pixelUpper = smoothstep(-0.4, 0.92, dot(normal, viewMatrix[1].xyz));
-        vec3 pixelTint = mix(vec3(dot(pixelSheenColor, pixelLuma)), pixelSheenColor, 0.38);
-        outgoingLight += pixelTint * pixelSheen * pixelLight * (0.46 + 0.95 * pixelUpper + 0.79 * pixelRim) * (${fur});
+        float pixelUpper = smoothstep(0.0, 0.92, dot(normal, viewMatrix[1].xyz));
+        vec3 pixelTint = mix(vec3(dot(pixelSheenColor, pixelLuma)), pixelSheenColor, 0.28);
+        float pixelReflection = 0.28 * pixelUpper + 0.52 * pixelRim;
+        // Reduce the standard dielectric reflection on fur, including the room PMREM.
+        outgoingLight += (pixelTint * pixelLight * (0.36 + pixelSheen * pixelReflection)
+          - 0.30 * totalSpecular) * (${fur});
         #include <opaque_fragment>
       `);
   };
@@ -135,7 +137,7 @@ export function applyResidentTextures(mesh: Mesh, material: MeshStandardMaterial
     if (material.name === 'cat_fur') {
       if (normal) {
         material.normalMap = normal;
-        material.normalScale.setScalar(id === 'pixel' ? .68 : .66);
+        material.normalScale.setScalar(id === 'pixel' ? .85 : .66);
       }
       if (id === 'pixel') applyPixelFinish(mesh, material);
     }

@@ -13,6 +13,8 @@ One line per Codex session (AGENTS.md, Token budget). Shares come from `/status`
 
 | 2026-11-12 | M2-6 Pixel coat and copper iris | artist and engine | Codex | A | Not reported | Authored and validated Pixel on all three resident LODs. Account allowance was unavailable. |
 
+| 2026-11-13 | M2-6 Pixel matte coat pass | artist and engine | Codex | A | Not reported | Tuned Pixel’s sheen and checked all three LODs. Account allowance was unavailable. |
+
 ## Running totals
 
 | Week | Planned | Used | Reserve left |
