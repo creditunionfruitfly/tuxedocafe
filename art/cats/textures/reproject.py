@@ -38,13 +38,14 @@ def archive(path, folder):
     (folder/'atlas.json').write_text(json.dumps({'codec':'gzip-json','sha256':hashlib.sha256(raw).hexdigest(),'chunks':chunks},indent=2)+'\n')
 
 
-def raster(atlas, surface=0):
+def raster(atlas, surface=0, *, surface_map=False):
     size = atlas['size']
     positions = np.asarray(atlas['positions']).reshape(-1,3)
     triangles = np.asarray(atlas['indices']).reshape(-1,3)
     uv = np.asarray(atlas['uv']).reshape(-1,2)*size
     point = np.zeros((size,size,3),dtype=np.float32)
     chart = np.full((size,size),-1,dtype=np.int16)
+    surfaces = np.zeros((size,size),dtype=np.uint8) if surface_map else None
     for face, ids in enumerate(triangles):
         a,b,c = uv[ids]
         lo = np.maximum(np.floor(np.minimum.reduce((a,b,c))).astype(int),0)
@@ -60,7 +61,9 @@ def raster(atlas, surface=0):
         px,py = xx[inside],yy[inside]
         point[py,px] = np.stack((u[inside],v[inside],w[inside]),1)@positions[ids]
         chart[py,px] = atlas['faceChart'][face]
-    return point,chart
+        if surfaces is not None:
+            surfaces[py,px] = atlas['faceSurface'][face]
+    return (point,chart,surfaces) if surface_map else (point,chart)
 
 
 def closest(points, triangles):

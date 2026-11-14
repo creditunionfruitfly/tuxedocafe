@@ -19,6 +19,8 @@ One line per Codex session (AGENTS.md, Token budget). Shares come from `/status`
 
 | 2026-11-13 | M2-6 Pepper body UV review | artist and engine | Codex | A | Not reported | Painted Pepper’s shared-atlas albedo and coat mask and verified all three tiers in the offline viewer. |
 
+| 2026-11-13 | M2-6 Waffles tuxedo UV review | artist and engine | Codex | A | Not reported | Baked the coat, face and fur maps and wired the chunky build into the resident viewer. |
+
 ## Running totals
 
 | Week | Planned | Used | Reserve left |

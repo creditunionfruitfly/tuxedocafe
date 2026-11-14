@@ -55,3 +55,18 @@ def soften_leather(pigment, rest, leather, adjacent_fur, feather):
     """Fade the pigment across the shared 3D edge between UV islands."""
     distance, index = cKDTree(rest[adjacent_fur]).query(rest[leather])
     pigment[leather] = mix(pigment[adjacent_fur][index], pigment[leather], smooth(.0007, feather, distance))
+
+
+def chart_gradient(values, islands):
+    """Take central differences without crossing into a different UV island."""
+    spatial_padding = ((1, 1), (1, 1))
+    padded = np.pad(values, spatial_padding + ((0, 0),) * (values.ndim - 2), mode='edge')
+    chart = np.pad(islands, 1, mode='edge')
+
+    def neighbor(samples, labels):
+        in_island = labels == islands
+        return np.where(in_island[..., None] if values.ndim == 3 else in_island, samples, values)
+
+    du = neighbor(padded[1:-1, 2:], chart[1:-1, 2:]) - neighbor(padded[1:-1, :-2], chart[1:-1, :-2])
+    dv = neighbor(padded[2:, 1:-1], chart[2:, 1:-1]) - neighbor(padded[:-2, 1:-1], chart[:-2, 1:-1])
+    return du, dv

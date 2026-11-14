@@ -11,11 +11,12 @@ const BODY = new Set(['cat_fur', 'cat_nose_leather', 'cat_paw_pads', 'cat_inner_
 const ROOT = 'art/cats/textures';
 
 const pixelCoat = cats.cats.find(cat => cat.id === 'pixel')!.model.coat;
-const tabbyCoats = {
+const coats = {
   biscuit: cats.cats.find(cat => cat.id === 'biscuit')!.model.coat,
   pepper: cats.cats.find(cat => cat.id === 'pepper')!.model.coat,
+  waffles: cats.cats.find(cat => cat.id === 'waffles')!.model.coat,
 };
-const usesTabbyFinish = (id: string): id is keyof typeof tabbyCoats => id === 'biscuit' || id === 'pepper';
+const usesCoatFinish = (id: string): id is keyof typeof coats => Object.hasOwn(coats, id);
 
 interface ResidentTextures {
   body: Texture;
@@ -24,7 +25,7 @@ interface ResidentTextures {
   normal?: Texture;
 }
 
-const usesKtx = (id: string): boolean => id === 'juniper' || id === 'pixel' || usesTabbyFinish(id);
+const usesKtx = (id: string): boolean => id === 'juniper' || id === 'pixel' || usesCoatFinish(id);
 
 const bodySize = (tier: Tier): number => tier === 'high' || tier === 'desktop' ? 2048 : 1024;
 
@@ -61,7 +62,7 @@ async function loadResident(id: string, tier: Tier, compressed: KTX2Loader | und
       console.warn(`${id} compressed textures could not load`, error);
     }
   }
-  const size = usesTabbyFinish(id) ? bodySize(tier) : tier === 'high' ? 2048 : 1024;
+  const size = usesCoatFinish(id) ? bodySize(tier) : tier === 'high' ? 2048 : 1024;
   const results = await Promise.allSettled([map(`body-${size}.jpg`), map('eye.png')]);
   const [body, eye] = results;
   if (body?.status === 'fulfilled' && eye?.status === 'fulfilled') return { body: body.value, eye: eye.value };
@@ -140,41 +141,43 @@ function applyPixelFinish(mesh: Mesh, material: MeshStandardMaterial): void {
   material.customProgramCacheKey = () => batched ? 'pixel-bombay-batched' : 'pixel-bombay-fur';
 }
 
-function applyTabbyFinish(mesh: Mesh, material: MeshStandardMaterial, sheen: number): void {
+function applyCoatFinish(mesh: Mesh, material: MeshStandardMaterial, sheen: number): void {
   const batched = mesh.geometry.hasAttribute('_surface');
   material.roughness = .84;
   material.onBeforeCompile = shader => {
-    shader.uniforms.tabbySheen = { value: sheen };
+    shader.uniforms.coatSheen = { value: sheen };
     if (batched) {
-      shader.vertexShader = 'attribute float _surface; varying float tabbySurface;\n' +
-        shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ntabbySurface = _surface;');
+      shader.vertexShader = 'attribute float _surface; varying float coatSurface;\n' +
+        shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ncoatSurface = _surface;');
     }
-    const surface = batched ? 'varying float tabbySurface;\n' : '';
-    const fur = batched ? '1.0 - step(0.5, tabbySurface)' : '1.0';
-    shader.fragmentShader = surface + 'uniform float tabbySheen;\n' +
+    const surface = batched ? 'varying float coatSurface;\n' : '';
+    const fur = batched ? '1.0 - step(0.5, coatSurface)' : '1.0';
+    shader.fragmentShader = surface + 'uniform float coatSheen;\n' +
       shader.fragmentShader.replace('#include <opaque_fragment>', `
         float grazing = 1.0 - saturate(dot(nonPerturbedNormal, normalize(vViewPosition)));
-        outgoingLight += totalDiffuse * (0.24 * tabbySheen * pow2(grazing)) * (${fur});
+        outgoingLight += totalDiffuse * (0.24 * coatSheen * pow2(grazing)) * (${fur});
         #include <opaque_fragment>
       `);
   };
-  material.customProgramCacheKey = () => batched ? 'tabby-batched' : 'tabby-fur';
+  material.customProgramCacheKey = () => `resident-coat-${batched ? 'batched' : 'fur'}-${sheen}`;
 }
+
+const corneaColors = { biscuit: '#3B2A19', pepper: '#343724', waffles: '#46321D' };
 
 export function applyResidentTextures(mesh: Mesh, material: MeshStandardMaterial, textures: ResidentTextures, id: string): void {
   const { body, eye, normal, rightEye } = textures;
   if (BODY.has(material.name)) {
     material.map = body;
-    // The tabby reworks and the compressed Pixel atlas include their own leather pigment.
-    if (usesTabbyFinish(id) || (id === 'pixel' && normal)) material.vertexColors = false;
-    if (id === 'pepper' && material.name === 'cat_nose_leather') material.roughness = .58;
+    // These painted atlases include leather pigment even when lower LODs batch it with fur.
+    if (usesCoatFinish(id) || (id === 'pixel' && normal)) material.vertexColors = false;
+    if ((id === 'pepper' || id === 'waffles') && material.name === 'cat_nose_leather') material.roughness = .58;
     if (material.name === 'cat_fur') {
       if (normal) {
         material.normalMap = normal;
         material.normalScale.setScalar(id === 'pixel' ? .85 : .66);
       }
       if (id === 'pixel') applyPixelFinish(mesh, material);
-      if (usesTabbyFinish(id)) applyTabbyFinish(mesh, material, tabbyCoats[id].sheen);
+      if (usesCoatFinish(id)) applyCoatFinish(mesh, material, coats[id].sheen);
     }
   } else if (material.name === 'cat_eye') {
     material.map = mesh.name === 'cat_eye_R' && rightEye ? rightEye : eye;
@@ -185,8 +188,8 @@ export function applyResidentTextures(mesh: Mesh, material: MeshStandardMaterial
   } else if (id === 'pixel' && material.name === 'cat_cornea') {
     material.color.set('#070609');
     material.roughness = .075;
-  } else if (usesTabbyFinish(id) && material.name === 'cat_cornea') {
-    material.color.set(id === 'pepper' ? '#343724' : '#3B2A19');
+  } else if (usesCoatFinish(id) && material.name === 'cat_cornea') {
+    material.color.set(corneaColors[id]);
     material.roughness = .075;
   } else if (id === 'pixel' && material.name === 'cat_whisker') {
     material.color.set('#302a31');
