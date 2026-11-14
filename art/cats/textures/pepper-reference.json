@@ -1,0 +1,28 @@
+{
+  "nose": {
+    "file": "mackerel-tabby-cat-15607123(1).webp",
+    "sha256": "c080d01e4d7d67454fa4a64bbba0ea8929efac8a03425d25411e7906928dba32",
+    "method": "Median RGB swatches from the visible leather of the near lobe. The dark rim is reconstructed around the shared nose surface. The same pigment applies to both lobes with subtle surface grain.",
+    "swatches": {
+      "lobe": {"box": [360, 382, 365, 388], "hex": "#AF6441"},
+      "warm": {"box": [354, 377, 360, 381], "hex": "#B06848"},
+      "low": {"box": [353, 381, 360, 385], "hex": "#80462C"},
+      "edge": {"box": [354, 397, 359, 401], "hex": "#2A120C"},
+      "nostril": {"box": [353, 386, 357, 390], "hex": "#0A0009"}
+    },
+    "pigments": {"warm": "#B06848", "low": "#80462C", "edge": "#2A120C", "nostril": "#1C100C"}
+  },
+  "iris": {
+    "file": "buddy.jpg",
+    "sha256": "fb03bf3ade35a6c7ff8d8b8e029d839f453729df8aa05626b763ff721a177f47",
+    "method": "Median RGB eyes sampled inside the iris and at its outer rim. The larger visible eye supplies the general olive tone and limbal rim. The sunlit far eye lightly informs the straw tones close to the pupil.",
+    "swatches": {
+      "base": {"box": [189, 227, 192, 231], "hex": "#8E9474"},
+      "lower": {"box": [189, 230, 191, 233], "hex": "#8C9272"},
+      "inner": {"box": [185, 227, 187, 231], "hex": "#848C6C"},
+      "limbal": {"box": [193, 224, 197, 226], "hex": "#64674E"},
+      "sunlit": {"box": [145, 227, 148, 230], "hex": "#C2CBAD"}
+    },
+    "pigments": {"inner": "#A6AB83"}
+  }
+}

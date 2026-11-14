@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { Group, Mesh } from 'three';
+import { Bone, Group, Mesh } from 'three';
 import catalog from '../../data/animation-catalog.json' with { type: 'json' };
 import cats from '../../data/cats.json' with { type: 'json' };
 import { createRng } from '../../src/core/rng.ts';
@@ -63,4 +63,19 @@ it('applies Biscuit’s adult scale and static body shape on each body primitive
   expect(root.scale.toArray()).toEqual([1.04, 1.04, 1.04]);
   expect(body.morphTargetInfluences).toEqual([.4, .25]);
   expect(leather.morphTargetInfluences).toEqual([.25]);
+});
+
+it('lengthens Pepper’s ears at the base joints without resetting their orientation', () => {
+  const root = new Group(), head = new Bone();
+  const left = new Bone(), right = new Bone(), tip = new Bone();
+  left.name = 'ear_L_01'; right.name = 'ear_R_01';
+  left.rotation.z = .2;
+  tip.position.y = .024;
+  root.add(head); head.add(left, right); left.add(tip);
+  expect(applyResidentBuild(root, 'pepper')).toBeCloseTo(.95);
+  expect(root.scale.toArray()).toEqual([.95, .95, .95]);
+  expect(left.scale.toArray()).toEqual([1, 1.03, 1]);
+  expect(right.scale.toArray()).toEqual([1, 1.03, 1]);
+  expect(left.rotation.z).toBeCloseTo(.2);
+  expect(tip.position.y).toBeCloseTo(.024);
 });
