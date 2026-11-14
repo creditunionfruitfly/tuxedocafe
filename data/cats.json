@@ -77,8 +77,8 @@
         "build": "adult",
         "scale": 0.95,
         "overrides": {"ears": {"length": 1.03}},
-        "eyes": {"iris": "#8DA83A", "limbal": "#4A5E23", "pupil": "slit"},
-        "leather": {"nose": "#9E5A4E", "pads": "#2E2521"},
+        "eyes": {"iris": "#8C9271", "limbal": "#64674E", "pupil": "slit"},
+        "leather": {"nose": "#AF6441", "pads": "#2E2521"},
         "coat": {
           "pattern": "mackerel_tabby",
           "palette": {"base": "#8A6E4C", "stripe": "#2B2219", "ticking": "#B39A73", "white": "#EFE6D6"},

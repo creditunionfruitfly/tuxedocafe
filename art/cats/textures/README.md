@@ -74,6 +74,27 @@ divided by 35. Length blends from 6 mm on the body to 12 mm on the chest,
 ready for the fur renderer. Inspect with `?lookdev=cat&cat=biscuit` and
 add `&view=face`, `&view=shoulders` or `&pose=walk`.
 
+## Pepper’s mackerel tabby coat and face
+
+`paint-pepper.py` paints the #8A6E4C coat with #2B2219 bands and #B39A73
+agouti ticking directly on the restored master. The #EFE6D6 wash is limited
+to the chin and inner legs. The dorsal line feeds curved flank stripes, with
+continuous throat necklaces, face and leg markings, tail rings and a dark tip.
+The adult build uses 0.95 scale, 1.03× ear length and 0.25 coat sheen.
+
+The 2048² desktop and 1024² phone body maps ship as sRGB ETC1S with JPEG
+fallbacks. Linear RGBA masks encode pale pigment, stripes, zero in blue and
+fur length divided by 35 mm. Nominal fur lengths are 5 mm on the body, 10 mm
+on the chest, 9 mm on the cheeks and 8 mm on the tail.
+
+The nose has #AF6441 copper leather from the mackerel reference, with a
+dark lower rim and softly blended upper edge. Buddy’s outdoor photo guides
+the #8C9271 olive iris, #64674E limbus and narrow daylight slit. The original
+iris fibers carry the sampled colors across the centered 512 px eye UV.
+The viewer loads the ETC1S iris, with PNG fallback. Source swatches and file
+hashes are in `pepper-reference.json`. Inspect `?lookdev=cat&cat=pepper`
+with `&view=face`, `&view=chest`, `&view=shoulders` or `&pose=walk`.
+
 ## UV registration and normals
 
 Body UV v increases down the PNG; three.js uses `flipY=false`. Hidden seams,

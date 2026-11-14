@@ -17,6 +17,8 @@ One line per Codex session (AGENTS.md, Token budget). Shares come from `/status`
 
 | 2026-11-13 | M2-6 Biscuit classic tabby coat | artist and engine | Codex | A | Not reported | Authored Biscuit’s master-atlas coat and reviewed Desktop, Phone and Low. |
 
+| 2026-11-13 | M2-6 Pepper body UV review | artist and engine | Codex | A | Not reported | Painted Pepper’s shared-atlas albedo and coat mask and verified all three tiers in the offline viewer. |
+
 ## Running totals
 
 | Week | Planned | Used | Reserve left |

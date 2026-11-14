@@ -26,6 +26,7 @@ export const residentScale = (id: string): number => {
 };
 
 const biscuitBodyFat = cats.cats.find(cat => cat.id === 'biscuit')!.model.morphs?.bodyFat ?? 0;
+const pepperEarLength = cats.cats.find(cat => cat.id === 'pepper')!.model.overrides?.ears?.length ?? 1;
 
 export function applyResidentBuild(root: Object3D, id: string): number {
   const scale = residentScale(id);
@@ -36,6 +37,12 @@ export function applyResidentBuild(root: Object3D, id: string): number {
       const target = node.morphTargetDictionary?.bodyFat;
       if (target !== undefined) node.morphTargetInfluences[target] = biscuitBodyFat;
     });
+  } else if (id === 'pepper') {
+    for (const name of ['ear_L_01', 'ear_R_01']) {
+      const base = root.getObjectByName(name);
+      // Ear animation drives rotation. Stretch the ear and tip along the rest up axis.
+      if (base) base.scale.y = pepperEarLength;
+    }
   }
   return scale;
 }

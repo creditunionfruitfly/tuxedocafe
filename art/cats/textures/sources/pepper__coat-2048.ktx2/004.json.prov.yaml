@@ -1,0 +1,6 @@
+source: art/cats/textures/paint-pepper.py
+tool: "Original rest-space coat painting and Basis Universal 1.15"
+date: "2026-11-13"
+license: original
+author_role: artist
+notes: "Mask channels are red pale pigment, green mackerel markings, zero blue, and alpha for fur length in millimetres divided by 35. Lengths are 5 mm body, 10 mm chest, 9 mm cheeks and 8 mm tail. Current master UV0 SHA-256 8a3776396efb036ea9efa74e57790e1af66cc278e40637f392ea38d9793afe07."

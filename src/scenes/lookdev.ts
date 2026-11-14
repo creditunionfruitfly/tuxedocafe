@@ -10,7 +10,10 @@ import { createRenderer } from '../render/renderer.ts';
 import { createCafe } from './cafe.ts';
 import { installOrientation } from '../input/orientation.ts';
 const ASSETS={cat:'art/cats/cat_placeholder_lod0.glb',hand:'art/hand.glb',cafe:'art/env_cafe.glb'} as const;
-const RESIDENTS={biscuit:'Biscuit',juniper:'Juniper',pixel:'Pixel'} as const;
+const RESIDENTS={biscuit:'Biscuit',juniper:'Juniper',pepper:'Pepper',pixel:'Pixel'} as const;
+function isResident(value:string|null):value is keyof typeof RESIDENTS{
+ return value!==null&&Object.hasOwn(RESIDENTS,value);
+}
 /** Explicit public asset whitelist: diagnostic URLs never become arbitrary fetches. */
 export function lookdevAsset(value:string):keyof typeof ASSETS|null{return value==='cat'||value==='hand'||value==='cafe'?value:null;}
 export async function mountLookdev(value:string):Promise<void>{
@@ -18,8 +21,9 @@ export async function mountLookdev(value:string):Promise<void>{
  document.querySelector('#title-screen')?.setAttribute('hidden','');document.querySelector('.top-settings')?.setAttribute('hidden','');document.body.dataset.phase='lookdev';
  const params=new URLSearchParams(location.search),tier=parseTier(params.get('tier'))??'desktop';
  const id=params.get('cat');
- const resident=asset==='cat'&&(id==='biscuit'||id==='juniper'||id==='pixel')?id:null;
- const studio=resident==='biscuit'||resident==='pixel';
+ const resident=asset==='cat'&&isResident(id)?id:null;
+ const tabby=resident==='biscuit'||resident==='pepper';
+ const studio=tabby||resident==='pixel';
  const display=createRenderer(document.querySelector<HTMLCanvasElement>('#view')!);display.configure(tier);
  let scene:Scene,camera:PerspectiveCamera,bones=0,orbit:OrbitControls|undefined;
  if(asset==='cafe'){const cafe=createCafe(display.renderer);await cafe.load();scene=cafe.scene;camera=cafe.camera;}
@@ -35,7 +39,7 @@ export async function mountLookdev(value:string):Promise<void>{
    Object.assign(key.shadow.camera,{left:-.6,right:.6,top:.6,bottom:-.6,near:.1,far:6});
    key.shadow.normalBias=.003;
    floor.receiveShadow=true;
-   if(resident==='biscuit'){
+   if(tabby){
     key.intensity=1.9;
     key.color.set('#fff9f3');
     rim.intensity=1.05;
@@ -72,15 +76,19 @@ export async function mountLookdev(value:string):Promise<void>{
   if(resident&&view==='face'&&eyeL&&eyeR){
    eyeL.getWorldPosition(center).lerp(eyeR.getWorldPosition(new Vector3()),.5);
    distance=.18;
-   const offset=resident==='biscuit'?new Vector3(.038,.018,distance):new Vector3(0,.012,distance);
+   const offset=new Vector3(tabby ? .038 : 0,tabby ? .018 : .012,distance);
    camera.position.copy(center).add(offset);
-  }else if(resident==='biscuit'&&view==='shoulders'){
+  }else if(resident==='pepper'&&view==='chest'){
+   center.set(0,.241,.138);
+   distance=.40;
+   camera.position.copy(center).add(new Vector3(.059,.014,distance));
+  }else if(tabby&&view==='shoulders'){
    center.set(0,.23,-.032);
    distance*=.74;
    camera.position.copy(center).add(new Vector3(distance*.12,distance,distance*.22));
-  }else if(resident==='biscuit'){
+  }else if(tabby){
    distance*=.66;
-   camera.position.copy(center).add(new Vector3(distance,distance*.26,distance*.45));
+   camera.position.copy(center).add(new Vector3(distance,distance*.26,distance*(resident==='pepper'?.57:.45)));
   }else if(resident==='pixel'){
    distance*=.65;
    camera.position.copy(center).add(new Vector3(distance,distance*.24,distance*.55));

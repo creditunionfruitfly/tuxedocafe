@@ -11,7 +11,11 @@ const BODY = new Set(['cat_fur', 'cat_nose_leather', 'cat_paw_pads', 'cat_inner_
 const ROOT = 'art/cats/textures';
 
 const pixelCoat = cats.cats.find(cat => cat.id === 'pixel')!.model.coat;
-const biscuitCoat = cats.cats.find(cat => cat.id === 'biscuit')!.model.coat;
+const tabbyCoats = {
+  biscuit: cats.cats.find(cat => cat.id === 'biscuit')!.model.coat,
+  pepper: cats.cats.find(cat => cat.id === 'pepper')!.model.coat,
+};
+const usesTabbyFinish = (id: string): id is keyof typeof tabbyCoats => id === 'biscuit' || id === 'pepper';
 
 interface ResidentTextures {
   body: Texture;
@@ -20,32 +24,29 @@ interface ResidentTextures {
   normal?: Texture;
 }
 
-const usesKtx = (id: string): boolean => id === 'juniper' || id === 'pixel' || id === 'biscuit';
+const usesKtx = (id: string): boolean => id === 'juniper' || id === 'pixel' || usesTabbyFinish(id);
 
 const bodySize = (tier: Tier): number => tier === 'high' || tier === 'desktop' ? 2048 : 1024;
 
 async function loadCompressed(id: string, size: number, loader: KTX2Loader): Promise<ResidentTextures> {
+  const ktx = (name: string): Promise<Texture> => loader.loadAsync(assetUrl(`${ROOT}/${id}/${name}.ktx2`));
   const separateIrises = id === 'juniper';
-  const names = [`body-${size}`, `normal-${size}`, separateIrises ? 'eye-left-512' : 'eye-512'];
-  if (separateIrises) names.push('eye-right-512');
-  const results = await Promise.allSettled(names.map(async name => loader.loadAsync(assetUrl(`${ROOT}/${id}/${name}.ktx2`))));
+  const results = await Promise.allSettled([
+    ktx(`body-${size}`),
+    ktx(separateIrises ? 'eye-left-512' : 'eye-512'),
+    id === 'pepper' ? undefined : ktx(`normal-${size}`),
+    separateIrises ? ktx('eye-right-512') : undefined,
+  ]);
   const failure = results.find(result => result.status === 'rejected');
   if (failure) {
-    for (const result of results) if (result.status === 'fulfilled') result.value.dispose();
+    for (const result of results) if (result.status === 'fulfilled') result.value?.dispose();
     throw failure.reason;
   }
-  const [body, normal, eye, rightEye] = results.map(result => (result as PromiseFulfilledResult<Texture>).value);
+  const [body, eye, normal, rightEye] = results.map(result => (result as PromiseFulfilledResult<Texture | undefined>).value);
   return { body: body!, eye: eye!, normal, rightEye };
 }
 
 async function loadResident(id: string, tier: Tier, compressed: KTX2Loader | undefined): Promise<ResidentTextures> {
-  if (compressed && usesKtx(id)) {
-    try {
-      return await loadCompressed(id, bodySize(tier), compressed);
-    } catch (error) {
-      console.warn(`${id} compressed textures could not load`, error);
-    }
-  }
   const loader = new TextureLoader();
   const map = async (name: string): Promise<Texture> => {
     const texture = await loader.loadAsync(assetUrl(`${ROOT}/${id}/${name}`));
@@ -53,7 +54,14 @@ async function loadResident(id: string, tier: Tier, compressed: KTX2Loader | und
     texture.colorSpace = SRGBColorSpace;
     return texture;
   };
-  const size = id === 'biscuit' ? bodySize(tier) : tier === 'high' ? 2048 : 1024;
+  if (compressed && usesKtx(id)) {
+    try {
+      return await loadCompressed(id, bodySize(tier), compressed);
+    } catch (error) {
+      console.warn(`${id} compressed textures could not load`, error);
+    }
+  }
+  const size = usesTabbyFinish(id) ? bodySize(tier) : tier === 'high' ? 2048 : 1024;
   const results = await Promise.allSettled([map(`body-${size}.jpg`), map('eye.png')]);
   const [body, eye] = results;
   if (body?.status === 'fulfilled' && eye?.status === 'fulfilled') return { body: body.value, eye: eye.value };
@@ -132,40 +140,41 @@ function applyPixelFinish(mesh: Mesh, material: MeshStandardMaterial): void {
   material.customProgramCacheKey = () => batched ? 'pixel-bombay-batched' : 'pixel-bombay-fur';
 }
 
-function applyBiscuitFinish(mesh: Mesh, material: MeshStandardMaterial): void {
+function applyTabbyFinish(mesh: Mesh, material: MeshStandardMaterial, sheen: number): void {
   const batched = mesh.geometry.hasAttribute('_surface');
   material.roughness = .84;
   material.onBeforeCompile = shader => {
-    shader.uniforms.biscuitSheen = { value: biscuitCoat.sheen };
+    shader.uniforms.tabbySheen = { value: sheen };
     if (batched) {
-      shader.vertexShader = 'attribute float _surface; varying float biscuitSurface;\n' +
-        shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nbiscuitSurface = _surface;');
+      shader.vertexShader = 'attribute float _surface; varying float tabbySurface;\n' +
+        shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ntabbySurface = _surface;');
     }
-    const surface = batched ? 'varying float biscuitSurface;\n' : '';
-    const fur = batched ? '1.0 - step(0.5, biscuitSurface)' : '1.0';
-    shader.fragmentShader = surface + 'uniform float biscuitSheen;\n' +
+    const surface = batched ? 'varying float tabbySurface;\n' : '';
+    const fur = batched ? '1.0 - step(0.5, tabbySurface)' : '1.0';
+    shader.fragmentShader = surface + 'uniform float tabbySheen;\n' +
       shader.fragmentShader.replace('#include <opaque_fragment>', `
         float grazing = 1.0 - saturate(dot(nonPerturbedNormal, normalize(vViewPosition)));
-        outgoingLight += totalDiffuse * (0.24 * biscuitSheen * pow2(grazing)) * (${fur});
+        outgoingLight += totalDiffuse * (0.24 * tabbySheen * pow2(grazing)) * (${fur});
         #include <opaque_fragment>
       `);
   };
-  material.customProgramCacheKey = () => batched ? 'biscuit-batched' : 'biscuit-fur';
+  material.customProgramCacheKey = () => batched ? 'tabby-batched' : 'tabby-fur';
 }
 
 export function applyResidentTextures(mesh: Mesh, material: MeshStandardMaterial, textures: ResidentTextures, id: string): void {
   const { body, eye, normal, rightEye } = textures;
   if (BODY.has(material.name)) {
     material.map = body;
-    // Biscuit and the compressed Pixel atlas carry their own leather and fur pigment.
-    if (id === 'biscuit' || (id === 'pixel' && normal)) material.vertexColors = false;
+    // The tabby reworks and the compressed Pixel atlas include their own leather pigment.
+    if (usesTabbyFinish(id) || (id === 'pixel' && normal)) material.vertexColors = false;
+    if (id === 'pepper' && material.name === 'cat_nose_leather') material.roughness = .58;
     if (material.name === 'cat_fur') {
       if (normal) {
         material.normalMap = normal;
         material.normalScale.setScalar(id === 'pixel' ? .85 : .66);
       }
       if (id === 'pixel') applyPixelFinish(mesh, material);
-      if (id === 'biscuit') applyBiscuitFinish(mesh, material);
+      if (usesTabbyFinish(id)) applyTabbyFinish(mesh, material, tabbyCoats[id].sheen);
     }
   } else if (material.name === 'cat_eye') {
     material.map = mesh.name === 'cat_eye_R' && rightEye ? rightEye : eye;
@@ -176,8 +185,8 @@ export function applyResidentTextures(mesh: Mesh, material: MeshStandardMaterial
   } else if (id === 'pixel' && material.name === 'cat_cornea') {
     material.color.set('#070609');
     material.roughness = .075;
-  } else if (id === 'biscuit' && material.name === 'cat_cornea') {
-    material.color.set('#3B2A19');
+  } else if (usesTabbyFinish(id) && material.name === 'cat_cornea') {
+    material.color.set(id === 'pepper' ? '#343724' : '#3B2A19');
     material.roughness = .075;
   } else if (id === 'pixel' && material.name === 'cat_whisker') {
     material.color.set('#302a31');

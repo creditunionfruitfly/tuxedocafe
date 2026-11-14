@@ -1,6 +1,6 @@
-source: art/cats/textures/prepare.py
-tool: OpenAI built-in imagegen; deterministic UV and bitmap preparation
-date: '2026-10-17'
+source: art/cats/textures/paint-pepper.py
+tool: "Original rest-space coat painting"
+date: "2026-11-13"
 license: original
 author_role: artist
-notes: Original generated pepper coat; native 1254x1254; registered anatomical atlas, white non-fur surfaces, three-pixel mip bleed; technical resampling to runtime sizes.
+notes: "Rest-space brown mackerel paint with agouti ticking, curved flank and leg bars, dorsal stripe, forehead M, cheek lines, closed necklaces, ringed tail and dark tip. Pale pigment on the chin and inner legs. Copper lobe #AF6441 and dark leather rim sampled from mackerel-tabby-cat-15607123(1).webp (SHA-256 c080d01e4d7d67454fa4a64bbba0ea8929efac8a03425d25411e7906928dba32) and painted on the nose chart. Copper lobe #AF6441 and dark leather rim sampled from mackerel-tabby-cat-15607123(1).webp (SHA-256 c080d01e4d7d67454fa4a64bbba0ea8929efac8a03425d25411e7906928dba32) and painted on the nose chart. Copper lobe #AF6441 and dark leather rim sampled from mackerel-tabby-cat-15607123(1).webp (SHA-256 c080d01e4d7d67454fa4a64bbba0ea8929efac8a03425d25411e7906928dba32) and painted on the nose chart. Current master UV0 SHA-256 8a3776396efb036ea9efa74e57790e1af66cc278e40637f392ea38d9793afe07. Visual references: buddy.jpg (SHA-256 fb03bf3ade35a6c7ff8d8b8e029d839f453729df8aa05626b763ff721a177f47) and mackerel-tabby-cat-15607123(1).webp (SHA-256 c080d01e4d7d67454fa4a64bbba0ea8929efac8a03425d25411e7906928dba32)."
