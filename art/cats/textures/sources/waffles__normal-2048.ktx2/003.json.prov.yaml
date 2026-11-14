@@ -1,0 +1,6 @@
+source: art/cats/textures/paint-waffles.py
+tool: "NumPy and Pillow rest-space UV painting and KTX-Software 4.4.2"
+date: "2026-11-13"
+license: original
+author_role: artist
+notes: "Estimated OpenGL tangent-space fur microstructure on UV0. linear UASTC with full mip chain."

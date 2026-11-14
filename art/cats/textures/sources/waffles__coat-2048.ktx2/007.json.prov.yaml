@@ -1,0 +1,6 @@
+source: art/cats/textures/paint-waffles.py
+tool: "NumPy and Pillow rest-space UV painting and KTX-Software 4.4.2"
+date: "2026-11-13"
+license: original
+author_role: artist
+notes: "Linear RGBA on UV0. R white spotting, G and B zero, A fur length divided by 35 mm. linear UASTC with full mip chain."

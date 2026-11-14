@@ -47,7 +47,7 @@ it('reads the pair matrix in either order', () => { expect(pairOf('waffles', 'mo
 it('places the cast apart on open floor and sizes each cat from its build', () => {
   const taken: { x: number; z: number }[] = [];
   for (let i = 0; i < 8; i++) { const spot = startSpot(createRng('cafe').fork(`cat:${i}`), taken); expect(walkable(spot.x, spot.z)).toBe(true); expect(taken.every(t => Math.hypot(t.x - spot.x, t.z - spot.z) > .8)).toBe(true); taken.push(spot); }
-  expect(residentScale('clementine')).toBeCloseTo(.6); expect(residentScale('waffles')).toBeCloseTo(1.06); expect(residentLod('phone')).toBe('lod1');
+  expect(residentScale('clementine')).toBeCloseTo(.6); expect(residentScale('waffles')).toBeCloseTo(1); expect(residentLod('phone')).toBe('lod1');
 });
 
 it('applies Biscuit’s adult scale and static body shape on each body primitive', () => {
@@ -78,4 +78,23 @@ it('lengthens Pepper’s ears at the base joints without resetting their orienta
   expect(right.scale.toArray()).toEqual([1, 1.03, 1]);
   expect(left.rotation.z).toBeCloseTo(.2);
   expect(tip.position.y).toBeCloseTo(.024);
+});
+
+it('widens Waffles’s head and uses the chunky morph at adult scale', () => {
+  const root = new Group(), body = new Mesh();
+  const head = new Bone(), jaw = new Bone(), eye = new Bone();
+  head.name = 'head';
+  jaw.name = 'jaw';
+  eye.name = 'eye_L';
+  eye.position.x = .017;
+  root.add(head, body);
+  head.add(jaw, eye);
+  body.morphTargetDictionary = { bodyFat: 0 };
+  body.morphTargetInfluences = [0];
+  expect(applyResidentBuild(root, 'waffles')).toBe(1);
+  expect(body.morphTargetInfluences).toEqual([.85]);
+  expect(head.scale.toArray()).toEqual([1.06, 1.06, 1]);
+  expect(jaw.scale.toArray()).toEqual([1, 1, 1]);
+  expect(eye.scale.x * head.scale.x).toBeCloseTo(1);
+  expect(eye.position.x).toBe(.017);
 });

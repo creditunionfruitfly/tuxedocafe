@@ -67,7 +67,7 @@
   "builds": {
     "adult": {"scale": 1.0, "groups": {}, "morphs": {}, "notes": "Reference build: Mochi."},
     "chunky": {
-      "scale": 1.06,
+      "scale": 1.0,
       "groups": {
         "spine": {"girth": 1.14},
         "pelvis": {"girth": 1.12},

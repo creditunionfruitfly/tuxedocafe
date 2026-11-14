@@ -88,12 +88,17 @@
         "sources/waffles__eye.png/003.json",
         "sources/waffles__eye.png/004.json"
       ],
-      "bytes": 186043,
-      "sha256": "1c0de0af7c61a081d60133820ee766fe0a78f504e806a591b0f2f3d3bb2d8751",
+      "bytes": 224004,
+      "sha256": "e5ee4c9eaa9948f080d672303d064bdff1822e3ee62f9812552f6254952797e2",
       "width": 512,
       "height": 512,
       "mimeType": "image/png",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Original OpenAI iris and deterministic Pillow grading",
+        "date": "2026-11-13",
+        "notes": "512 px radial iris, Waffles original iris fibers regraded to the roster gold and limbus. browser-native fallback."
+      }
     },
     "waffles/body-2048.jpg": {
       "chunks": [
@@ -109,15 +114,19 @@
         "sources/waffles__body-2048.jpg/009.json",
         "sources/waffles__body-2048.jpg/010.json",
         "sources/waffles__body-2048.jpg/011.json",
-        "sources/waffles__body-2048.jpg/012.json",
-        "sources/waffles__body-2048.jpg/013.json"
+        "sources/waffles__body-2048.jpg/012.json"
       ],
-      "bytes": 606098,
-      "sha256": "3e0d361582cae3e4b0330b69ffb8fc0b9ed3ec1f878a6f8c7b4d0122bc3ebd08",
+      "bytes": 562587,
+      "sha256": "b108b0e546e7a5523885770837575d0770f11b05544eaceb6b62871dbbdcf1a6",
       "width": 2048,
       "height": 2048,
       "mimeType": "image/jpeg",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "NumPy and Pillow rest-space UV painting",
+        "date": "2026-11-13",
+        "notes": "UV0 albedo in rest space with pink nose, chest, belly and sock pigment. browser-native fallback."
+      }
     },
     "waffles/body-1024.jpg": {
       "chunks": [
@@ -127,26 +136,35 @@
         "sources/waffles__body-1024.jpg/003.json",
         "sources/waffles__body-1024.jpg/004.json"
       ],
-      "bytes": 198541,
-      "sha256": "d4d37d62dcf6367875f97bf24a842ad2d3fb0490e15dd2302e46e34057dcd496",
+      "bytes": 187613,
+      "sha256": "2f31c00b00676e97e04a8d4b3a1e670137c9579cd3acc99c49210c8ec378eec2",
       "width": 1024,
       "height": 1024,
       "mimeType": "image/jpeg",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "NumPy and Pillow rest-space UV painting",
+        "date": "2026-11-13",
+        "notes": "UV0 albedo in rest space with pink nose, chest, belly and sock pigment. browser-native fallback."
+      }
     },
     "waffles/coat.png": {
       "chunks": [
         "sources/waffles__coat.png/000.json",
         "sources/waffles__coat.png/001.json",
-        "sources/waffles__coat.png/002.json",
-        "sources/waffles__coat.png/003.json"
+        "sources/waffles__coat.png/002.json"
       ],
-      "bytes": 140450,
-      "sha256": "8aa3231e9ef482eca1a6be3a26f92d60c083c36321f5d652f25ec6c4a6d7b855",
+      "bytes": 112663,
+      "sha256": "5ff6a4bd3bd8615f42316c087a69f5b9fab879be5fd4ee594d75fad04905213e",
       "width": 1024,
       "height": 1024,
       "mimeType": "image/png",
-      "colorSpace": "linear"
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "NumPy and Pillow rest-space UV painting",
+        "date": "2026-11-13",
+        "notes": "Linear RGBA on UV0. R white spotting, G and B zero, A fur length divided by 35 mm. browser-native fallback."
+      }
     },
     "pepper/eye.png": {
       "chunks": [
@@ -1620,6 +1638,232 @@
         "tool": "Reference color sampling and deterministic iris painting and Basis Universal 1.15",
         "date": "2026-11-13",
         "notes": "Olive #8C9271 and limbal #64674E from buddy.jpg (SHA-256 fb03bf3ade35a6c7ff8d8b8e029d839f453729df8aa05626b763ff721a177f47). Daylight slit and subtle straw pigment near the pupil on the centered .42-radius iris cap. Original registered Pepper fibers. Cornea geometry supplies catchlights."
+      }
+    },
+    "waffles/body-1024.ktx2": {
+      "chunks": [
+        "sources/waffles__body-1024.ktx2/000.json",
+        "sources/waffles__body-1024.ktx2/001.json",
+        "sources/waffles__body-1024.ktx2/002.json",
+        "sources/waffles__body-1024.ktx2/003.json"
+      ],
+      "bytes": 135958,
+      "sha256": "b06263da3762b30b0a207f38906e18c8ebd61610e02db18692fbbebb0fc87cb8",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "NumPy and Pillow rest-space UV painting and KTX-Software 4.4.2",
+        "date": "2026-11-13",
+        "notes": "UV0 albedo in rest space with pink nose, chest, belly and sock pigment. ETC1S with full mip chain."
+      }
+    },
+    "waffles/body-2048.ktx2": {
+      "chunks": [
+        "sources/waffles__body-2048.ktx2/000.json",
+        "sources/waffles__body-2048.ktx2/001.json",
+        "sources/waffles__body-2048.ktx2/002.json",
+        "sources/waffles__body-2048.ktx2/003.json",
+        "sources/waffles__body-2048.ktx2/004.json",
+        "sources/waffles__body-2048.ktx2/005.json",
+        "sources/waffles__body-2048.ktx2/006.json",
+        "sources/waffles__body-2048.ktx2/007.json",
+        "sources/waffles__body-2048.ktx2/008.json"
+      ],
+      "bytes": 396131,
+      "sha256": "2efa5252f9d3110910bd77b7607fea6423de9904b7c09dc3fbd0daa2c0989a32",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "NumPy and Pillow rest-space UV painting and KTX-Software 4.4.2",
+        "date": "2026-11-13",
+        "notes": "UV0 albedo in rest space with pink nose, chest, belly and sock pigment. ETC1S with full mip chain."
+      }
+    },
+    "waffles/coat-1024.ktx2": {
+      "chunks": [
+        "sources/waffles__coat-1024.ktx2/000.json",
+        "sources/waffles__coat-1024.ktx2/001.json",
+        "sources/waffles__coat-1024.ktx2/002.json",
+        "sources/waffles__coat-1024.ktx2/003.json"
+      ],
+      "bytes": 135433,
+      "sha256": "d23227adc953f05a9206d0f8fff446fd010fa7b6fc340ba43859f6755c0f0064",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "NumPy and Pillow rest-space UV painting and KTX-Software 4.4.2",
+        "date": "2026-11-13",
+        "notes": "Linear RGBA on UV0. R white spotting, G and B zero, A fur length divided by 35 mm. linear UASTC with full mip chain."
+      }
+    },
+    "waffles/coat-2048.ktx2": {
+      "chunks": [
+        "sources/waffles__coat-2048.ktx2/000.json",
+        "sources/waffles__coat-2048.ktx2/001.json",
+        "sources/waffles__coat-2048.ktx2/002.json",
+        "sources/waffles__coat-2048.ktx2/003.json",
+        "sources/waffles__coat-2048.ktx2/004.json",
+        "sources/waffles__coat-2048.ktx2/005.json",
+        "sources/waffles__coat-2048.ktx2/006.json",
+        "sources/waffles__coat-2048.ktx2/007.json"
+      ],
+      "bytes": 335425,
+      "sha256": "d8c9fd6845315a1b7c94b833933a143ddecbfdc2c55399d21b6d1bea1e79e8d9",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "NumPy and Pillow rest-space UV painting and KTX-Software 4.4.2",
+        "date": "2026-11-13",
+        "notes": "Linear RGBA on UV0. R white spotting, G and B zero, A fur length divided by 35 mm. linear UASTC with full mip chain."
+      }
+    },
+    "waffles/eye-512.ktx2": {
+      "chunks": [
+        "sources/waffles__eye-512.ktx2/000.json",
+        "sources/waffles__eye-512.ktx2/001.json"
+      ],
+      "bytes": 59312,
+      "sha256": "79488c1bc643d293adc5def4f38b157a450f022f40a7fcee48ad0c64ffacbdea",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Original OpenAI iris and deterministic Pillow grading and KTX-Software 4.4.2",
+        "date": "2026-11-13",
+        "notes": "512 px radial iris, Waffles original iris fibers regraded to the roster gold and limbus. ETC1S with full mip chain."
+      }
+    },
+    "waffles/flow-1024.ktx2": {
+      "chunks": [
+        "sources/waffles__flow-1024.ktx2/000.json",
+        "sources/waffles__flow-1024.ktx2/001.json",
+        "sources/waffles__flow-1024.ktx2/002.json",
+        "sources/waffles__flow-1024.ktx2/003.json",
+        "sources/waffles__flow-1024.ktx2/004.json",
+        "sources/waffles__flow-1024.ktx2/005.json",
+        "sources/waffles__flow-1024.ktx2/006.json",
+        "sources/waffles__flow-1024.ktx2/007.json",
+        "sources/waffles__flow-1024.ktx2/008.json",
+        "sources/waffles__flow-1024.ktx2/009.json",
+        "sources/waffles__flow-1024.ktx2/010.json"
+      ],
+      "bytes": 466947,
+      "sha256": "503c4470cc24a6e9272daae32fd6a61725d6097d6505c295871102d6f0f8ae06",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "NumPy and Pillow rest-space UV painting and KTX-Software 4.4.2",
+        "date": "2026-11-13",
+        "notes": "Unit rest-space tangent direction in linear RGB on UV0. linear UASTC with full mip chain."
+      }
+    },
+    "waffles/normal-1024.ktx2": {
+      "chunks": [
+        "sources/waffles__normal-1024.ktx2/000.json",
+        "sources/waffles__normal-1024.ktx2/001.json",
+        "sources/waffles__normal-1024.ktx2/002.json",
+        "sources/waffles__normal-1024.ktx2/003.json",
+        "sources/waffles__normal-1024.ktx2/004.json",
+        "sources/waffles__normal-1024.ktx2/005.json",
+        "sources/waffles__normal-1024.ktx2/006.json",
+        "sources/waffles__normal-1024.ktx2/007.json",
+        "sources/waffles__normal-1024.ktx2/008.json",
+        "sources/waffles__normal-1024.ktx2/009.json",
+        "sources/waffles__normal-1024.ktx2/010.json"
+      ],
+      "bytes": 474958,
+      "sha256": "fb6ae6a48561d3ba22c38dacc78550681a9bcc35c05a3af4189f977b29d66097",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "NumPy and Pillow rest-space UV painting and KTX-Software 4.4.2",
+        "date": "2026-11-13",
+        "notes": "Estimated OpenGL tangent-space fur microstructure on UV0. linear UASTC with full mip chain."
+      }
+    },
+    "waffles/normal-2048.ktx2": {
+      "chunks": [
+        "sources/waffles__normal-2048.ktx2/000.json",
+        "sources/waffles__normal-2048.ktx2/001.json",
+        "sources/waffles__normal-2048.ktx2/002.json",
+        "sources/waffles__normal-2048.ktx2/003.json",
+        "sources/waffles__normal-2048.ktx2/004.json",
+        "sources/waffles__normal-2048.ktx2/005.json",
+        "sources/waffles__normal-2048.ktx2/006.json",
+        "sources/waffles__normal-2048.ktx2/007.json",
+        "sources/waffles__normal-2048.ktx2/008.json",
+        "sources/waffles__normal-2048.ktx2/009.json",
+        "sources/waffles__normal-2048.ktx2/010.json",
+        "sources/waffles__normal-2048.ktx2/011.json",
+        "sources/waffles__normal-2048.ktx2/012.json",
+        "sources/waffles__normal-2048.ktx2/013.json",
+        "sources/waffles__normal-2048.ktx2/014.json",
+        "sources/waffles__normal-2048.ktx2/015.json",
+        "sources/waffles__normal-2048.ktx2/016.json",
+        "sources/waffles__normal-2048.ktx2/017.json",
+        "sources/waffles__normal-2048.ktx2/018.json",
+        "sources/waffles__normal-2048.ktx2/019.json",
+        "sources/waffles__normal-2048.ktx2/020.json",
+        "sources/waffles__normal-2048.ktx2/021.json",
+        "sources/waffles__normal-2048.ktx2/022.json",
+        "sources/waffles__normal-2048.ktx2/023.json",
+        "sources/waffles__normal-2048.ktx2/024.json",
+        "sources/waffles__normal-2048.ktx2/025.json",
+        "sources/waffles__normal-2048.ktx2/026.json",
+        "sources/waffles__normal-2048.ktx2/027.json",
+        "sources/waffles__normal-2048.ktx2/028.json",
+        "sources/waffles__normal-2048.ktx2/029.json",
+        "sources/waffles__normal-2048.ktx2/030.json",
+        "sources/waffles__normal-2048.ktx2/031.json",
+        "sources/waffles__normal-2048.ktx2/032.json",
+        "sources/waffles__normal-2048.ktx2/033.json",
+        "sources/waffles__normal-2048.ktx2/034.json",
+        "sources/waffles__normal-2048.ktx2/035.json",
+        "sources/waffles__normal-2048.ktx2/036.json",
+        "sources/waffles__normal-2048.ktx2/037.json",
+        "sources/waffles__normal-2048.ktx2/038.json",
+        "sources/waffles__normal-2048.ktx2/039.json"
+      ],
+      "bytes": 1761809,
+      "sha256": "e3747aa2487c9ccd67c207c565f123f8143fab7e911f71a369715c2016a00c98",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "NumPy and Pillow rest-space UV painting and KTX-Software 4.4.2",
+        "date": "2026-11-13",
+        "notes": "Estimated OpenGL tangent-space fur microstructure on UV0. linear UASTC with full mip chain."
+      }
+    },
+    "waffles/strand-256.ktx2": {
+      "chunks": [
+        "sources/waffles__strand-256.ktx2/000.json",
+        "sources/waffles__strand-256.ktx2/001.json"
+      ],
+      "bytes": 66699,
+      "sha256": "5afc40eff66ad55c716e5d8103920e8ce3ecc4b64b0ad13218346bdc9800a869",
+      "width": 256,
+      "height": 256,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "NumPy and Pillow rest-space UV painting and KTX-Software 4.4.2",
+        "date": "2026-11-13",
+        "notes": "Tileable 256 px linear strand noise with fibers running along V. linear UASTC with full mip chain."
       }
     }
   }

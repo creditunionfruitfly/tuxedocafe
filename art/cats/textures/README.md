@@ -12,7 +12,7 @@ technical resamples, not native 2K generation. Phone bodies are 1024², irises
 Encoded source chunks include byte counts, SHA256 hashes and provenance.
 `generate.ts` verifies and decodes these files without network or Python in CI.
 `prepare.py` is the authoring path; its NumPy/SciPy/Pillow dependencies are not
-runtime dependencies. The café loads Juniper, Pixel and Biscuit’s GPU-ready
+runtime dependencies. The café loads the reworked residents’ GPU-ready
 body, normal and iris maps on demand. JPEG and PNG maps provide fallbacks.
 
 ## Mochi's coat and face
@@ -94,6 +94,29 @@ iris fibers carry the sampled colors across the centered 512 px eye UV.
 The viewer loads the ETC1S iris, with PNG fallback. Source swatches and file
 hashes are in `pepper-reference.json`. Inspect `?lookdev=cat&cat=pepper`
 with `&view=face`, `&view=chest`, `&view=shoulders` or `&pose=walk`.
+
+## Waffles's tuxedo coat
+
+`paint-waffles.py` paints the #1C1B20 coat and #F5F2EB spotting in rest
+space. White runs from the muzzle and nose-bridge blaze to the bib and
+belly. The cuffs reach the middle of the forearms and sit above the hind
+hocks. The nose uses the roster's pink leather and the eyes use the shared
+512 px gold #D8B23A iris with a #8A6420 limbus and narrow vertical pupil.
+The chunky build applies the existing torso morph at 1.0 scale and 1.06×
+head girth. Coat sheen is 0.3.
+
+Nominal lengths are 6 mm on the body, 14 mm on the chest, 12 mm on the
+cheeks and 10 mm on the tail. The belly fringe increases toward the edge of
+the white panel. The body and normal maps ship at 2048² and 1024². The linear
+coat mask stores white spotting in R and length divided by 35 mm in A. Flow,
+strand and coat maps are ready for the future fur-shell renderer. The current
+material shows the color and fiber relief on the surface.
+
+Inspect `?lookdev=cat&cat=waffles` with `&view=face`, `&view=chest`,
+`&view=belly` or `&pose=walk`. After restoring the master checkpoint, run
+`python3 art/cats/textures/paint-waffles.py OUTPUT` to recreate the editable
+maps. Add `--registration-v1` and use a separate output directory to bake the
+earlier atlas packing for comparison.
 
 ## UV registration and normals
 

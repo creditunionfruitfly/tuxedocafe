@@ -27,16 +27,30 @@ export const residentScale = (id: string): number => {
 
 const biscuitBodyFat = cats.cats.find(cat => cat.id === 'biscuit')!.model.morphs?.bodyFat ?? 0;
 const pepperEarLength = cats.cats.find(cat => cat.id === 'pepper')!.model.overrides?.ears?.length ?? 1;
+const wafflesHeadGirth = cats.cats.find(cat => cat.id === 'waffles')!.model.overrides?.head?.girth ??
+  builds.builds.chunky.groups.head.girth;
 
 export function applyResidentBuild(root: Object3D, id: string): number {
   const scale = residentScale(id);
   root.scale.setScalar(scale);
-  if (id === 'biscuit') {
+  const bodyFat = id === 'waffles' ? builds.builds.chunky.morphs.bodyFat : id === 'biscuit' ? biscuitBodyFat : undefined;
+  if (bodyFat !== undefined) {
     root.traverse(node => {
       if (!(node instanceof Mesh) || !node.morphTargetInfluences) return;
       const target = node.morphTargetDictionary?.bodyFat;
-      if (target !== undefined) node.morphTargetInfluences[target] = biscuitBodyFat;
+      if (target !== undefined) node.morphTargetInfluences[target] = bodyFat;
     });
+  }
+  if (id === 'waffles') {
+    const head = root.getObjectByName('head');
+    if (head) {
+      head.scale.set(wafflesHeadGirth, wafflesHeadGirth, 1);
+      for (const child of head.children) {
+        if (child.name === 'jaw') continue;
+        // Move the sockets with the head while preserving eye and ear size.
+        child.scale.set(1 / wafflesHeadGirth, 1 / wafflesHeadGirth, 1);
+      }
+    }
   } else if (id === 'pepper') {
     for (const name of ['ear_L_01', 'ear_R_01']) {
       const base = root.getObjectByName(name);

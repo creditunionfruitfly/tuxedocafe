@@ -136,12 +136,13 @@ test('Pixel loads the glossy black coat and copper iris on every master LOD', as
  }
 });
 
-const tabbyReviews = [
+const coatReviews = [
  { cat: 'biscuit', name: 'Biscuit', maps: (size: number) => [`normal-${size}.ktx2`, 'eye-512.ktx2'] },
  { cat: 'pepper', name: 'Pepper', maps: () => ['eye-512.ktx2'] },
+ { cat: 'waffles', name: 'Waffles', maps: (size: number) => [`normal-${size}.ktx2`, 'eye-512.ktx2'] },
 ];
-for (const { cat, name, maps } of tabbyReviews) {
- test(`${name} loads the tabby coat on every master LOD`, async ({ page, isMobile }, info) => {
+for (const { cat, name, maps } of coatReviews) {
+ test(`${name} loads the coat on every master LOD`, async ({ page, isMobile }, info) => {
   // Disable the HTTP cache so the second tier also records the shared iris request.
   await page.route('**/textures/**', route => route.continue());
   const errors: string[] = [], textures = new Set<string>();

@@ -10,7 +10,7 @@ import { createRenderer } from '../render/renderer.ts';
 import { createCafe } from './cafe.ts';
 import { installOrientation } from '../input/orientation.ts';
 const ASSETS={cat:'art/cats/cat_placeholder_lod0.glb',hand:'art/hand.glb',cafe:'art/env_cafe.glb'} as const;
-const RESIDENTS={biscuit:'Biscuit',juniper:'Juniper',pepper:'Pepper',pixel:'Pixel'} as const;
+const RESIDENTS={biscuit:'Biscuit',juniper:'Juniper',pepper:'Pepper',pixel:'Pixel',waffles:'Waffles'} as const;
 function isResident(value:string|null):value is keyof typeof RESIDENTS{
  return value!==null&&Object.hasOwn(RESIDENTS,value);
 }
@@ -23,7 +23,8 @@ export async function mountLookdev(value:string):Promise<void>{
  const id=params.get('cat');
  const resident=asset==='cat'&&isResident(id)?id:null;
  const tabby=resident==='biscuit'||resident==='pepper';
- const studio=tabby||resident==='pixel';
+ const waffles=resident==='waffles';
+ const studio=tabby||waffles||resident==='pixel';
  const display=createRenderer(document.querySelector<HTMLCanvasElement>('#view')!);display.configure(tier);
  let scene:Scene,camera:PerspectiveCamera,bones=0,orbit:OrbitControls|undefined;
  if(asset==='cafe'){const cafe=createCafe(display.renderer);await cafe.load();scene=cafe.scene;camera=cafe.camera;}
@@ -39,10 +40,11 @@ export async function mountLookdev(value:string):Promise<void>{
    Object.assign(key.shadow.camera,{left:-.6,right:.6,top:.6,bottom:-.6,near:.1,far:6});
    key.shadow.normalBias=.003;
    floor.receiveShadow=true;
-   if(tabby){
+   if(tabby||waffles){
     key.intensity=1.9;
     key.color.set('#fff9f3');
-    rim.intensity=1.05;
+    rim.intensity=waffles ? 1.4 : 1.05;
+    if(waffles)rim.color.set('#f3f4ff');
    }
   }
   const loader=new GLTFLoader();loader.setMeshoptDecoder(MeshoptDecoder);
@@ -70,18 +72,23 @@ export async function mountLookdev(value:string):Promise<void>{
    }
   });
   const bounds=new Box3().setFromObject(gltf.scene),center=bounds.getCenter(new Vector3()),size=bounds.getSize(new Vector3());
+  const aspect=innerWidth/innerHeight;
   let distance=Math.max(size.x,size.y,size.z)*1.9;
   const eyeL=gltf.scene.getObjectByName('eye_L'),eyeR=gltf.scene.getObjectByName('eye_R');
   const view=params.get('view');
   if(resident&&view==='face'&&eyeL&&eyeR){
    eyeL.getWorldPosition(center).lerp(eyeR.getWorldPosition(new Vector3()),.5);
-   distance=.18;
-   const offset=new Vector3(tabby ? .038 : 0,tabby ? .018 : .012,distance);
+   distance=waffles ? .193 * Math.max(1,.96/aspect) : .18;
+   const offset=new Vector3(tabby ? .038 : waffles ? .018 : 0,tabby ? .018 : .012,distance);
    camera.position.copy(center).add(offset);
-  }else if(resident==='pepper'&&view==='chest'){
-   center.set(0,.241,.138);
-   distance=.40;
+  }else if((resident==='pepper'||waffles)&&view==='chest'){
+   center.set(0,waffles ? .196 : .241,waffles ? .102 : .138);
+   distance=waffles ? .60 * Math.max(1,.92/aspect) : .40;
    camera.position.copy(center).add(new Vector3(.059,.014,distance));
+  }else if(waffles&&view==='belly'){
+   center.set(0,.187,-.045);
+   distance=.59*Math.max(1,1.22/aspect);
+   camera.position.copy(center).add(new Vector3(distance,-.067,distance*.68));
   }else if(tabby&&view==='shoulders'){
    center.set(0,.23,-.032);
    distance*=.74;
@@ -89,6 +96,9 @@ export async function mountLookdev(value:string):Promise<void>{
   }else if(tabby){
    distance*=.66;
    camera.position.copy(center).add(new Vector3(distance,distance*.26,distance*(resident==='pepper'?.57:.45)));
+  }else if(waffles){
+   distance*=.59*Math.max(1,1.31/aspect);
+   camera.position.copy(center).add(new Vector3(distance*.83,distance*.29,distance*.87));
   }else if(resident==='pixel'){
    distance*=.65;
    camera.position.copy(center).add(new Vector3(distance,distance*.24,distance*.55));

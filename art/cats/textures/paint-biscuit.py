@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image
 from scipy.ndimage import distance_transform_edt, gaussian_filter
 
-from coat_paint import bitmap, color, fur_grain, mix, ribbon, smooth, soften_leather, stroke, unit
+from coat_paint import bitmap, chart_gradient, color, fur_grain, mix, ribbon, smooth, soften_leather, stroke, unit
 from prepare import register_iris
 from reproject import raster, read_atlas
 
@@ -145,12 +145,7 @@ def body(out, atlas, model, rng):
     relief[gutter] = relief[rows[gutter], cols[gutter]]
     fur_charts = np.where(fur, chart, -1)
     islands = np.where(gutter, fur_charts[rows, cols], fur_charts)
-    padded = np.pad(relief, 1, mode='edge')
-    padded_chart = np.pad(islands, 1, mode='edge')
-    left, right = padded_chart[1:-1, :-2] == islands, padded_chart[1:-1, 2:] == islands
-    up, down = padded_chart[:-2, 1:-1] == islands, padded_chart[2:, 1:-1] == islands
-    du = np.where(right, padded[1:-1, 2:], relief) - np.where(left, padded[1:-1, :-2], relief)
-    dv = np.where(down, padded[2:, 1:-1], relief) - np.where(up, padded[:-2, 1:-1], relief)
+    du, dv = chart_gradient(relief, islands)
     normal_map = unit(np.stack((-du * .078, -dv * .078, np.ones_like(relief)), axis=-1))
     normal_map[~fur] = [0, 0, 1]
 
