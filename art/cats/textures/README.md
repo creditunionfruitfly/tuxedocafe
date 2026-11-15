@@ -140,6 +140,24 @@ checkpoint, run `python3 art/cats/textures/paint-clementine.py OUTPUT`
 to regenerate the editable maps. Add `--registration-v1` with a separate
 output directory to compare the earlier UV packing.
 
+## Duchess's cream longhair
+
+`paint-duchess.py` follows fur growth on the master atlas in rest space,
+with a pale ruff, softly blended pink nose leather and faint cream rings on
+the tail only. The blue iris uses #7FB8C9 and a #3E6E84 limbus around a
+daylight slit. Fur lengths blend from 28 mm on the body to 35 mm at the
+chest, 30 mm at the cheeks, 32 mm at the britches and 34 mm on the tail.
+
+The café applies the senior body morph at 1.02 scale. The ruff, plume,
+britches, cheeks and ear furnishings use cutout ribbons skinned to the
+master rig. Duchess adds one draw and up to 888, 308 or 248 triangles
+at the Desktop, Phone and Low tiers respectively.
+
+Inspect `?lookdev=cat&cat=duchess` with `&view=face`, `&view=chest`,
+`&view=tail` or `&pose=walk`. Restore the master checkpoint, then run
+`python3 art/cats/textures/paint-duchess.py OUTPUT` to recreate the
+editable body, normal, mask, flow, strand and iris maps.
+
 ## UV registration and normals
 
 Body UV v increases down the PNG; three.js uses `flipY=false`. Hidden seams,
@@ -172,8 +190,8 @@ A fur length divided by 35 mm. Preserve anatomical fur flow across mirrored limb
 and hidden seams. These masks are available on demand; the current standard
 material samples the original generated albedo. The next fur renderer should
 sample masks, palette and master flow attributes, add root/tip variation and
-clumped shells/cards, and avoid baking lighting into coat color. Duchess needs
-her long chest/tail ruff; Pixel needs short, close-lying strands; Juniper needs subtle
+clumped shells/cards, and avoid baking lighting into coat color. Pixel needs
+short, close-lying strands; Juniper needs subtle
 Bengal glitter. Their geometric scale/proportion and eye parameters remain
 resident data rather than destructive edits to the shared master rig.
 

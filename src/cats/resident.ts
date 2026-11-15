@@ -10,6 +10,7 @@ import type { Rng } from '../core/rng.ts';
 import type { Tier } from '../core/tiers.ts';
 import { walkable, type Waypoint } from '../scenes/navigation.ts';
 import { Brain, type World } from './brain.ts';
+import { addDuchessFur } from './duchess-fur.ts';
 import { applyResidentTextures, loadResidentTextures } from './surfaces.ts';
 
 export interface Resident { readonly id: string; readonly name: string; readonly root: Object3D; readonly brain: Brain; step(dt: number, world: World): void; render(alpha: number): void; eyes(position: Vector3, orientation: Quaternion): void }
@@ -79,7 +80,8 @@ export function applyResidentBuild(root: Object3D, id: string): number {
   root.scale.setScalar(scale);
   const morph = id === 'clementine' ? 'headKitten' : 'bodyFat';
   const weight = id === 'clementine' ? kitten.morphs.headKitten :
-    id === 'waffles' ? builds.builds.chunky.morphs.bodyFat : id === 'biscuit' ? biscuitBodyFat : undefined;
+    id === 'waffles' ? builds.builds.chunky.morphs.bodyFat :
+    id === 'duchess' ? builds.builds.senior.morphs.bodyFat : id === 'biscuit' ? biscuitBodyFat : undefined;
   if (weight !== undefined) {
     root.traverse(node => {
       if (!(node instanceof Mesh) || !node.morphTargetInfluences) return;
@@ -150,6 +152,7 @@ export async function loadCast(tier: Tier, world: Rng, renderer: WebGLRenderer):
       const material = (node.material as MeshStandardMaterial).clone(); node.material = material; owned.add(material);
       applyResidentTextures(node, material, maps[index]!, cat.id);
     });
+    if (cat.id === 'duchess') addDuchessFur(root, tier, maps[index]!.body, owned);
     const brain = new Brain(cat.id, rng, start, scale), mover = brain.mover, mixer = new AnimationMixer(root), actions = new Map<string, AnimationAction>();
     brains.push(brain);
     const action = (name: string): AnimationAction | null => {

@@ -14,6 +14,7 @@ const pixelCoat = cats.cats.find(cat => cat.id === 'pixel')!.model.coat;
 const coats = {
   biscuit: cats.cats.find(cat => cat.id === 'biscuit')!.model.coat,
   clementine: cats.cats.find(cat => cat.id === 'clementine')!.model.coat,
+  duchess: cats.cats.find(cat => cat.id === 'duchess')!.model.coat,
   pepper: cats.cats.find(cat => cat.id === 'pepper')!.model.coat,
   waffles: cats.cats.find(cat => cat.id === 'waffles')!.model.coat,
 };
@@ -163,7 +164,7 @@ function applyCoatFinish(mesh: Mesh, material: MeshStandardMaterial, sheen: numb
   material.customProgramCacheKey = () => `resident-coat-${batched ? 'batched' : 'fur'}-${sheen}`;
 }
 
-const corneaColors = { biscuit: '#3B2A19', clementine: '#303B3D', pepper: '#343724', waffles: '#46321D' };
+const corneaColors = { biscuit: '#3B2A19', clementine: '#303B3D', duchess: '#283D48', pepper: '#343724', waffles: '#46321D' };
 
 export function applyResidentTextures(mesh: Mesh, material: MeshStandardMaterial, textures: ResidentTextures, id: string): void {
   const { body, eye, normal, rightEye } = textures;
@@ -171,7 +172,7 @@ export function applyResidentTextures(mesh: Mesh, material: MeshStandardMaterial
     material.map = body;
     // These painted atlases include leather pigment even when lower LODs batch it with fur.
     if (usesCoatFinish(id) || (id === 'pixel' && normal)) material.vertexColors = false;
-    if ((id === 'pepper' || id === 'waffles' || id === 'clementine') && material.name === 'cat_nose_leather') material.roughness = .58;
+    if ((id === 'pepper' || id === 'waffles' || id === 'clementine' || id === 'duchess') && material.name === 'cat_nose_leather') material.roughness = .58;
     if (material.name === 'cat_fur') {
       if (normal) {
         material.normalMap = normal;
