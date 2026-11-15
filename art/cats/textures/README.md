@@ -148,9 +148,10 @@ the tail only. The blue iris uses #7FB8C9 and a #3E6E84 limbus around a
 daylight slit. Fur lengths blend from 28 mm on the body to 35 mm at the
 chest, 30 mm at the cheeks, 32 mm at the britches and 34 mm on the tail.
 
-The café applies the senior body morph at 1.02 scale. The ruff, plume,
-britches, cheeks and ear furnishings use cutout ribbons skinned to the
-master rig. Duchess adds one draw and up to 888, 308 or 248 triangles
+The café applies the senior body morph at 1.02 scale. Smooth pelt volume
+supports the ruff and plume. The ruff, plume, britches, cheeks and ear
+furnishings use soft-edged ribbons skinned to the master rig.
+Duchess adds one draw and up to 888, 308 or 248 triangles
 at the Desktop, Phone and Low tiers respectively.
 
 Inspect `?lookdev=cat&cat=duchess` with `&view=face`, `&view=chest`,

@@ -24,7 +24,10 @@ it('binds the phone plume to the animated surface and leaves leather uncovered',
   const fur = body.getObjectByName('duchess_fur') as SkinnedMesh;
   expect(fur.skeleton).toBe(body.skeleton);
   expect(fur.geometry.index?.count).toBe(23 * 4 * 3);
-  expect(owned.size).toBe(3);
+  expect(owned.size).toBe(4);
+  expect(body.geometry.attributes.uv).toBe(geometry.attributes.uv);
+  expect(body.geometry.attributes.position!.getX(0)).toBeGreaterThan(position[0]!);
+  expect(body.geometry.attributes.position!.getX(3)).toBeCloseTo(position[0]!);
   const start = fur.getVertexPosition(5, new Vector3());
   joint.position.y += .02;
   root.updateMatrixWorld(true);

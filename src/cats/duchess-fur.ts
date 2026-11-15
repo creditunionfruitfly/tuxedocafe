@@ -10,12 +10,12 @@ import type { Tier } from '../core/tiers.ts';
 const duchess = cats.cats.find(cat => cat.id === 'duchess')!;
 const lengths = duchess.model.coat.furLengthMm;
 const regions = [
-  { name: 'ruff', desktop: 57, phone: 22, low: 18, length: lengths.chest, width: .013, outward: .62 },
-  { name: 'tail', desktop: 70, phone: 23, low: 21, length: lengths.tail, width: .010, outward: .66 },
-  { name: 'britches', desktop: 32, phone: 11, low: 8, length: lengths.britches!, width: .012, outward: .54 },
-  { name: 'cheeks', desktop: 25, phone: 8, low: 6, length: lengths.cheeks, width: .008, outward: .55 },
-  { name: 'ears', desktop: 16, phone: 6, low: 4, length: 19, width: .004, outward: .45 },
-  { name: 'body', desktop: 22, phone: 7, low: 5, length: lengths.body, width: .011, outward: .37 },
+  { name: 'ruff', desktop: 57, phone: 22, low: 18, length: lengths.chest, width: .010, outward: .38 },
+  { name: 'tail', desktop: 70, phone: 23, low: 21, length: lengths.tail, width: .008, outward: .44 },
+  { name: 'britches', desktop: 32, phone: 11, low: 8, length: lengths.britches!, width: .009, outward: .35 },
+  { name: 'cheeks', desktop: 25, phone: 8, low: 6, length: lengths.cheeks, width: .006, outward: .32 },
+  { name: 'ears', desktop: 16, phone: 6, low: 4, length: 13, width: .003, outward: .22 },
+  { name: 'body', desktop: 22, phone: 7, low: 5, length: lengths.body, width: .008, outward: .22 },
 ] as const;
 
 type Region = typeof regions[number]['name'];
@@ -41,10 +41,11 @@ function strandAlpha(): DataTexture {
       const across = u - .5 + .025 * Math.sin(6 * v);
       const fibers = .60 * Math.sin(78 * u + 2 * v) + .40 * Math.sin(163 * u - 4 * v);
       const taper = .48 - .27 * v ** 1.5 + .053 * fibers;
-      const edge = 1 - MathUtils.smoothstep(Math.abs(across), taper - .10, taper);
-      const tip = 1 - MathUtils.smoothstep(v, .77 + .10 * fibers, .96 + .04 * fibers);
+      const edge = 1 - MathUtils.smoothstep(Math.abs(across), taper - .17, taper);
+      const root = MathUtils.smoothstep(v, .05, .32);
+      const tip = 1 - MathUtils.smoothstep(v, .51 + .09 * fibers, .98);
       const offset = (row * width + col) * 4;
-      pixels.fill(Math.round(255 * edge * tip * (.83 + .17 * fibers)), offset, offset + 4);
+      pixels.fill(Math.round(232 * root * edge * tip * (.77 + .23 * fibers)), offset, offset + 4);
     }
   }
   const texture = new DataTexture(pixels, width, height);
@@ -54,6 +55,39 @@ function strandAlpha(): DataTexture {
   texture.generateMipmaps = true;
   texture.needsUpdate = true;
   return texture;
+}
+
+function peltVolume({ x, y, z }: Vector3): number {
+  const ramp = MathUtils.smoothstep;
+  const flank = ramp(y, .12, .22) * (1 - ramp(z, .113, .166)) * ramp(z, -.232, -.186);
+  const ruff = ramp(z, .095, .161) * (1 - ramp(z, .192, .226)) *
+    ramp(y, .130, .203) * (1 - ramp(y, .259, .318));
+  const cheeks = ramp(Math.abs(x), .022, .042) * ramp(z, .151, .181) * (1 - ramp(z, .214, .235)) *
+    ramp(y, .258, .282) * (1 - ramp(y, .308, .335));
+  const britches = (1 - ramp(z, -.143, -.091)) * ramp(y, .077, .142) * (1 - ramp(y, .164, .239));
+  const tail = (1 - ramp(z, -.263, -.229)) * ramp(y, .050, .113);
+  return Math.max(.0048 * flank, .014 * ruff, .0075 * cheeks, .010 * britches, .013 * tail);
+}
+
+/** Share the other master buffers and give Duchess her own resting pelt contour. */
+function shapePelt(source: SkinnedMesh, owned?: Set<Disposable>): void {
+  const base = source.geometry, pelt = new BufferGeometry();
+  const { position, normal, _surface: surface } = base.attributes;
+  const grown = new Float32Array(position!.count * 3);
+  const point = new Vector3(), outward = new Vector3();
+  for (let i = 0; i < position!.count; i++) {
+    point.fromBufferAttribute(position!, i);
+    if (!surface || surface.getX(i) < .5)
+      point.addScaledVector(outward.fromBufferAttribute(normal!, i), peltVolume(point));
+    point.toArray(grown, i * 3);
+  }
+  for (const [name, attribute] of Object.entries(base.attributes)) pelt.setAttribute(name, attribute);
+  pelt.setAttribute('position', new Float32BufferAttribute(grown, 3));
+  pelt.setIndex(base.index);
+  pelt.morphAttributes = base.morphAttributes;
+  pelt.morphTargetsRelative = base.morphTargetsRelative;
+  source.geometry = pelt;
+  owned?.add(pelt);
 }
 
 function groom(region: Region, origin: Vector3, rng: Rng): Vector3 {
@@ -94,6 +128,8 @@ export function addDuchessFur(root: Object3D, tier: Tier, map: Texture, owned?: 
     patch.faces.push({ vertices, end });
   }
 
+  shapePelt(source, owned);
+  const grown = source.geometry.attributes.position!;
   const rng = createRng('duchess-longhair');
   const positions: number[] = [], normals: number[] = [], uvs: number[] = [], alphaUVs: number[] = [];
   const joints: number[] = [], weights: number[] = [], indices: number[] = [];
@@ -119,7 +155,7 @@ export function addDuchessFur(root: Object3D, tier: Tier, map: Texture, owned?: 
       const influences = new Map<number, number>();
       for (const [corner, vertex] of faces[face]!.vertices.entries()) {
         const factor = bary[corner]!;
-        origin.addScaledVector(sample.fromBufferAttribute(position!, vertex), factor);
+        origin.addScaledVector(sample.fromBufferAttribute(grown, vertex), factor);
         if (fatDelta && fatWeight && geometry.morphTargetsRelative)
           origin.addScaledVector(sample.fromBufferAttribute(fatDelta, vertex), factor * fatWeight);
         outward.addScaledVector(sample.fromBufferAttribute(normal!, vertex), factor);
@@ -136,7 +172,7 @@ export function addDuchessFur(root: Object3D, tier: Tier, map: Texture, owned?: 
       const flow = groom(patch.name, origin, rng).projectOnPlane(outward).normalize();
       tip.copy(flow).addScaledVector(outward, patch.outward);
       across.crossVectors(outward, tip).normalize().applyAxisAngle(tip.normalize(), rng.range(-.92, .92));
-      const length = patch.length * .001 * rng.range(.79, 1.04);
+      const length = patch.length * .001 * rng.range(.64, .91);
       const width = patch.width * rng.range(.73, 1.19);
       const base = positions.length / 3;
       for (const [row, t] of [0, .46, 1].entries()) {
@@ -167,7 +203,10 @@ export function addDuchessFur(root: Object3D, tier: Tier, map: Texture, owned?: 
   cards.setAttribute('skinWeight', new Float32BufferAttribute(weights, 4));
   cards.setIndex(indices);
   const alphaMap = strandAlpha();
-  const material = new MeshStandardMaterial({ map, alphaMap, alphaTest: .45, side: DoubleSide, roughness: .84 });
+  const material = new MeshStandardMaterial({
+    map, alphaMap, alphaTest: .025, side: DoubleSide, roughness: .84,
+    transparent: true, depthWrite: false, forceSinglePass: true,
+  });
   material.onBeforeCompile = shader => {
     // Both sides use the outward pelt normal inherited from the root.
     shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_begin>',
