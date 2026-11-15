@@ -1,4 +1,4 @@
-import { AdditiveAnimationBlendMode, AnimationMixer, AnimationUtils, LoopOnce, LoopRepeat, Matrix4, Mesh, Quaternion, type AnimationAction, type AnimationClip, type MeshStandardMaterial, type Object3D, type Vector3, type WebGLRenderer } from 'three';
+import { AdditiveAnimationBlendMode, AnimationMixer, AnimationUtils, Group, LoopOnce, LoopRepeat, Matrix4, Mesh, Quaternion, Vector3, type AnimationAction, type AnimationClip, type MeshStandardMaterial, type Object3D, type WebGLRenderer } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
@@ -29,16 +29,62 @@ const biscuitBodyFat = cats.cats.find(cat => cat.id === 'biscuit')!.model.morphs
 const pepperEarLength = cats.cats.find(cat => cat.id === 'pepper')!.model.overrides?.ears?.length ?? 1;
 const wafflesHeadGirth = cats.cats.find(cat => cat.id === 'waffles')!.model.overrides?.head?.girth ??
   builds.builds.chunky.groups.head.girth;
+const kitten = builds.builds.kitten;
+
+function applyKittenProportions(root: Object3D, scale: number): void {
+  const head = root.getObjectByName('head');
+  if (head) {
+    const { girth, length } = kitten.groups.head;
+    head.scale.set(girth, girth, length);
+    for (const child of head.children) {
+      if (child.name === 'jaw') continue;
+      const eye = child.name.startsWith('eye_');
+      const width = eye ? kitten.groups.eyes.girth : 1;
+      child.scale.set(width / girth, width / girth, width / length);
+      if (eye) {
+        // Align the globe with the wider, more lateral headKitten lid aperture.
+        child.position.x *= 1.12;
+        child.position.z -= .0017;
+        child.scale.x *= 1.14;
+      } else if (child.name.startsWith('ear_')) {
+        child.scale.x *= kitten.groups.ears.girth;
+        child.scale.y *= kitten.groups.ears.length;
+      }
+    }
+  }
+
+  const paw = root.getObjectByName('hind_L_paw');
+  const foot = new Vector3();
+  const originalY = paw?.getWorldPosition(foot).y ?? 0;
+  for (const group of ['spine', 'frontLegs', 'hindLegs', 'tail'] as const) {
+    const { length } = kitten.groups[group];
+    for (const name of builds.groups[group]) {
+      for (const child of root.getObjectByName(name)?.children ?? []) {
+        // Shoulder translations are driven by the locomotion clips.
+        if (!child.name.endsWith('_scapula')) child.position.multiplyScalar(length);
+      }
+    }
+  }
+  if (paw) {
+    // Lower the shortened stance without editing the shared pelvis and root tracks.
+    const stance = new Group();
+    stance.position.y = (originalY - paw.getWorldPosition(foot).y) / scale;
+    stance.add(...root.children);
+    root.add(stance);
+  }
+}
 
 export function applyResidentBuild(root: Object3D, id: string): number {
   const scale = residentScale(id);
   root.scale.setScalar(scale);
-  const bodyFat = id === 'waffles' ? builds.builds.chunky.morphs.bodyFat : id === 'biscuit' ? biscuitBodyFat : undefined;
-  if (bodyFat !== undefined) {
+  const morph = id === 'clementine' ? 'headKitten' : 'bodyFat';
+  const weight = id === 'clementine' ? kitten.morphs.headKitten :
+    id === 'waffles' ? builds.builds.chunky.morphs.bodyFat : id === 'biscuit' ? biscuitBodyFat : undefined;
+  if (weight !== undefined) {
     root.traverse(node => {
       if (!(node instanceof Mesh) || !node.morphTargetInfluences) return;
-      const target = node.morphTargetDictionary?.bodyFat;
-      if (target !== undefined) node.morphTargetInfluences[target] = bodyFat;
+      const target = node.morphTargetDictionary?.[morph];
+      if (target !== undefined) node.morphTargetInfluences[target] = weight;
     });
   }
   if (id === 'waffles') {
@@ -51,6 +97,8 @@ export function applyResidentBuild(root: Object3D, id: string): number {
         child.scale.set(1 / wafflesHeadGirth, 1 / wafflesHeadGirth, 1);
       }
     }
+  } else if (id === 'clementine') {
+    applyKittenProportions(root, scale);
   } else if (id === 'pepper') {
     for (const name of ['ear_L_01', 'ear_R_01']) {
       const base = root.getObjectByName(name);
@@ -94,6 +142,7 @@ export async function loadCast(tier: Tier, world: Rng, renderer: WebGLRenderer):
     placed.push(start);
     const root = clone(model.scene);
     const scale = applyResidentBuild(root, cat.id);
+    const strideScale = cat.model.build === 'kitten' ? kitten.groups.frontLegs.length : 1;
     const head = root.getObjectByName('head') ?? root, eyeL = head.getObjectByName('eye_L'), eyeR = head.getObjectByName('eye_R'), rotation = new Matrix4();
     root.traverse(node => {
       if (!(node instanceof Mesh)) return;
@@ -142,12 +191,12 @@ export async function loadCast(tier: Tier, world: Rng, renderer: WebGLRenderer):
           current?.fadeOut(FADE); current = wanted ? action(wanted) : null; currentId = id;
           current?.reset().setEffectiveWeight(1).fadeIn(FADE).play();
         }
-        if (current && wanted === 'cat.react.walk_away') current.timeScale = Math.max(.3, mover.speed / (.85 * scale));
+        if (current && wanted === 'cat.react.walk_away') current.timeScale = Math.max(.3, mover.speed / (.85 * scale * strideScale));
         const speed = mover.speed / scale, gait = gaitFor(speed), base = current ? 0 : 1;
         for (const g of gaits) {
           fade(g, g.getClip().name === gait ? base : 0, dt, 1 / FADE);
           const authored = CATALOG.get(g.getClip().name)?.authoredSpeed ?? 0;
-          if (authored) g.timeScale = Math.max(.3, speed / authored);
+          if (authored) g.timeScale = Math.max(.3, speed / (authored * strideScale));
         }
         for (const [name, layer] of actions) if (CATALOG.get(name)?.layer === 'additive' && CATALOG.get(name)?.loop) fade(layer, brain.layers.includes(name) ? 1 : 0, dt, 4);
         for (const name of brain.layers) { const layer = action(name); if (layer && !weights.has(layer)) fade(layer, 0, dt, 4); }

@@ -10,7 +10,7 @@ import { createRenderer } from '../render/renderer.ts';
 import { createCafe } from './cafe.ts';
 import { installOrientation } from '../input/orientation.ts';
 const ASSETS={cat:'art/cats/cat_placeholder_lod0.glb',hand:'art/hand.glb',cafe:'art/env_cafe.glb'} as const;
-const RESIDENTS={biscuit:'Biscuit',juniper:'Juniper',pepper:'Pepper',pixel:'Pixel',waffles:'Waffles'} as const;
+const RESIDENTS={biscuit:'Biscuit',clementine:'Clementine',juniper:'Juniper',pepper:'Pepper',pixel:'Pixel',waffles:'Waffles'} as const;
 function isResident(value:string|null):value is keyof typeof RESIDENTS{
  return value!==null&&Object.hasOwn(RESIDENTS,value);
 }
@@ -24,14 +24,15 @@ export async function mountLookdev(value:string):Promise<void>{
  const resident=asset==='cat'&&isResident(id)?id:null;
  const tabby=resident==='biscuit'||resident==='pepper';
  const waffles=resident==='waffles';
- const studio=tabby||waffles||resident==='pixel';
+ const clementine=resident==='clementine';
+ const studio=tabby||waffles||clementine||resident==='pixel';
  const display=createRenderer(document.querySelector<HTMLCanvasElement>('#view')!);display.configure(tier);
  let scene:Scene,camera:PerspectiveCamera,bones=0,orbit:OrbitControls|undefined;
  if(asset==='cafe'){const cafe=createCafe(display.renderer);await cafe.load();scene=cafe.scene;camera=cafe.camera;}
  else{
   scene=new Scene();scene.background=new Color('#d7e5df');camera=new PerspectiveCamera(45,1,.01,30);
   scene.add(new HemisphereLight(0xffffff,0x8c7d6a,1.8));const key=new DirectionalLight(0xffefda,2.3);key.position.set(2,4,3);scene.add(key);
-  const floor=new Mesh(new PlaneGeometry(6,6),new MeshStandardMaterial({color:'#bacdc1',roughness:.9}));floor.rotation.x=-Math.PI/2;floor.position.y=-.015;scene.add(floor);
+  const floor=new Mesh(new PlaneGeometry(6,6),new MeshStandardMaterial({color:'#bacdc1',roughness:.9}));floor.rotation.x=-Math.PI/2;floor.position.y=clementine?-.003:-.015;scene.add(floor);
   if(studio){
    const rim=new DirectionalLight(0xe9edff,1.35);
    rim.position.set(-3,2,-3);scene.add(rim);
@@ -40,11 +41,11 @@ export async function mountLookdev(value:string):Promise<void>{
    Object.assign(key.shadow.camera,{left:-.6,right:.6,top:.6,bottom:-.6,near:.1,far:6});
    key.shadow.normalBias=.003;
    floor.receiveShadow=true;
-   if(tabby||waffles){
+   if(tabby||waffles||clementine){
     key.intensity=1.9;
     key.color.set('#fff9f3');
-    rim.intensity=waffles ? 1.4 : 1.05;
-    if(waffles)rim.color.set('#f3f4ff');
+    rim.intensity=waffles||clementine ? 1.4 : 1.05;
+    if(waffles||clementine)rim.color.set('#f3f4ff');
    }
   }
   const loader=new GLTFLoader();loader.setMeshoptDecoder(MeshoptDecoder);
@@ -71,6 +72,7 @@ export async function mountLookdev(value:string):Promise<void>{
     applyResidentTextures(node,node.material,textures,resident);
    }
   });
+  if(clementine)gltf.scene.updateMatrixWorld(true);
   const bounds=new Box3().setFromObject(gltf.scene),center=bounds.getCenter(new Vector3()),size=bounds.getSize(new Vector3());
   const aspect=innerWidth/innerHeight;
   let distance=Math.max(size.x,size.y,size.z)*1.9;
@@ -78,9 +80,20 @@ export async function mountLookdev(value:string):Promise<void>{
   const view=params.get('view');
   if(resident&&view==='face'&&eyeL&&eyeR){
    eyeL.getWorldPosition(center).lerp(eyeR.getWorldPosition(new Vector3()),.5);
-   distance=waffles ? .193 * Math.max(1,.96/aspect) : .18;
-   const offset=new Vector3(tabby ? .038 : waffles ? .018 : 0,tabby ? .018 : .012,distance);
+   distance=clementine ? .136 * Math.max(1,.99/aspect) : waffles ? .193 * Math.max(1,.96/aspect) : .18;
+   const offset=new Vector3(tabby ? .038 : waffles ? .018 : 0,tabby ? .018 : clementine ? .004 : .012,distance);
    camera.position.copy(center).add(offset);
+  }else if(clementine&&view==='chest'){
+   center.set(0,.092,.064);
+   distance=.33*Math.max(1,.89/aspect);
+   camera.position.copy(center).add(new Vector3(.032,.018,distance));
+  }else if(clementine&&view==='back'){
+   distance*=.66*Math.max(1,1.11/aspect);
+   camera.position.copy(center).add(new Vector3(-distance*.52,distance*.86,-distance*.70));
+  }else if(clementine&&view==='belly'){
+   center.set(0,.110,-.022);
+   distance=.40*Math.max(1,1.18/aspect);
+   camera.position.copy(center).add(new Vector3(distance,-.094,distance*.49));
   }else if((resident==='pepper'||waffles)&&view==='chest'){
    center.set(0,waffles ? .196 : .241,waffles ? .102 : .138);
    distance=waffles ? .60 * Math.max(1,.92/aspect) : .40;
@@ -96,6 +109,9 @@ export async function mountLookdev(value:string):Promise<void>{
   }else if(tabby){
    distance*=.66;
    camera.position.copy(center).add(new Vector3(distance,distance*.26,distance*(resident==='pepper'?.57:.45)));
+  }else if(clementine){
+   distance*=.62*Math.max(1,1.31/aspect);
+   camera.position.copy(center).add(new Vector3(distance*.74,distance*.32,distance*.92));
   }else if(waffles){
    distance*=.59*Math.max(1,1.31/aspect);
    camera.position.copy(center).add(new Vector3(distance*.83,distance*.29,distance*.87));

@@ -138,6 +138,7 @@ test('Pixel loads the glossy black coat and copper iris on every master LOD', as
 
 const coatReviews = [
  { cat: 'biscuit', name: 'Biscuit', maps: (size: number) => [`normal-${size}.ktx2`, 'eye-512.ktx2'] },
+ { cat: 'clementine', name: 'Clementine', maps: (size: number) => [`normal-${size}.ktx2`, 'eye-512.ktx2'] },
  { cat: 'pepper', name: 'Pepper', maps: () => ['eye-512.ktx2'] },
  { cat: 'waffles', name: 'Waffles', maps: (size: number) => [`normal-${size}.ktx2`, 'eye-512.ktx2'] },
 ];

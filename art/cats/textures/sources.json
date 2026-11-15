@@ -346,14 +346,20 @@
         "sources/clementine__eye.png/001.json",
         "sources/clementine__eye.png/002.json",
         "sources/clementine__eye.png/003.json",
-        "sources/clementine__eye.png/004.json"
+        "sources/clementine__eye.png/004.json",
+        "sources/clementine__eye.png/005.json"
       ],
-      "bytes": 192780,
-      "sha256": "3ee202c0a8bd16c8437bc1943118f3c715c944861a09103eef8a48375ee3443b",
+      "bytes": 262642,
+      "sha256": "9df0fcc6796fb4e73691629e2e479a2e3273a80165ca8ed7798883a4fef2662a",
       "width": 512,
       "height": 512,
       "mimeType": "image/png",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "NumPy, SciPy and Pillow",
+        "date": "2026-11-14",
+        "notes": "Original iris fibers regraded to the roster sage and blue-gray limbal colors. Analytic vertical slit. Corneal highlights are rendered. Browser-native fallback."
+      }
     },
     "clementine/body-2048.jpg": {
       "chunks": [
@@ -369,17 +375,19 @@
         "sources/clementine__body-2048.jpg/009.json",
         "sources/clementine__body-2048.jpg/010.json",
         "sources/clementine__body-2048.jpg/011.json",
-        "sources/clementine__body-2048.jpg/012.json",
-        "sources/clementine__body-2048.jpg/013.json",
-        "sources/clementine__body-2048.jpg/014.json",
-        "sources/clementine__body-2048.jpg/015.json"
+        "sources/clementine__body-2048.jpg/012.json"
       ],
-      "bytes": 710656,
-      "sha256": "020cee68d1ad3e195e4cb60b5365268c6accac7274ad1f8b47d8874d94d29cc8",
+      "bytes": 574044,
+      "sha256": "2cea537221855c636af664c69866d861acc4891cf664c3a8db5c591009033ceb",
       "width": 2048,
       "height": 2048,
       "mimeType": "image/jpeg",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "NumPy, SciPy and Pillow",
+        "date": "2026-11-14",
+        "notes": "Rest-space calico albedo on the current shared UV0. User photo guided the white blaze, muzzle and chest and the palette follows the roster. Browser-native fallback."
+      }
     },
     "clementine/body-1024.jpg": {
       "chunks": [
@@ -387,31 +395,38 @@
         "sources/clementine__body-1024.jpg/001.json",
         "sources/clementine__body-1024.jpg/002.json",
         "sources/clementine__body-1024.jpg/003.json",
-        "sources/clementine__body-1024.jpg/004.json",
-        "sources/clementine__body-1024.jpg/005.json"
+        "sources/clementine__body-1024.jpg/004.json"
       ],
-      "bytes": 233749,
-      "sha256": "4e4470ad79d358eccae5c0e1b0c317d6fa1efa72862bd0f75240f94b949e3c1b",
+      "bytes": 196612,
+      "sha256": "bdd84ec3ec04b3279029a05a79dc1b7c92a863a14251076c742691952708266a",
       "width": 1024,
       "height": 1024,
       "mimeType": "image/jpeg",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "NumPy, SciPy and Pillow",
+        "date": "2026-11-14",
+        "notes": "Rest-space calico albedo on the current shared UV0. User photo guided the white blaze, muzzle and chest and the palette follows the roster. Browser-native fallback."
+      }
     },
     "clementine/coat.png": {
       "chunks": [
         "sources/clementine__coat.png/000.json",
         "sources/clementine__coat.png/001.json",
         "sources/clementine__coat.png/002.json",
-        "sources/clementine__coat.png/003.json",
-        "sources/clementine__coat.png/004.json",
-        "sources/clementine__coat.png/005.json"
+        "sources/clementine__coat.png/003.json"
       ],
-      "bytes": 230575,
-      "sha256": "5a1b351f2eff306fbb17e22733422a4ef61f533ea1f0448401ef768ab282aebe",
+      "bytes": 162759,
+      "sha256": "6e4285ca035e88574bb42e90d41c937dce87a4524f42d53328ebc3d8949a7e2d",
       "width": 1024,
       "height": 1024,
       "mimeType": "image/png",
-      "colorSpace": "linear"
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "NumPy, SciPy and Pillow",
+        "date": "2026-11-14",
+        "notes": "Linear RGBA. White spotting, orange-only tabby, orange pigment and fur length divided by 35 mm."
+      }
     },
     "juniper/eye.png": {
       "chunks": [
@@ -1864,6 +1879,245 @@
         "tool": "NumPy and Pillow rest-space UV painting and KTX-Software 4.4.2",
         "date": "2026-11-13",
         "notes": "Tileable 256 px linear strand noise with fibers running along V. linear UASTC with full mip chain."
+      }
+    },
+    "clementine/body-2048.ktx2": {
+      "chunks": [
+        "sources/clementine__body-2048.ktx2/000.json",
+        "sources/clementine__body-2048.ktx2/001.json",
+        "sources/clementine__body-2048.ktx2/002.json",
+        "sources/clementine__body-2048.ktx2/003.json",
+        "sources/clementine__body-2048.ktx2/004.json",
+        "sources/clementine__body-2048.ktx2/005.json",
+        "sources/clementine__body-2048.ktx2/006.json",
+        "sources/clementine__body-2048.ktx2/007.json",
+        "sources/clementine__body-2048.ktx2/008.json",
+        "sources/clementine__body-2048.ktx2/009.json"
+      ],
+      "bytes": 410836,
+      "sha256": "74b1c2a3f868cf80bd5ab8531ba6ce42fd0ef25d0aeb4ab07263d56869d167e0",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "NumPy, SciPy and Pillow and Basis Universal 1.16.3",
+        "date": "2026-11-14",
+        "notes": "Rest-space calico albedo on the current shared UV0. User photo guided the white blaze, muzzle and chest and the palette follows the roster. Full mip chain, sRGB ETC1S."
+      }
+    },
+    "clementine/body-1024.ktx2": {
+      "chunks": [
+        "sources/clementine__body-1024.ktx2/000.json",
+        "sources/clementine__body-1024.ktx2/001.json",
+        "sources/clementine__body-1024.ktx2/002.json"
+      ],
+      "bytes": 128980,
+      "sha256": "34922193b6b4436a5e71a19f512a1269bd185b1f8ecbdc967bcff193acdb9910",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "NumPy, SciPy and Pillow and Basis Universal 1.16.3",
+        "date": "2026-11-14",
+        "notes": "Rest-space calico albedo on the current shared UV0. User photo guided the white blaze, muzzle and chest and the palette follows the roster. Full mip chain, sRGB ETC1S."
+      }
+    },
+    "clementine/eye-512.ktx2": {
+      "chunks": [
+        "sources/clementine__eye-512.ktx2/000.json",
+        "sources/clementine__eye-512.ktx2/001.json"
+      ],
+      "bytes": 53313,
+      "sha256": "dfcfa6e236cd9feb99794d6b942cb642fff0fd4b073448e3ae7808794c9b543e",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "NumPy, SciPy and Pillow and Basis Universal 1.16.3",
+        "date": "2026-11-14",
+        "notes": "Original iris fibers regraded to the roster sage and blue-gray limbal colors. Analytic vertical slit. Corneal highlights are rendered. Full mip chain, sRGB ETC1S."
+      }
+    },
+    "clementine/normal-2048.ktx2": {
+      "chunks": [
+        "sources/clementine__normal-2048.ktx2/000.json",
+        "sources/clementine__normal-2048.ktx2/001.json",
+        "sources/clementine__normal-2048.ktx2/002.json",
+        "sources/clementine__normal-2048.ktx2/003.json",
+        "sources/clementine__normal-2048.ktx2/004.json",
+        "sources/clementine__normal-2048.ktx2/005.json",
+        "sources/clementine__normal-2048.ktx2/006.json",
+        "sources/clementine__normal-2048.ktx2/007.json",
+        "sources/clementine__normal-2048.ktx2/008.json",
+        "sources/clementine__normal-2048.ktx2/009.json",
+        "sources/clementine__normal-2048.ktx2/010.json",
+        "sources/clementine__normal-2048.ktx2/011.json",
+        "sources/clementine__normal-2048.ktx2/012.json",
+        "sources/clementine__normal-2048.ktx2/013.json",
+        "sources/clementine__normal-2048.ktx2/014.json",
+        "sources/clementine__normal-2048.ktx2/015.json",
+        "sources/clementine__normal-2048.ktx2/016.json",
+        "sources/clementine__normal-2048.ktx2/017.json",
+        "sources/clementine__normal-2048.ktx2/018.json",
+        "sources/clementine__normal-2048.ktx2/019.json",
+        "sources/clementine__normal-2048.ktx2/020.json",
+        "sources/clementine__normal-2048.ktx2/021.json",
+        "sources/clementine__normal-2048.ktx2/022.json",
+        "sources/clementine__normal-2048.ktx2/023.json",
+        "sources/clementine__normal-2048.ktx2/024.json",
+        "sources/clementine__normal-2048.ktx2/025.json",
+        "sources/clementine__normal-2048.ktx2/026.json",
+        "sources/clementine__normal-2048.ktx2/027.json",
+        "sources/clementine__normal-2048.ktx2/028.json",
+        "sources/clementine__normal-2048.ktx2/029.json",
+        "sources/clementine__normal-2048.ktx2/030.json",
+        "sources/clementine__normal-2048.ktx2/031.json",
+        "sources/clementine__normal-2048.ktx2/032.json",
+        "sources/clementine__normal-2048.ktx2/033.json",
+        "sources/clementine__normal-2048.ktx2/034.json",
+        "sources/clementine__normal-2048.ktx2/035.json",
+        "sources/clementine__normal-2048.ktx2/036.json",
+        "sources/clementine__normal-2048.ktx2/037.json",
+        "sources/clementine__normal-2048.ktx2/038.json",
+        "sources/clementine__normal-2048.ktx2/039.json",
+        "sources/clementine__normal-2048.ktx2/040.json",
+        "sources/clementine__normal-2048.ktx2/041.json",
+        "sources/clementine__normal-2048.ktx2/042.json",
+        "sources/clementine__normal-2048.ktx2/043.json",
+        "sources/clementine__normal-2048.ktx2/044.json",
+        "sources/clementine__normal-2048.ktx2/045.json",
+        "sources/clementine__normal-2048.ktx2/046.json"
+      ],
+      "bytes": 2105482,
+      "sha256": "67ca50501cd22d8eae7ec081cb72e6ed87a20b16f9a21c4133edec0a3eb6b046",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "NumPy, SciPy and Pillow and Basis Universal 1.16.3",
+        "date": "2026-11-14",
+        "notes": "Estimated linear OpenGL tangent-space fur relief on the current shared UV0. Full mip chain, linear UASTC."
+      }
+    },
+    "clementine/normal-1024.ktx2": {
+      "chunks": [
+        "sources/clementine__normal-1024.ktx2/000.json",
+        "sources/clementine__normal-1024.ktx2/001.json",
+        "sources/clementine__normal-1024.ktx2/002.json",
+        "sources/clementine__normal-1024.ktx2/003.json",
+        "sources/clementine__normal-1024.ktx2/004.json",
+        "sources/clementine__normal-1024.ktx2/005.json",
+        "sources/clementine__normal-1024.ktx2/006.json",
+        "sources/clementine__normal-1024.ktx2/007.json",
+        "sources/clementine__normal-1024.ktx2/008.json",
+        "sources/clementine__normal-1024.ktx2/009.json",
+        "sources/clementine__normal-1024.ktx2/010.json",
+        "sources/clementine__normal-1024.ktx2/011.json",
+        "sources/clementine__normal-1024.ktx2/012.json"
+      ],
+      "bytes": 564880,
+      "sha256": "80a7fc5ef71921ef906fae485d81ddca8a6be294d56567d8aa19b5eeb242b89b",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "NumPy, SciPy and Pillow and Basis Universal 1.16.3",
+        "date": "2026-11-14",
+        "notes": "Estimated linear OpenGL tangent-space fur relief on the current shared UV0. Full mip chain, linear UASTC."
+      }
+    },
+    "clementine/coat-2048.ktx2": {
+      "chunks": [
+        "sources/clementine__coat-2048.ktx2/000.json",
+        "sources/clementine__coat-2048.ktx2/001.json",
+        "sources/clementine__coat-2048.ktx2/002.json",
+        "sources/clementine__coat-2048.ktx2/003.json",
+        "sources/clementine__coat-2048.ktx2/004.json",
+        "sources/clementine__coat-2048.ktx2/005.json",
+        "sources/clementine__coat-2048.ktx2/006.json",
+        "sources/clementine__coat-2048.ktx2/007.json",
+        "sources/clementine__coat-2048.ktx2/008.json",
+        "sources/clementine__coat-2048.ktx2/009.json",
+        "sources/clementine__coat-2048.ktx2/010.json"
+      ],
+      "bytes": 451460,
+      "sha256": "4b47ec7cc60a11c289886671e0f4649c0e1b57ad5fcac5b8eb548b317d80d12a",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "NumPy, SciPy and Pillow and Basis Universal 1.16.3",
+        "date": "2026-11-14",
+        "notes": "Linear RGBA. White spotting, orange-only tabby, orange pigment and fur length divided by 35 mm. Full mip chain, linear UASTC."
+      }
+    },
+    "clementine/coat-1024.ktx2": {
+      "chunks": [
+        "sources/clementine__coat-1024.ktx2/000.json",
+        "sources/clementine__coat-1024.ktx2/001.json",
+        "sources/clementine__coat-1024.ktx2/002.json",
+        "sources/clementine__coat-1024.ktx2/003.json"
+      ],
+      "bytes": 174430,
+      "sha256": "c20113d7dc6124775e7bb3ae457e36f81ae985166e73746a174fb3c01a0d5e33",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "NumPy, SciPy and Pillow and Basis Universal 1.16.3",
+        "date": "2026-11-14",
+        "notes": "Linear RGBA. White spotting, orange-only tabby, orange pigment and fur length divided by 35 mm. Full mip chain, linear UASTC."
+      }
+    },
+    "clementine/flow-1024.ktx2": {
+      "chunks": [
+        "sources/clementine__flow-1024.ktx2/000.json",
+        "sources/clementine__flow-1024.ktx2/001.json",
+        "sources/clementine__flow-1024.ktx2/002.json",
+        "sources/clementine__flow-1024.ktx2/003.json",
+        "sources/clementine__flow-1024.ktx2/004.json",
+        "sources/clementine__flow-1024.ktx2/005.json",
+        "sources/clementine__flow-1024.ktx2/006.json",
+        "sources/clementine__flow-1024.ktx2/007.json",
+        "sources/clementine__flow-1024.ktx2/008.json",
+        "sources/clementine__flow-1024.ktx2/009.json",
+        "sources/clementine__flow-1024.ktx2/010.json",
+        "sources/clementine__flow-1024.ktx2/011.json"
+      ],
+      "bytes": 495077,
+      "sha256": "43c70a4815be1512f9866260fe81c9c134d0764c8e819619d37b4cc6575ab88b",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "NumPy, SciPy and Pillow and Basis Universal 1.16.3",
+        "date": "2026-11-14",
+        "notes": "Linear RGB normalized rest-space tangent direction, encoded from [-1,1] to [0,1]. Full mip chain, linear UASTC."
+      }
+    },
+    "clementine/strand-256.ktx2": {
+      "chunks": [
+        "sources/clementine__strand-256.ktx2/000.json",
+        "sources/clementine__strand-256.ktx2/001.json"
+      ],
+      "bytes": 67713,
+      "sha256": "471de33f77b4f86ba0aad4babaec77c52f870cbe48f7da54ab9ce0ab791e84e3",
+      "width": 256,
+      "height": 256,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "NumPy, SciPy and Pillow and Basis Universal 1.16.3",
+        "date": "2026-11-14",
+        "notes": "Linear tileable fur density, with fibers running along V. Full mip chain, linear UASTC."
       }
     }
   }

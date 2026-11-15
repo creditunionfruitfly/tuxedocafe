@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { Bone, Group, Mesh } from 'three';
+import { Bone, Group, Mesh, Vector3 } from 'three';
 import catalog from '../../data/animation-catalog.json' with { type: 'json' };
 import cats from '../../data/cats.json' with { type: 'json' };
 import { createRng } from '../../src/core/rng.ts';
@@ -97,4 +97,31 @@ it('widens Waffles’s head and uses the chunky morph at adult scale', () => {
   expect(jaw.scale.toArray()).toEqual([1, 1, 1]);
   expect(eye.scale.x * head.scale.x).toBeCloseTo(1);
   expect(eye.position.x).toBe(.017);
+});
+
+it('enlarges Clementine’s head and eyes and shortens the legs at the floor pivot', () => {
+  const root = new Group(), body = new Mesh();
+  const head = new Bone(), eye = new Bone(), hip = new Bone(), paw = new Bone(), fore = new Bone(), wrist = new Bone();
+  head.name = 'head';
+  eye.name = 'eye_L';
+  hip.name = 'hind_L_hip';
+  paw.name = 'hind_L_paw';
+  fore.name = 'front_L_fore';
+  wrist.name = 'front_L_wrist';
+  hip.position.y = .24;
+  paw.position.y = -.22;
+  wrist.position.y = -.10;
+  root.add(head, hip, fore, body);
+  head.add(eye);
+  hip.add(paw);
+  fore.add(wrist);
+  body.morphTargetDictionary = { headKitten: 1 };
+  body.morphTargetInfluences = [.4, 0];
+  expect(applyResidentBuild(root, 'clementine')).toBeCloseTo(.6);
+  expect(body.morphTargetInfluences).toEqual([.4, 1]);
+  expect(head.scale.toArray()).toEqual([1.2, 1.2, 1.08]);
+  expect(eye.getWorldScale(new Vector3()).y).toBeCloseTo(.6 * 1.15);
+  expect(wrist.position.y).toBeCloseTo(-.09);
+  expect(paw.position.y).toBeCloseTo(-.198);
+  expect(paw.getWorldPosition(new Vector3()).y).toBeCloseTo(.6 * .02);
 });
