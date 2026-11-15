@@ -118,6 +118,28 @@ Inspect `?lookdev=cat&cat=waffles` with `&view=face`, `&view=chest`,
 maps. Add `--registration-v1` and use a separate output directory to bake the
 earlier atlas packing for comparison.
 
+## Clementine's calico coat
+
+`paint-clementine.py` paints black #1B1A1E and orange #D9853A patches
+on the shared master in rest space. The orange left ear and cheek face
+the black right ear and cheek across a white #F6F2EA blaze. White also
+covers the muzzle, bib, belly and legs. The orange patches alone carry
+faint tabby markings. The kitten build uses a 1.0 resident scale
+multiplier, the headKitten morph, wider eye sockets and shorter legs.
+Coat sheen is 0.2.
+
+The 512 px radial iris uses #9DB0A0 with a #5F7A86 limbus and a vertical
+slit. Body and tangent-space normal maps ship at 2048² and 1024². White
+spotting, tabby, orange pigment and fur length divided by 35 mm occupy
+R, G, B and A respectively. Length is 6 mm on the body, 10 mm on the
+chest, 9 mm on the cheeks and 8 mm on the tail.
+
+Inspect `?lookdev=cat&cat=clementine` with `&view=face`, `&view=chest`,
+`&view=back`, `&view=belly` or `&pose=walk`. After restoring the master
+checkpoint, run `python3 art/cats/textures/paint-clementine.py OUTPUT`
+to regenerate the editable maps. Add `--registration-v1` with a separate
+output directory to compare the earlier UV packing.
+
 ## UV registration and normals
 
 Body UV v increases down the PNG; three.js uses `flipY=false`. Hidden seams,

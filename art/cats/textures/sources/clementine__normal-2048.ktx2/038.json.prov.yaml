@@ -1,0 +1,6 @@
+source: art/cats/textures/paint-clementine.py
+tool: "NumPy, SciPy and Pillow and Basis Universal 1.16.3"
+date: "2026-11-14"
+license: original
+author_role: artist
+notes: "Estimated linear OpenGL tangent-space fur relief on the current shared UV0. Full mip chain, linear UASTC."
