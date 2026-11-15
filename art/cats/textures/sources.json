@@ -578,16 +578,19 @@
       "chunks": [
         "sources/duchess__eye.png/000.json",
         "sources/duchess__eye.png/001.json",
-        "sources/duchess__eye.png/002.json",
-        "sources/duchess__eye.png/003.json",
-        "sources/duchess__eye.png/004.json"
+        "sources/duchess__eye.png/002.json"
       ],
-      "bytes": 193445,
-      "sha256": "95bf9d71d4e14fee50da5dbefa3dd96f681c62aaaf6a63839446cc736fd23730",
+      "bytes": 124851,
+      "sha256": "d714835605c632621bec1c2b6204e5a0413c2d656e4ffcea3f3cfcbd496150a8",
       "width": 512,
       "height": 512,
       "mimeType": "image/png",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Deterministic NumPy and Pillow rest-space painting",
+        "date": "2026-11-15",
+        "notes": "Blue iris #7FB8C9 with #3E6E84 limbus and a tapered vertical daylight slit."
+      }
     },
     "duchess/body-2048.jpg": {
       "chunks": [
@@ -597,52 +600,54 @@
         "sources/duchess__body-2048.jpg/003.json",
         "sources/duchess__body-2048.jpg/004.json",
         "sources/duchess__body-2048.jpg/005.json",
-        "sources/duchess__body-2048.jpg/006.json",
-        "sources/duchess__body-2048.jpg/007.json",
-        "sources/duchess__body-2048.jpg/008.json",
-        "sources/duchess__body-2048.jpg/009.json",
-        "sources/duchess__body-2048.jpg/010.json",
-        "sources/duchess__body-2048.jpg/011.json",
-        "sources/duchess__body-2048.jpg/012.json",
-        "sources/duchess__body-2048.jpg/013.json",
-        "sources/duchess__body-2048.jpg/014.json",
-        "sources/duchess__body-2048.jpg/015.json"
+        "sources/duchess__body-2048.jpg/006.json"
       ],
-      "bytes": 684935,
-      "sha256": "9a8d7bb81ff9669ed9525c6c4e48f3880490de05fc46bbe887ba22140bbcb043",
+      "bytes": 277217,
+      "sha256": "629b7946307160b386e0ce720bd48a5e8dd5f9d85c709c1d0034f9d92daf434a",
       "width": 2048,
       "height": 2048,
       "mimeType": "image/jpeg",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Deterministic NumPy and Pillow rest-space painting",
+        "date": "2026-11-15",
+        "notes": "Cream rest-space pigment with pale ruff, pink leather and tail-only ghost rings."
+      }
     },
     "duchess/body-1024.jpg": {
       "chunks": [
         "sources/duchess__body-1024.jpg/000.json",
-        "sources/duchess__body-1024.jpg/001.json",
-        "sources/duchess__body-1024.jpg/002.json",
-        "sources/duchess__body-1024.jpg/003.json",
-        "sources/duchess__body-1024.jpg/004.json"
+        "sources/duchess__body-1024.jpg/001.json"
       ],
-      "bytes": 220408,
-      "sha256": "eed2b10c097bf40bd63900026e9f8f0b74fb3aa465d4ccdae327d79afbe47eef",
+      "bytes": 84572,
+      "sha256": "bb0db172a80a13928082701bb2ad2878ce4566fcbb9415fdfcf7db7c3b37c555",
       "width": 1024,
       "height": 1024,
       "mimeType": "image/jpeg",
-      "colorSpace": "srgb"
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Deterministic NumPy and Pillow rest-space painting",
+        "date": "2026-11-15",
+        "notes": "Cream rest-space pigment with pale ruff, pink leather and tail-only ghost rings."
+      }
     },
     "duchess/coat.png": {
       "chunks": [
         "sources/duchess__coat.png/000.json",
         "sources/duchess__coat.png/001.json",
-        "sources/duchess__coat.png/002.json",
-        "sources/duchess__coat.png/003.json"
+        "sources/duchess__coat.png/002.json"
       ],
-      "bytes": 171173,
-      "sha256": "76538e372ce8cea90c8f58d2ff79832faed4d11f552bb4030352076c4540274b",
+      "bytes": 126653,
+      "sha256": "050bddb95a062684a32895b81b699a2b1556a5d84f75ff1506e1193e3e15da45",
       "width": 1024,
       "height": 1024,
       "mimeType": "image/png",
-      "colorSpace": "linear"
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Deterministic NumPy and Pillow rest-space painting",
+        "date": "2026-11-15",
+        "notes": "RGBA coat mask with pale wash, tail markings, zero partition and length divided by 35 mm."
+      }
     },
     "shared/fur-normal.png": {
       "chunks": [
@@ -2118,6 +2123,239 @@
         "tool": "NumPy, SciPy and Pillow and Basis Universal 1.16.3",
         "date": "2026-11-14",
         "notes": "Linear tileable fur density, with fibers running along V. Full mip chain, linear UASTC."
+      }
+    },
+    "duchess/body-2048.ktx2": {
+      "chunks": [
+        "sources/duchess__body-2048.ktx2/000.json",
+        "sources/duchess__body-2048.ktx2/001.json",
+        "sources/duchess__body-2048.ktx2/002.json",
+        "sources/duchess__body-2048.ktx2/003.json",
+        "sources/duchess__body-2048.ktx2/004.json",
+        "sources/duchess__body-2048.ktx2/005.json",
+        "sources/duchess__body-2048.ktx2/006.json",
+        "sources/duchess__body-2048.ktx2/007.json"
+      ],
+      "bytes": 316509,
+      "sha256": "316f56bc66aae25db91ee0659d9e29dac1bcbbcbfc2d0bfdf0164f48fbf61a0a",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Deterministic NumPy and Pillow rest-space painting and Basis Universal",
+        "date": "2026-11-15",
+        "notes": "Cream rest-space pigment with pale ruff, pink leather and tail-only ghost rings. srgb ETC1S with full mip chain."
+      }
+    },
+    "duchess/body-1024.ktx2": {
+      "chunks": [
+        "sources/duchess__body-1024.ktx2/000.json",
+        "sources/duchess__body-1024.ktx2/001.json",
+        "sources/duchess__body-1024.ktx2/002.json"
+      ],
+      "bytes": 99960,
+      "sha256": "a8e771f6066b7303f0bd8d17c226faa45fb83a91da477e592cd2b70ee6683c96",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Deterministic NumPy and Pillow rest-space painting and Basis Universal",
+        "date": "2026-11-15",
+        "notes": "Cream rest-space pigment with pale ruff, pink leather and tail-only ghost rings. srgb ETC1S with full mip chain."
+      }
+    },
+    "duchess/eye-512.ktx2": {
+      "chunks": [
+        "sources/duchess__eye-512.ktx2/000.json",
+        "sources/duchess__eye-512.ktx2/001.json"
+      ],
+      "bytes": 49358,
+      "sha256": "4785ff3441f5157027b254ae7f8a362f2594ee0f97ac344dbe204188dc8ea1e9",
+      "width": 512,
+      "height": 512,
+      "mimeType": "image/ktx2",
+      "colorSpace": "srgb",
+      "provenance": {
+        "tool": "Deterministic NumPy and Pillow rest-space painting and Basis Universal",
+        "date": "2026-11-15",
+        "notes": "Blue iris #7FB8C9 with #3E6E84 limbus and a tapered vertical daylight slit. srgb ETC1S with full mip chain."
+      }
+    },
+    "duchess/normal-2048.ktx2": {
+      "chunks": [
+        "sources/duchess__normal-2048.ktx2/000.json",
+        "sources/duchess__normal-2048.ktx2/001.json",
+        "sources/duchess__normal-2048.ktx2/002.json",
+        "sources/duchess__normal-2048.ktx2/003.json",
+        "sources/duchess__normal-2048.ktx2/004.json",
+        "sources/duchess__normal-2048.ktx2/005.json",
+        "sources/duchess__normal-2048.ktx2/006.json",
+        "sources/duchess__normal-2048.ktx2/007.json",
+        "sources/duchess__normal-2048.ktx2/008.json",
+        "sources/duchess__normal-2048.ktx2/009.json",
+        "sources/duchess__normal-2048.ktx2/010.json",
+        "sources/duchess__normal-2048.ktx2/011.json",
+        "sources/duchess__normal-2048.ktx2/012.json",
+        "sources/duchess__normal-2048.ktx2/013.json",
+        "sources/duchess__normal-2048.ktx2/014.json",
+        "sources/duchess__normal-2048.ktx2/015.json",
+        "sources/duchess__normal-2048.ktx2/016.json",
+        "sources/duchess__normal-2048.ktx2/017.json",
+        "sources/duchess__normal-2048.ktx2/018.json",
+        "sources/duchess__normal-2048.ktx2/019.json",
+        "sources/duchess__normal-2048.ktx2/020.json",
+        "sources/duchess__normal-2048.ktx2/021.json",
+        "sources/duchess__normal-2048.ktx2/022.json",
+        "sources/duchess__normal-2048.ktx2/023.json",
+        "sources/duchess__normal-2048.ktx2/024.json",
+        "sources/duchess__normal-2048.ktx2/025.json",
+        "sources/duchess__normal-2048.ktx2/026.json",
+        "sources/duchess__normal-2048.ktx2/027.json",
+        "sources/duchess__normal-2048.ktx2/028.json",
+        "sources/duchess__normal-2048.ktx2/029.json",
+        "sources/duchess__normal-2048.ktx2/030.json",
+        "sources/duchess__normal-2048.ktx2/031.json",
+        "sources/duchess__normal-2048.ktx2/032.json",
+        "sources/duchess__normal-2048.ktx2/033.json",
+        "sources/duchess__normal-2048.ktx2/034.json",
+        "sources/duchess__normal-2048.ktx2/035.json",
+        "sources/duchess__normal-2048.ktx2/036.json",
+        "sources/duchess__normal-2048.ktx2/037.json",
+        "sources/duchess__normal-2048.ktx2/038.json",
+        "sources/duchess__normal-2048.ktx2/039.json",
+        "sources/duchess__normal-2048.ktx2/040.json",
+        "sources/duchess__normal-2048.ktx2/041.json",
+        "sources/duchess__normal-2048.ktx2/042.json",
+        "sources/duchess__normal-2048.ktx2/043.json",
+        "sources/duchess__normal-2048.ktx2/044.json",
+        "sources/duchess__normal-2048.ktx2/045.json"
+      ],
+      "bytes": 2051614,
+      "sha256": "987bd9648c82dfb01ddbf1e57abe4994ceb57a1ff4db62fc5437215d3331ecec",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Deterministic NumPy and Pillow rest-space painting and Basis Universal",
+        "date": "2026-11-15",
+        "notes": "Estimated OpenGL tangent-space fur relief on the master UV0 atlas. linear UASTC with full mip chain."
+      }
+    },
+    "duchess/normal-1024.ktx2": {
+      "chunks": [
+        "sources/duchess__normal-1024.ktx2/000.json",
+        "sources/duchess__normal-1024.ktx2/001.json",
+        "sources/duchess__normal-1024.ktx2/002.json",
+        "sources/duchess__normal-1024.ktx2/003.json",
+        "sources/duchess__normal-1024.ktx2/004.json",
+        "sources/duchess__normal-1024.ktx2/005.json",
+        "sources/duchess__normal-1024.ktx2/006.json",
+        "sources/duchess__normal-1024.ktx2/007.json",
+        "sources/duchess__normal-1024.ktx2/008.json",
+        "sources/duchess__normal-1024.ktx2/009.json",
+        "sources/duchess__normal-1024.ktx2/010.json",
+        "sources/duchess__normal-1024.ktx2/011.json",
+        "sources/duchess__normal-1024.ktx2/012.json"
+      ],
+      "bytes": 564607,
+      "sha256": "a9b700edc0e45df93a9eaf09042e5cce95084564fe622aaa30f7ea3f5a861211",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Deterministic NumPy and Pillow rest-space painting and Basis Universal",
+        "date": "2026-11-15",
+        "notes": "Estimated OpenGL tangent-space fur relief on the master UV0 atlas. linear UASTC with full mip chain."
+      }
+    },
+    "duchess/coat-2048.ktx2": {
+      "chunks": [
+        "sources/duchess__coat-2048.ktx2/000.json",
+        "sources/duchess__coat-2048.ktx2/001.json",
+        "sources/duchess__coat-2048.ktx2/002.json",
+        "sources/duchess__coat-2048.ktx2/003.json",
+        "sources/duchess__coat-2048.ktx2/004.json",
+        "sources/duchess__coat-2048.ktx2/005.json",
+        "sources/duchess__coat-2048.ktx2/006.json",
+        "sources/duchess__coat-2048.ktx2/007.json",
+        "sources/duchess__coat-2048.ktx2/008.json"
+      ],
+      "bytes": 370450,
+      "sha256": "62b6305e45d2e143b230ede4c4f09603d79edd712fad58974128d3a64aef8f5e",
+      "width": 2048,
+      "height": 2048,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Deterministic NumPy and Pillow rest-space painting and Basis Universal",
+        "date": "2026-11-15",
+        "notes": "RGBA coat mask with pale wash, tail markings, zero partition and length divided by 35 mm. linear UASTC with full mip chain."
+      }
+    },
+    "duchess/coat-1024.ktx2": {
+      "chunks": [
+        "sources/duchess__coat-1024.ktx2/000.json",
+        "sources/duchess__coat-1024.ktx2/001.json",
+        "sources/duchess__coat-1024.ktx2/002.json",
+        "sources/duchess__coat-1024.ktx2/003.json"
+      ],
+      "bytes": 146255,
+      "sha256": "3a79c60ad265720ffba76870d35662e3d86feaed0b5a1089c5202e3ebdd88a88",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Deterministic NumPy and Pillow rest-space painting and Basis Universal",
+        "date": "2026-11-15",
+        "notes": "RGBA coat mask with pale wash, tail markings, zero partition and length divided by 35 mm. linear UASTC with full mip chain."
+      }
+    },
+    "duchess/flow-1024.ktx2": {
+      "chunks": [
+        "sources/duchess__flow-1024.ktx2/000.json",
+        "sources/duchess__flow-1024.ktx2/001.json",
+        "sources/duchess__flow-1024.ktx2/002.json",
+        "sources/duchess__flow-1024.ktx2/003.json",
+        "sources/duchess__flow-1024.ktx2/004.json",
+        "sources/duchess__flow-1024.ktx2/005.json",
+        "sources/duchess__flow-1024.ktx2/006.json",
+        "sources/duchess__flow-1024.ktx2/007.json",
+        "sources/duchess__flow-1024.ktx2/008.json",
+        "sources/duchess__flow-1024.ktx2/009.json",
+        "sources/duchess__flow-1024.ktx2/010.json"
+      ],
+      "bytes": 467699,
+      "sha256": "7c26f8b2b6239c07ac7842e5ecc7b2c284ffcdb1f8b541fd5ae15a83b97e08a0",
+      "width": 1024,
+      "height": 1024,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Deterministic NumPy and Pillow rest-space painting and Basis Universal",
+        "date": "2026-11-15",
+        "notes": "Rest-space tangent vector encoded in RGB. linear UASTC with full mip chain."
+      }
+    },
+    "duchess/strand-256.ktx2": {
+      "chunks": [
+        "sources/duchess__strand-256.ktx2/000.json",
+        "sources/duchess__strand-256.ktx2/001.json"
+      ],
+      "bytes": 68099,
+      "sha256": "2dbac69312f2228d1b7cbe1cdc6a83e8d50bf40a6c40756f633ea277ebe90c34",
+      "width": 256,
+      "height": 256,
+      "mimeType": "image/ktx2",
+      "colorSpace": "linear",
+      "provenance": {
+        "tool": "Deterministic NumPy and Pillow rest-space painting and Basis Universal",
+        "date": "2026-11-15",
+        "notes": "Tileable linear strand density with the fibers running in V. linear UASTC with full mip chain."
       }
     }
   }

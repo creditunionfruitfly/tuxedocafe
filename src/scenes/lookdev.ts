@@ -2,6 +2,7 @@ import { AnimationMixer,Box3,Color,DirectionalLight,HemisphereLight,Mesh,MeshSta
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { addDuchessFur } from '../cats/duchess-fur.ts';
 import { applyResidentBuild, residentLod } from '../cats/resident.ts';
 import { applyResidentTextures, loadResidentTextures } from '../cats/surfaces.ts';
 import { assetUrl,siteUrl } from '../core/assets.ts';
@@ -10,7 +11,7 @@ import { createRenderer } from '../render/renderer.ts';
 import { createCafe } from './cafe.ts';
 import { installOrientation } from '../input/orientation.ts';
 const ASSETS={cat:'art/cats/cat_placeholder_lod0.glb',hand:'art/hand.glb',cafe:'art/env_cafe.glb'} as const;
-const RESIDENTS={biscuit:'Biscuit',clementine:'Clementine',juniper:'Juniper',pepper:'Pepper',pixel:'Pixel',waffles:'Waffles'} as const;
+const RESIDENTS={biscuit:'Biscuit',clementine:'Clementine',duchess:'Duchess',juniper:'Juniper',pepper:'Pepper',pixel:'Pixel',waffles:'Waffles'} as const;
 function isResident(value:string|null):value is keyof typeof RESIDENTS{
  return value!==null&&Object.hasOwn(RESIDENTS,value);
 }
@@ -25,7 +26,8 @@ export async function mountLookdev(value:string):Promise<void>{
  const tabby=resident==='biscuit'||resident==='pepper';
  const waffles=resident==='waffles';
  const clementine=resident==='clementine';
- const studio=tabby||waffles||clementine||resident==='pixel';
+ const duchess=resident==='duchess';
+ const studio=tabby||waffles||clementine||duchess||resident==='pixel';
  const display=createRenderer(document.querySelector<HTMLCanvasElement>('#view')!);display.configure(tier);
  let scene:Scene,camera:PerspectiveCamera,bones=0,orbit:OrbitControls|undefined;
  if(asset==='cafe'){const cafe=createCafe(display.renderer);await cafe.load();scene=cafe.scene;camera=cafe.camera;}
@@ -41,7 +43,7 @@ export async function mountLookdev(value:string):Promise<void>{
    Object.assign(key.shadow.camera,{left:-.6,right:.6,top:.6,bottom:-.6,near:.1,far:6});
    key.shadow.normalBias=.003;
    floor.receiveShadow=true;
-   if(tabby||waffles||clementine){
+   if(tabby||waffles||clementine||duchess){
     key.intensity=1.9;
     key.color.set('#fff9f3');
     rim.intensity=waffles||clementine ? 1.4 : 1.05;
@@ -72,7 +74,8 @@ export async function mountLookdev(value:string):Promise<void>{
     applyResidentTextures(node,node.material,textures,resident);
    }
   });
-  if(clementine)gltf.scene.updateMatrixWorld(true);
+  if(duchess&&textures)addDuchessFur(gltf.scene,tier,textures.body);
+  if(clementine||duchess)gltf.scene.updateMatrixWorld(true);
   const bounds=new Box3().setFromObject(gltf.scene),center=bounds.getCenter(new Vector3()),size=bounds.getSize(new Vector3());
   const aspect=innerWidth/innerHeight;
   let distance=Math.max(size.x,size.y,size.z)*1.9;
@@ -83,6 +86,14 @@ export async function mountLookdev(value:string):Promise<void>{
    distance=clementine ? .136 * Math.max(1,.99/aspect) : waffles ? .193 * Math.max(1,.96/aspect) : .18;
    const offset=new Vector3(tabby ? .038 : waffles ? .018 : 0,tabby ? .018 : clementine ? .004 : .012,distance);
    camera.position.copy(center).add(offset);
+  }else if(duchess&&view==='chest'){
+   center.set(0,.235,.15);
+   distance=.44*Math.max(1,1.14/aspect);
+   camera.position.copy(center).add(new Vector3(.082,.027,distance));
+  }else if(duchess&&view==='tail'){
+   center.set(0,.17,-.259);
+   distance=.42*Math.max(1,1.19/aspect);
+   camera.position.copy(center).add(new Vector3(distance,.071,-distance*.59));
   }else if(clementine&&view==='chest'){
    center.set(0,.092,.064);
    distance=.33*Math.max(1,.89/aspect);
@@ -112,7 +123,7 @@ export async function mountLookdev(value:string):Promise<void>{
   }else if(clementine){
    distance*=.62*Math.max(1,1.31/aspect);
    camera.position.copy(center).add(new Vector3(distance*.74,distance*.32,distance*.92));
-  }else if(waffles){
+  }else if(waffles||duchess){
    distance*=.59*Math.max(1,1.31/aspect);
    camera.position.copy(center).add(new Vector3(distance*.83,distance*.29,distance*.87));
   }else if(resident==='pixel'){

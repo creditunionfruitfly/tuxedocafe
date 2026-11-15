@@ -50,7 +50,7 @@ it('places the cast apart on open floor and sizes each cat from its build', () =
   expect(residentScale('clementine')).toBeCloseTo(.6); expect(residentScale('waffles')).toBeCloseTo(1); expect(residentLod('phone')).toBe('lod1');
 });
 
-it('applies Biscuit’s adult scale and static body shape on each body primitive', () => {
+it.each(['biscuit', 'duchess'] as const)('applies %s’s scale and static body shape on each body primitive', id => {
   const root = new Group();
   const body = new Mesh();
   const leather = new Mesh();
@@ -59,8 +59,9 @@ it('applies Biscuit’s adult scale and static body shape on each body primitive
   body.morphTargetInfluences = [.4, 0];
   leather.morphTargetDictionary = { bodyFat: 0 };
   leather.morphTargetInfluences = [0];
-  expect(applyResidentBuild(root, 'biscuit')).toBeCloseTo(1.04);
-  expect(root.scale.toArray()).toEqual([1.04, 1.04, 1.04]);
+  const scale = id === 'biscuit' ? 1.04 : 1.02;
+  expect(applyResidentBuild(root, id)).toBeCloseTo(scale);
+  expect(root.scale.toArray()).toEqual([scale, scale, scale]);
   expect(body.morphTargetInfluences).toEqual([.4, .25]);
   expect(leather.morphTargetInfluences).toEqual([.25]);
 });

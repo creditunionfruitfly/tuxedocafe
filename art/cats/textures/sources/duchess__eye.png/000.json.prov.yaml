@@ -1,6 +1,6 @@
-source: art/cats/textures/prepare.py
-tool: OpenAI built-in imagegen; deterministic UV and bitmap preparation
-date: '2026-10-17'
+source: art/cats/textures/paint-duchess.py
+tool: "Deterministic NumPy and Pillow rest-space painting"
+date: "2026-11-15"
 license: original
 author_role: artist
-notes: Original generated duchess iris; radial-cap UV registration to radius 0.42 and 512px resampling; highlights come from the cornea geometry.
+notes: "Blue iris #7FB8C9 with #3E6E84 limbus and a tapered vertical daylight slit."

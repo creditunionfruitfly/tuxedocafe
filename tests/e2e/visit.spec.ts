@@ -139,6 +139,7 @@ test('Pixel loads the glossy black coat and copper iris on every master LOD', as
 const coatReviews = [
  { cat: 'biscuit', name: 'Biscuit', maps: (size: number) => [`normal-${size}.ktx2`, 'eye-512.ktx2'] },
  { cat: 'clementine', name: 'Clementine', maps: (size: number) => [`normal-${size}.ktx2`, 'eye-512.ktx2'] },
+ { cat: 'duchess', name: 'Duchess', maps: (size: number) => [`normal-${size}.ktx2`, 'eye-512.ktx2'] },
  { cat: 'pepper', name: 'Pepper', maps: () => ['eye-512.ktx2'] },
  { cat: 'waffles', name: 'Waffles', maps: (size: number) => [`normal-${size}.ktx2`, 'eye-512.ktx2'] },
 ];
@@ -157,7 +158,8 @@ for (const { cat, name, maps } of coatReviews) {
   });
   for (const tier of isMobile ? ['phone', 'low'] : ['desktop']) {
    textures.clear();
-   await page.goto(`./?lookdev=cat&cat=${cat}&tier=${tier}`);
+   const pose = cat === 'duchess' ? '&pose=walk' : '';
+   await page.goto(`./?lookdev=cat&cat=${cat}&tier=${tier}${pose}`);
    await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: STARTUP_TIMEOUT });
    await expect(page.locator('body')).toHaveAttribute('data-bones', '65');
    await expect(page.locator('#lookdev-status')).toContainText(`${name} · ${tier}`);
