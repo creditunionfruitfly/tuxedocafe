@@ -144,7 +144,7 @@ def encode(samples):
                           input=data.tobytes(), stdout=subprocess.PIPE, check=True).stdout
 
 
-def soundfont():
+def soundfont(melodic=MELODIC, drums=DRUMS, filename="cafe_bank.sf3", bank_title="Tuxedo Cafe Bank"):
     smpl, shdr, igen, ibag, inst, position = b'', b'', b'', b'', b'', 0
     zones = 0
 
@@ -159,7 +159,7 @@ def soundfont():
         return loop is not None
 
     sample_id = 0
-    for i, (title, _, _, key, atten, release, build) in enumerate(MELODIC):
+    for i, (title, _, _, key, atten, release, build) in enumerate(melodic):
         looped = sample(title, build(), key)
         inst += struct.pack('<20sH', name(title), zones)
         ibag += struct.pack('<HH', len(igen) // 4, 0)
@@ -171,7 +171,7 @@ def soundfont():
         sample_id += 1
         zones += 1
     inst += struct.pack('<20sH', name('Cafe Kit'), zones)
-    for title, key, build in DRUMS:
+    for title, key, build in drums:
         sample(title, build(), key)
         ibag += struct.pack('<HH', len(igen) // 4, 0)
         igen += struct.pack('<HH', 43, key | key << 8)
@@ -184,18 +184,18 @@ def soundfont():
     ibag += struct.pack('<HH', len(igen) // 4, 0)
     igen += bytes(4)
     shdr += struct.pack('<20sIIIIIBbHH', name('EOS'), position, position, 0, 0, RATE, 0, 0, 0, 1)
-    presets = [(title, bank, program) for title, bank, program, *_ in MELODIC] + [('Cafe Kit', 128, 0)]
+    presets = [(title, bank, program) for title, bank, program, *_ in melodic] + [('Cafe Kit', 128, 0)]
     phdr = b''.join(struct.pack('<20sHHHIII', name(t), p, b, i, 0, 0, 0) for i, (t, b, p) in enumerate(presets))
     phdr += struct.pack('<20sHHHIII', name('EOP'), 0, 0, len(presets), 0, 0, 0)
     pbag = b''.join(struct.pack('<HH', i, 0) for i in range(len(presets) + 1))
     pgen = b''.join(struct.pack('<HH', 41, i) for i in range(len(presets))) + bytes(4)
     info = chunk('ifil', struct.pack('<HH', 3, 0))
-    for tag, text in [('isng', 'EMU8000'), ('INAM', 'Tuxedo Cafe Bank'), ('ICOP', 'CC0-1.0 original synthesis for Tuxedo Cafe'), ('ISFT', 'tools/audio/author-bank.py')]:
+    for tag, text in [('isng', 'EMU8000'), ('INAM', bank_title), ('ICOP', 'CC0-1.0 original synthesis for Tuxedo Cafe'), ('ISFT', 'tools/audio/author-bank.py')]:
         info += chunk(tag, text.encode() + b'\0')
     pdta = (chunk('phdr', phdr) + chunk('pbag', pbag) + chunk('pmod', bytes(10)) + chunk('pgen', pgen) + chunk('inst', inst)
             + chunk('ibag', ibag) + chunk('imod', bytes(10)) + chunk('igen', igen) + chunk('shdr', shdr))
     payload = b'sfbk' + chunk('LIST', b'INFO' + info) + chunk('LIST', b'sdta' + chunk('smpl', smpl)) + chunk('LIST', b'pdta' + pdta)
-    (OUT / 'cafe_bank.sf3').write_bytes(chunk('RIFF', payload))
+    (OUT / filename).write_bytes(chunk('RIFF', payload))
 
 
 # ---------- cues ----------

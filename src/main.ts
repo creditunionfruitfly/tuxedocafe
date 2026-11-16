@@ -183,9 +183,19 @@ try {
   canvas.addEventListener('webglcontextrestored',()=>{contextLost=false;redraw=true;});
   mountShell(bus,visit,save);mountAbout(buildInfo);
   const mixer=new AudioMixer(visit.settings.master);
-  const jukebox=new Jukebox(visit.settings.music,mixer);
+  const jukebox=new Jukebox(visit.settings.music,mixer,undefined,visit.settings.soundfont);
   mountMusicPill(jukebox);
-  bus.on('settings',value=>{mixer.setVolume(value.master);void jukebox.setVolume(value.music);});
+  bus.on('settings',value=>{
+    mixer.setVolume(value.master);void jukebox.setVolume(value.music);
+    const selected = value.soundfont;
+    void jukebox.setSoundfont(selected).catch(error=>{
+      console.warn('SoundFont could not load',error);
+      if(visit.settings.soundfont !== selected)return;
+      visit.settings.soundfont=jukebox.soundfont;
+      document.querySelector<HTMLSelectElement>('[name="soundfont"]')!.value=jukebox.soundfont;
+      void save();bus.emit('notice',{text:'That SoundFont could not load. Please try again.'});
+    });
+  });
   await cafe.load();const handLoader=new GLTFLoader();handLoader.setMeshoptDecoder(MeshoptDecoder);const gltf=await handLoader.loadAsync(assetUrl('art/hand.glb'));useRoomProbe(gltf.scene);hand.setModel(gltf.scene,gltf.animations);if(visit.profile)hand.customize(visit.profile.skin,visit.profile.sleeve);
   // M2: the resident cast strolls the café behind ?flags=cats until the behavior engine lands.
   if(flags.has('cats'))try{cast=await loadCast(tier,createRng('cafe'),display.renderer);for(const cat of cast.residents){scene.add(cat.root);cat.render(0);}body.dataset.cats=cast.residents.map(cat=>cat.id).join(',');}catch(error){console.warn('The cats could not load',error);}

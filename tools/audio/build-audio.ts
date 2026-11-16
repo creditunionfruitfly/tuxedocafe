@@ -11,3 +11,8 @@ execFileSync('python3', ['tools/audio/author-bank.py'], {
   cwd: fileURLToPath(new URL('../../', import.meta.url)),
   stdio: 'inherit',
 });
+
+execFileSync(process.env.CAFE_AUDIO_PYTHON ?? 'python3', ['tools/audio/author-c64.py'], {
+  cwd: fileURLToPath(new URL('../../', import.meta.url)),
+  stdio: 'inherit',
+});

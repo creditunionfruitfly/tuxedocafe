@@ -46,7 +46,9 @@ jobs:
               sudo apt-get update
               sudo apt-get install -y ffmpeg
             fi
-            node tools/audio/build-audio.ts
+            python3 -m venv "$RUNNER_TEMP/cafe-audio"
+            "$RUNNER_TEMP/cafe-audio/bin/pip" install -r tools/audio/requirements.txt
+            CAFE_AUDIO_PYTHON="$RUNNER_TEMP/cafe-audio/bin/python" node tools/audio/build-audio.ts
           fi
       - run: npm run check
       - run: npm run audio:check

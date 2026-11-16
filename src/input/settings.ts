@@ -1,7 +1,9 @@
-export interface Settings { reducedMotion: boolean; catMode: boolean; leftHanded: boolean; holdToggle: boolean; holdMs: number; captions: boolean; tier: string; master: number; music: number; effects: number }
-export const DEFAULT_SETTINGS: Settings = { reducedMotion: false, catMode: true, leftHanded: false, holdToggle: false, holdMs: 250, captions: true, tier: 'auto', master: 1, music: 1, effects: 1 };
+export type SoundfontId = 'aero' | 'c64';
+export interface Settings { reducedMotion: boolean; catMode: boolean; leftHanded: boolean; holdToggle: boolean; holdMs: number; captions: boolean; tier: string; master: number; music: number; effects: number; soundfont: SoundfontId }
+export const DEFAULT_SETTINGS: Settings = { reducedMotion: false, catMode: true, leftHanded: false, holdToggle: false, holdMs: 250, captions: true, tier: 'auto', master: 1, music: 1, effects: 1, soundfont: 'aero' };
 export function cleanSettings(value: Partial<Settings>): Settings {
   const result = { ...DEFAULT_SETTINGS, ...value };
+  result.soundfont = value.soundfont === 'c64' ? 'c64' : 'aero';
   result.catMode = value.catMode !== false;
   result.holdMs = Math.max(150, Math.min(1000, Number(result.holdMs) || 250));
   for (const key of ['master', 'music', 'effects'] as const) {

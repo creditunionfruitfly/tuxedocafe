@@ -64,3 +64,18 @@ describe('authored audio contract', () => {
     }
   });
 });
+
+it('matches C64 melodic programs and drum keys to Aero', () => {
+  const aero = readFileSync('public/assets/audio/cafe_bank.sf3');
+  const c64 = readFileSync('public/assets/audio/c64_bank.sf3');
+  expect([...inspectSoundfont(c64)].sort()).toEqual([...inspectSoundfont(aero)].sort());
+  const drumKeys = (bank: Buffer): number[] => {
+    const offset = bank.indexOf('igen'), end = offset + 8 + bank.readUInt32LE(offset + 4);
+    const keys = [];
+    for (let i = offset + 8; i < end; i += 4) if (bank.readUInt16LE(i) === 43) keys.push(bank.readUInt16LE(i + 2));
+    return keys;
+  };
+  expect(drumKeys(c64)).toEqual(drumKeys(aero));
+  expect(drumKeys(c64)).toHaveLength(5);
+  expect(c64.equals(aero)).toBe(false);
+});

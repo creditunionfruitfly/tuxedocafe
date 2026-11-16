@@ -1,0 +1,32 @@
+import { expect, test } from '@playwright/test';
+import { STARTUP_TIMEOUT } from './config.ts';
+
+test('SoundFont selection loads C64, switches while paused and survives reload', async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'warning' && /Music could not|SoundFont could not/.test(message.text())) errors.push(message.text()); });
+  await page.goto('./?tier=low');
+  await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: STARTUP_TIMEOUT });
+  await page.locator('.top-settings').click();
+  await expect(page.getByLabel('SoundFont')).toHaveValue('aero');
+  await page.getByLabel('SoundFont').selectOption('c64');
+  await page.locator('#close-settings').click();
+  const c64 = page.waitForResponse(response => response.url().includes('c64_bank.sf3'));
+  await page.getByRole('button', { name: 'Play music', exact: true }).click();
+  expect((await c64).ok()).toBe(true);
+  await expect(page.getByRole('button', { name: 'Pause music', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Pause music', exact: true }).click();
+  await page.locator('.top-settings').click();
+  const aero = page.waitForResponse(response => response.url().includes('cafe_bank.sf3'));
+  await page.getByLabel('SoundFont').selectOption('aero');
+  expect((await aero).ok()).toBe(true);
+  await page.getByLabel('SoundFont').selectOption('c64');
+  await page.locator('#close-settings').click();
+  await expect(page.getByRole('button', { name: 'Play music', exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.locator('body')).toHaveAttribute('data-ready', 'true', { timeout: STARTUP_TIMEOUT });
+  await page.locator('.top-settings').click();
+  await expect(page.getByLabel('SoundFont')).toHaveValue('c64');
+  await page.screenshot({ path: info.outputPath('soundfont-settings.png') });
+  expect(errors).toEqual([]);
+});
