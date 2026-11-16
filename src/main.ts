@@ -29,19 +29,20 @@ import { createHand } from './interaction/hand.ts';
 import { mountAbout } from './ui/about.ts';
 import { mountShell } from './ui/shell.ts';
 import { mountHoverMenu } from './ui/hover-menu.ts';
-import { freshVisit,cleanVisit } from './save/visit.ts';
+import { freshVisit,cleanVisit,visitMigrations } from './save/visit.ts';
 import { createRng } from './core/rng.ts';
 import { loadCast,type Cast,type Resident } from './cats/resident.ts';
 import { CloseUp } from './interaction/closeup.ts';
 import { mountRadialMenu } from './ui/radial-menu.ts';
 import { Jukebox } from './audio/music.ts';
+import { AudioMixer } from './audio/mixer.ts';
 import { mountMusicPill } from './ui/music-pill.ts';
 import { mountCatView } from './ui/cat-view.ts';
 async function boot():Promise<void>{
 const body=document.body,bus=new EventBus();
 const stamp=document.querySelector<HTMLElement>('#build-stamp');if(stamp)stamp.textContent=formatStamp(buildInfo);
 const flags=parseFlags(buildInfo.flags,location.search);body.dataset.flags=[...flags].join(',');
-const store=new SaveStore(buildInfo.channel,browserStorage(),freshVisit,{},text=>bus.emit('notice',{text}));
+const store=new SaveStore(buildInfo.channel,browserStorage(),freshVisit,visitMigrations,text=>bus.emit('notice',{text}));
 await store.open();const visit=cleanVisit(await store.load('visit'));const save=():Promise<void>=>store.save('visit',visit);
 watchUpdates(buildInfo,save,reload=>{const button=document.querySelector<HTMLButtonElement>('#update');if(button){button.hidden=false;button.onclick=reload;}});
 let rendererReady=false;
@@ -181,7 +182,10 @@ try {
   canvas.addEventListener('webglcontextlost',()=>{contextLost=true;releaseFrame();submittedView=presentedView=false;delete body.dataset.catViewReady;previousDraw=0;});
   canvas.addEventListener('webglcontextrestored',()=>{contextLost=false;redraw=true;});
   mountShell(bus,visit,save);mountAbout(buildInfo);
-  const jukebox=new Jukebox(visit.settings.music);mountMusicPill(jukebox);bus.on('settings',value=>{void jukebox.setVolume(value.music);});
+  const mixer=new AudioMixer(visit.settings.master);
+  const jukebox=new Jukebox(visit.settings.music,mixer);
+  mountMusicPill(jukebox);
+  bus.on('settings',value=>{mixer.setVolume(value.master);void jukebox.setVolume(value.music);});
   await cafe.load();const handLoader=new GLTFLoader();handLoader.setMeshoptDecoder(MeshoptDecoder);const gltf=await handLoader.loadAsync(assetUrl('art/hand.glb'));useRoomProbe(gltf.scene);hand.setModel(gltf.scene,gltf.animations);if(visit.profile)hand.customize(visit.profile.skin,visit.profile.sleeve);
   // M2: the resident cast strolls the café behind ?flags=cats until the behavior engine lands.
   if(flags.has('cats'))try{cast=await loadCast(tier,createRng('cafe'),display.renderer);for(const cat of cast.residents){scene.add(cat.root);cat.render(0);}body.dataset.cats=cast.residents.map(cat=>cat.id).join(',');}catch(error){console.warn('The cats could not load',error);}
