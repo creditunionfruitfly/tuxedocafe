@@ -11,6 +11,19 @@ function mochiAtSpawn(page: Page): { x: number; y: number } {
 }
 
 test('watch a resident from their menu, stay parked, and leave even when they fall asleep', async ({ page, isMobile }, info) => {
+  // Hold simulation time through setup and the first cat-view screenshot. Keep
+  // real animation callbacks running so software WebGL can finish its handoff.
+  // Otherwise Mochi can finish settling to sleep while Playwright is clicking.
+  await page.addInitScript(() => {
+    const requestFrame = window.requestAnimationFrame.bind(window);
+    let simulationTime = 1000, previous: number | undefined;
+    window.requestAnimationFrame = callback => requestFrame(time => {
+      simulationTime = Math.max(simulationTime, Number(document.documentElement.dataset.catClock ?? 1000));
+      if (document.documentElement.dataset.advanceCatClock === 'true') simulationTime += time - (previous ?? time);
+      previous = time;
+      callback(simulationTime);
+    });
+  });
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
@@ -27,6 +40,8 @@ test('watch a resident from their menu, stay parked, and leave even when they fa
   });
   await page.locator('#start').click(); await page.locator('#patron-name').fill('River');
   await page.getByRole('button', { name: 'Make yourself at home' }).click();
+  // One fixed-step batch initializes the patron state without advancing the nap.
+  await page.evaluate(() => { document.documentElement.dataset.catClock = '1100'; });
   await expect(body).toHaveAttribute('data-player', '0.00,2.20');
   const patronDraws = Number(await body.getAttribute('data-draw-calls'));
   const beforeLook = (await body.getAttribute('data-look'))!, point = mochiAtSpawn(page);
@@ -38,12 +53,13 @@ test('watch a resident from their menu, stay parked, and leave even when they fa
   await selectCat();
   await expect(body).toHaveAttribute('data-cat-view', 'mochi'); await expect(page.locator('#radial-menu')).toBeHidden();
   await expect(lids).toBeVisible(); await expect(exit).toBeFocused();
-  await page.keyboard.down('w'); await page.keyboard.press('ArrowRight'); await page.mouse.wheel(0, -200); await page.keyboard.up('w');
   const closure = (): Promise<number> => lids.evaluate(node => Number(node.style.getPropertyValue('--closed')));
   await expect(body).toHaveAttribute('data-cat-view-ready', 'true', { timeout: 20_000 });
   await expect.poll(closure).toBe(0);
   const viewDraws = Number(await body.getAttribute('data-draw-calls'));
   await page.screenshot({ path: info.outputPath('cat-view-open.png') });
+  await page.evaluate(() => { document.documentElement.dataset.advanceCatClock = 'true'; });
+  await page.keyboard.down('w'); await page.keyboard.press('ArrowRight'); await page.mouse.wheel(0, -200); await page.keyboard.up('w');
   // Hold an observed in-between frame just for the screenshot; actual sleep continues underneath.
   await expect(lids).toHaveAttribute('data-mid-closure', /^0\./, { timeout: 25_000 });
   const sample = Number(await lids.getAttribute('data-mid-closure'));
