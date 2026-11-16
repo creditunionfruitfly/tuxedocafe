@@ -39,3 +39,9 @@ Later optional cues extend the first-cue pulse without altering its recipe:
 kicks, clipped offbeat keys and a broken bass line. "Cat Lounge" runs at 92 BPM;
 two-bar suspended pads, airy vibraphone, little celesta reflections and a sparse
 backbeat make its space-age pop/chillout arc. Both use only the existing bank.
+
+"Cat Bongos" adds a 32-bar Jungle/Liquid DnB cue at 172 BPM in G minor.
+Rolling kick/snare breaks and ghost notes sit beneath extended electric-piano
+chords, a flute hook and rounded bass. High/low bongos drive the fills and a
+four-bar breakdown. Both Aero and C64 include matching GM percussion keys
+60 and 61, with separate measured cue gains for each bank.

@@ -132,18 +132,27 @@ def author(spec, root, output):
             if bar % 4 == 3:
                 note(9, at(bar, 12), 38, 85, 19)
 
+    notes = ('Swung sixteenth shakers, a displaced two-step kick and brush backbeat, '
+             'clipped electric-piano offbeats, answering marimba and a broken bass line.'
+             if garage else
+             'Slow suspended two-bar pad changes, spacious vibraphone arcs, celesta glints, '
+             'soft electric-piano answers and a sparse pulse for an airy space-age lounge.')
+    write_cue(spec, root, output, parts, END, notes)
+
+
+def write_cue(spec, root, output, parts, end, notes, tool='tools/audio/author-extra-cues.py', date='2026-10-19'):
     conductor = [(0, 0, meta(3, spec['title'])),
                  (0, 0, meta(81, round(60_000_000 / spec['bpm']).to_bytes(3, 'big'))),
                  (0, 0, meta(88, bytes((4, 2, 24, 8)))),
                  (0, 0, meta(6, 'loopStart')),
-                 (END, 0, meta(6, 'loopEnd'))]
+                 (end, 0, meta(6, 'loopEnd'))]
 
     def track(events):
         data, last = bytearray(), 0
         for tick, _, event in sorted(events, key=lambda item: (item[0], item[1])):
             data.extend(vlq(tick - last) + event)
             last = tick
-        data.extend(vlq(END - last) + meta(47, b''))
+        data.extend(vlq(end - last) + meta(47, b''))
         return b'MTrk' + struct.pack('>I', len(data)) + data
 
     tracks = [track(conductor)]
@@ -159,15 +168,10 @@ def author(spec, root, output):
     destination.write_bytes(midi)
     source = Path(root) / 'audio/cues' / spec['file']
     source.write_bytes(midi)
-    notes = ('Swung sixteenth shakers, a displaced two-step kick and brush backbeat, '
-             'clipped electric-piano offbeats, answering marimba and a broken bass line.'
-             if garage else
-             'Slow suspended two-bar pad changes, spacious vibraphone arcs, celesta glints, '
-             'soft electric-piano answers and a sparse pulse for an airy space-age lounge.')
     source.with_name(source.name + '.prov.yaml').write_text(
         'source: Original composition for Tuxedo Cafe (' + spec['title'] + ' MIDI source)\n'
-        'tool: tools/audio/author-extra-cues.py\n'
-        "date: '2026-10-19'\n"
+        'tool: ' + tool + '\n'
+        "date: '" + date + "'\n"
         'license: original\n'
         'author_role: composer\n'
         'notes: ' + notes + ' Deterministic MIDI using the existing original bank; no recordings, borrowed melodies or third-party samples. Dedicated to the public domain under CC0-1.0.\n')
