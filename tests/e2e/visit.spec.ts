@@ -37,7 +37,7 @@ async function jump(page:Page,isMobile:boolean,x:number,z:number):Promise<void>{
 }
 test('first visit, accessibility and profile survive a reload',async({page},info)=>{
  await enter(page,info);await page.locator('.top-settings').click();
- await expect(page.getByLabel('Master volume')).toHaveValue('0.85');
+ await expect(page.getByLabel('Master volume')).toHaveValue('1');
  await page.locator('input[name="leftHanded"]').check();await page.locator('input[name="holdToggle"]').check();await page.locator('input[name="reducedMotion"]').check();await page.locator('#close-settings').click();await expect(page.locator('body')).toHaveClass(/left-handed/);await page.reload();await expect(page.locator('#start')).toHaveText('Continue your visit');await expect(page.locator('#returning')).toContainText('River');await page.locator('#start').click();await page.screenshot({path:info.outputPath('first-visit.png')});
 });
 test('walk, proxy hover action and room collision stay playable',async({page,isMobile},info)=>{
