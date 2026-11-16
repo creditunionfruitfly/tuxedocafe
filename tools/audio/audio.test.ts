@@ -76,6 +76,19 @@ it('matches C64 melodic programs and drum keys to Aero', () => {
     return keys;
   };
   expect(drumKeys(c64)).toEqual(drumKeys(aero));
-  expect(drumKeys(c64)).toHaveLength(5);
+  expect(drumKeys(c64)).toHaveLength(7);
   expect(c64.equals(aero)).toBe(false);
+});
+
+it('ships Cat Bongos as a 32-bar DnB loop supported by both banks', () => {
+  const midi = inspectMidi(readFileSync('audio/cues/cat_bongos.mid'));
+  expect(midi.tempos).toEqual([Math.round(60_000_000 / 172)]);
+  expect(midi.markers.get('loopStart')).toEqual([0]);
+  expect(midi.markers.get('loopEnd')).toEqual([32 * 4 * 480]);
+  expect(midi.peak).toBeLessThanOrEqual(24);
+  expect(midi.channels.size).toBe(5);
+  for (const file of ['cafe_bank.sf3', 'c64_bank.sf3']) {
+    const presets = inspectSoundfont(readFileSync(`public/assets/audio/${file}`));
+    for (const preset of midi.presets) expect(presets.has(preset)).toBe(true);
+  }
 });

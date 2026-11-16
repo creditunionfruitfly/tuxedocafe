@@ -20,12 +20,14 @@ it('cycles the style-guide cues and drives the engine without loading it before 
 it('appends Cafe Garage and Cat Lounge after Late Night Jazz', () => {
   const lateNight = music.tracks.findIndex((track) => track.id === 'late_night_jazz');
   expect(lateNight).toBeGreaterThanOrEqual(0);
-  expect(music.tracks.slice(lateNight + 1).map((track) => track.id)).toEqual(['cafe_garage', 'cat_lounge']);
+  expect(music.tracks.slice(lateNight + 1, lateNight + 3).map((track) => track.id)).toEqual(['cafe_garage', 'cat_lounge']);
 });
-it('keeps the lounge tempo range with an explicit UK garage arrangement exception and neighbouring keys', () => {
+it('keeps each arrangement tempo range and neighbouring keys', () => {
+  const ranges: Record<string, number[]> = { uk_garage: [128, 132], liquid_dnb: [168, 176] };
   for (const track of music.tracks) {
-    expect(track.bpm).toBeGreaterThanOrEqual(track.arrangement === 'uk_garage' ? 128 : 68);
-    expect(track.bpm).toBeLessThanOrEqual(track.arrangement === 'uk_garage' ? 132 : 100);
+    const range = ranges[track.arrangement ?? ''] ?? [68, 100];
+    expect(track.bpm).toBeGreaterThanOrEqual(range[0]!);
+    expect(track.bpm).toBeLessThanOrEqual(range[1]!);
     if (track.arrangement === 'uk_garage') expect(track.id).toBe('cafe_garage');
     expect([53, 55, 60, 62]).toContain(track.key);
   }

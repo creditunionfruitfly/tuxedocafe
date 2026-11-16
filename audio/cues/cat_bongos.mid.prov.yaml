@@ -1,0 +1,6 @@
+source: Original composition for Tuxedo Cafe (Cat Bongos MIDI source)
+tool: tools/audio/author-dnb.py
+date: '2026-11-16'
+license: original
+author_role: composer
+notes: 32-bar 172 BPM liquid DnB in G minor; original chopped kick/snare patterns, ghost strokes, high/low bongos, a percussion breakdown, warm extended chords and a flute hook. Deterministic MIDI using the existing original bank; no recordings, borrowed melodies or third-party samples. Dedicated to the public domain under CC0-1.0.

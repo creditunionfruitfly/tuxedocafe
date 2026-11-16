@@ -130,6 +130,8 @@ DRUMS = [
     ('Brush', 38, lambda: noise_hit(.4, 9, .35)),
     ('Finger Snap', 39, lambda: noise_hit(.12, 55, .9, highpass=1, tone=(2100, 1800, 40))),
     ('Shaker', 70, lambda: noise_hit(.12, 38, .95, highpass=1)),
+    ('High Bongo', 60, lambda: noise_hit(.22, 24, .35, tone=(360, 240, 35))),
+    ('Low Bongo', 61, lambda: noise_hit(.3, 19, .25, tone=(240, 160, 30))),
     ('Woodblock', 76, lambda: decaying(76, .2, [(1, 1, 30), (2.7, .4, 45)], 4)),
 ]
 
@@ -333,6 +335,9 @@ def evening_cue(spec):
 
 
 def cue(spec):
+    if spec.get('arrangement') == 'liquid_dnb':
+        runpy.run_path(str(ROOT / 'tools/audio/author-dnb.py'))['author'](spec, ROOT, OUT)
+        return
     if spec.get('arrangement') in ('uk_garage', 'space_lounge'):
         runpy.run_path(str(ROOT / 'tools/audio/author-extra-cues.py'))['author'](spec, ROOT, OUT)
         return

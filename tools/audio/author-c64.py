@@ -86,6 +86,8 @@ drums = [
     ('Brush', 38, lambda: render(55, N, decay=4)),
     ('Finger Snap', 39, lambda: render(88, N, decay=1)),
     ('Shaker', 70, lambda: render(100, N, decay=2)),
+    ('High Bongo', 60, lambda: render(59, T, decay=3, sweep=.5)),
+    ('Low Bongo', 61, lambda: render(52, T, decay=4, sweep=.5)),
     ('Woodblock', 76, lambda: render(76, T, decay=2, ring=2)),
 ]
 aero.OUT.mkdir(parents=True, exist_ok=True)
@@ -97,4 +99,4 @@ license: original
 author_role: composer
 notes: Original MOS 8580 register programming, rendered with the GPL-2.0 emulator at https://github.com/pyresidfp/pyresidfp. No ROMs or borrowed recordings. Samples dedicated to CC0-1.0. Emulator used only during authoring.
 ''')
-print('Authored the C64 SF3 bank with 11 melodic presets and 5 percussion keys.')
+print('Authored the C64 SF3 bank with 11 melodic presets and 7 percussion keys.')
