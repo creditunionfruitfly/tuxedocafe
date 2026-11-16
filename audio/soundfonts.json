@@ -1,0 +1,4 @@
+{
+  "aero": { "name": "Aero", "file": "audio/cafe_bank.sf3" },
+  "c64": { "name": "C64", "file": "audio/c64_bank.sf3" }
+}

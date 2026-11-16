@@ -1,0 +1,2 @@
+# SID sample authoring only. The browser plays the resulting SF3 bank.
+pyresidfp==0.17.0

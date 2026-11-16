@@ -15,3 +15,11 @@ it.each([[.85, .8, 1, 1], [.4, .3, .4, .3], [0, 0, 0, 0]])('migrates master %s a
   const visit = migrateSave({ schemaVersion: 2, settings: { master, effects, music: .5 } }, freshVisit().schemaVersion, visitMigrations) as Visit;
   expect(cleanVisit(visit).settings).toMatchObject({ master: expectedMaster, effects: expectedEffects, music: .5 });
 });
+
+it('defaults older visits to Aero and retains a saved C64 choice', () => {
+  const migrated = migrateSave({ schemaVersion: 3, settings: { master: .5, music: 0 } }, freshVisit().schemaVersion, visitMigrations) as Visit;
+  expect(cleanVisit(migrated).settings).toMatchObject({ soundfont: 'aero', master: .5, music: 0 });
+  const visit = freshVisit();
+  visit.settings.soundfont = 'c64';
+  expect(cleanVisit(visit).settings.soundfont).toBe('c64');
+});

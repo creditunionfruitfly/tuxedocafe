@@ -2,7 +2,7 @@ import { DEFAULT_SETTINGS, cleanSettings, type Settings } from '../input/setting
 import type { Migrations, SavedState } from '../core/storage.ts';
 export interface Profile { name: string; pronouns: string; skin: string; sleeve: string }
 export interface Visit extends SavedState { schemaVersion: number; profile: Profile|null; settings: Settings; waterDone: boolean }
-export function freshVisit(): Visit { return { schemaVersion:3, profile:null, settings:{...DEFAULT_SETTINGS}, waterDone:false }; }
+export function freshVisit(): Visit { return { schemaVersion:4, profile:null, settings:{...DEFAULT_SETTINGS}, waterDone:false }; }
 export const visitMigrations: Migrations = {
   1: save => {
     const settings = save.settings as Partial<Settings> | undefined;
@@ -17,6 +17,7 @@ export const visitMigrations: Migrations = {
       effects: settings?.effects === .8 ? DEFAULT_SETTINGS.effects : settings?.effects ?? DEFAULT_SETTINGS.effects,
     } };
   },
+  3: save => ({ ...save, schemaVersion: 4, settings: { ...cleanSettings((save.settings ?? {}) as Partial<Settings>), soundfont: 'aero' } }),
 };
 export function cleanVisit(value: Visit): Visit {
   const fresh=freshVisit();
