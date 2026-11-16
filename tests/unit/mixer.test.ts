@@ -13,7 +13,7 @@ it('applies the default boost on a shared output and can mute it', () => {
     const mixer = new AudioMixer(freshVisit().settings.master);
     expect(createContext).not.toHaveBeenCalled();
     const output = mixer.output;
-    expect(20 * Math.log10(gain.value / .6 ** 2)).toBeCloseTo(6.05);
+    expect(gain.value).toBe(1);
     expect(connect).toHaveBeenCalledWith(mixer.context.destination);
     expect(mixer.output).toBe(output);
     mixer.setVolume(0);

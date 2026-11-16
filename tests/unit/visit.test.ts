@@ -8,5 +8,10 @@ it.each([[.6, 1], [.35, .35], [0, 0]])('migrates an old music setting of %s to %
     freshVisit().schemaVersion,
     visitMigrations,
   ) as Visit;
-  expect(cleanVisit(visit)).toMatchObject({ settings: { master: .85, music: expected, effects: .5 }, waterDone: true });
+  expect(cleanVisit(visit)).toMatchObject({ settings: { master: 1, music: expected, effects: .5 }, waterDone: true });
+});
+
+it.each([[.85, .8, 1, 1], [.4, .3, .4, .3], [0, 0, 0, 0]])('migrates master %s and effects %s', (master, effects, expectedMaster, expectedEffects) => {
+  const visit = migrateSave({ schemaVersion: 2, settings: { master, effects, music: .5 } }, freshVisit().schemaVersion, visitMigrations) as Visit;
+  expect(cleanVisit(visit).settings).toMatchObject({ master: expectedMaster, effects: expectedEffects, music: .5 });
 });

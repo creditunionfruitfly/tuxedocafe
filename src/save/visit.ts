@@ -2,12 +2,20 @@ import { DEFAULT_SETTINGS, cleanSettings, type Settings } from '../input/setting
 import type { Migrations, SavedState } from '../core/storage.ts';
 export interface Profile { name: string; pronouns: string; skin: string; sleeve: string }
 export interface Visit extends SavedState { schemaVersion: number; profile: Profile|null; settings: Settings; waterDone: boolean }
-export function freshVisit(): Visit { return { schemaVersion:2, profile:null, settings:{...DEFAULT_SETTINGS}, waterDone:false }; }
+export function freshVisit(): Visit { return { schemaVersion:3, profile:null, settings:{...DEFAULT_SETTINGS}, waterDone:false }; }
 export const visitMigrations: Migrations = {
   1: save => {
     const settings = save.settings as Partial<Settings> | undefined;
     const music = settings?.music;
     return { ...save, schemaVersion: 2, settings: { ...settings, music: music === undefined || music === .6 ? DEFAULT_SETTINGS.music : music } };
+  },
+  2: save => {
+    const settings = save.settings as Partial<Settings> | undefined;
+    return { ...save, schemaVersion: 3, settings: {
+      ...settings,
+      master: settings?.master === .85 ? DEFAULT_SETTINGS.master : settings?.master ?? DEFAULT_SETTINGS.master,
+      effects: settings?.effects === .8 ? DEFAULT_SETTINGS.effects : settings?.effects ?? DEFAULT_SETTINGS.effects,
+    } };
   },
 };
 export function cleanVisit(value: Visit): Visit {

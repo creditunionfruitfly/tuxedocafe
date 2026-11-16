@@ -1,10 +1,11 @@
 {
   "version": 1,
-  "notes": "First composer pass (README Audio and music spec; Town Theme style guide). Mix rows are channel: [program, volume, pan, reverb, chorus]. Keys stay neighbours (G, C, F) so hour crossfades never clash.",
+  "notes": "First composer pass (README Audio and music spec; Town Theme style guide). Mix rows are channel: [program, volume, pan, reverb, chorus]. Keys stay neighbours (G, C, F) so hour crossfades never clash. gainDb is playback normalization measured over a full loop with the shipped bank and SpessaSynth at 48 kHz, including the 0.9 music bus gain, targeting at most -20 LUFS momentary and -1 dBTP. Re-measure after changing the bank or arrangements.",
   "bank": "audio/cafe_bank.sf3",
   "tracks": [
     {
       "id": "morning",
+      "gainDb": 11.1,
       "title": "Morning Light",
       "mood": "Gentle wake-up",
       "file": "morning.mid",
@@ -50,6 +51,7 @@
     },
     {
       "id": "day",
+      "gainDb": 8.3,
       "title": "Sparkling Counter",
       "mood": "Fresh and sparkling",
       "file": "day.mid",
@@ -104,6 +106,7 @@
     },
     {
       "id": "bossa",
+      "gainDb": 8.3,
       "title": "Golden Bossa",
       "mood": "Golden and mellow",
       "file": "bossa.mid",
@@ -149,6 +152,7 @@
     },
     {
       "id": "samba",
+      "gainDb": 6.8,
       "title": "Afternoon Samba",
       "mood": "Lively afternoon",
       "file": "samba.mid",
@@ -203,6 +207,7 @@
     },
     {
       "id": "evening_reggae",
+      "gainDb": 10.8,
       "title": "Evening Reggae",
       "mood": "Unhurried evening roots groove",
       "file": "evening_reggae.mid",
@@ -219,6 +224,7 @@
     },
     {
       "id": "night",
+      "gainDb": 15.0,
       "title": "Cozy Night",
       "mood": "Cozy night",
       "file": "night.mid",
@@ -264,6 +270,7 @@
     },
     {
       "id": "late_night_jazz",
+      "gainDb": 13.5,
       "title": "Late Night Jazz",
       "mood": "Soft after-hours jazz",
       "file": "late_night_jazz.mid",
@@ -279,6 +286,7 @@
     },
     {
       "id": "cafe_garage",
+      "gainDb": 15.0,
       "title": "Cafe Garage",
       "mood": "Buoyant two-step with warm late-cafe keys",
       "file": "cafe_garage.mid",
@@ -295,6 +303,7 @@
     },
     {
       "id": "cat_lounge",
+      "gainDb": 20.4,
       "title": "Cat Lounge",
       "mood": "Weightless space-age pop and chillout",
       "file": "cat_lounge.mid",

@@ -10,11 +10,11 @@ it('cycles the style-guide cues and drives the engine without loading it before 
   const engine = { play: vi.fn(), pause: vi.fn(), volume: vi.fn() }, load = vi.fn(async () => engine);
   const jukebox = new Jukebox(.6, new AudioMixer(.85), load);
   expect(load).not.toHaveBeenCalled(); expect(jukebox.track.title).toBe('Morning Light');
-  await jukebox.toggle(); expect(jukebox.playing).toBe(true); expect(engine.play).toHaveBeenCalledTimes(1); expect(engine.volume).toHaveBeenCalledWith(.6);
+  await jukebox.toggle(); expect(jukebox.playing).toBe(true); expect(engine.play).toHaveBeenCalledTimes(1); expect(engine.volume).toHaveBeenCalledWith(.6, jukebox.track.gainDb);
   await jukebox.next(); expect(jukebox.track.id).toBe('day');
   await jukebox.previous(); await jukebox.previous(); expect(jukebox.track.id).toBe(music.tracks.at(-1)?.id);
   await jukebox.toggle(); expect(engine.pause).toHaveBeenCalled(); expect(jukebox.playing).toBe(false);
-  await jukebox.setVolume(2); expect(engine.volume).toHaveBeenLastCalledWith(1);
+  await jukebox.setVolume(2); expect(engine.volume).toHaveBeenLastCalledWith(1, jukebox.track.gainDb);
   expect(load).toHaveBeenCalledTimes(1);
 });
 it('appends Cafe Garage and Cat Lounge after Late Night Jazz', () => {

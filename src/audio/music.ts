@@ -3,9 +3,9 @@ import processorUrl from 'spessasynth_lib/dist/spessasynth_processor.min.js?url'
 import { assetUrl } from '../core/assets.ts';
 import type { AudioMixer } from './mixer.ts';
 
-export interface Track { id: string; title: string; mood: string; file: string }
+export interface Track { id: string; title: string; mood: string; file: string; gainDb: number }
 /** The parts of the synth the jukebox drives; tests swap in a fake. */
-export interface MusicEngine { play(midi: ArrayBuffer): void; pause(): void; volume(value: number): void }
+export interface MusicEngine { play(midi: ArrayBuffer): void; pause(): void; volume(value: number, gainDb: number): void }
 
 /**
  * Loads spessasynth_lib only on the first gesture (AudioContext rules, and it stays out of the boot
@@ -23,8 +23,8 @@ async function loadEngine(mixer: AudioMixer): Promise<MusicEngine> {
   return {
     play(midi) { void context.resume(); sequencer.loadNewSongList([{ binary: midi }]); sequencer.loopCount = Infinity; sequencer.play(); },
     pause() { sequencer.pause(); },
-    // Perceptual curve, and a quiet ceiling so music sits under gameplay sounds.
-    volume(value) { gain.gain.setTargetAtTime(value * value * .9, context.currentTime, .08); },
+    // Perceptual volume curve with measured per-cue normalization.
+    volume(value, gainDb) { gain.gain.setTargetAtTime(value * value * .9 * 10 ** (gainDb / 20), context.currentTime, .08); },
   };
 }
 
@@ -37,11 +37,12 @@ export class Jukebox {
   async play(index = this.index): Promise<void> {
     this.index = (index + this.tracks.length) % this.tracks.length; this.playing = true;
     const engine = await (this.#engine ??= this.#load());
-    engine.volume(this.#volume);
-    engine.play(await (await fetch(assetUrl(`audio/${this.track.file}`))).arrayBuffer());
+    const midi = await (await fetch(assetUrl(`audio/${this.track.file}`))).arrayBuffer();
+    engine.volume(this.#volume, this.track.gainDb);
+    engine.play(midi);
   }
   async toggle(): Promise<void> { if (this.playing) { this.playing = false; (await this.#engine)?.pause(); } else await this.play(); }
   next(): Promise<void> { return this.play(this.index + 1); }
   previous(): Promise<void> { return this.play(this.index - 1); }
-  async setVolume(value: number): Promise<void> { this.#volume = Math.max(0, Math.min(1, value)); (await this.#engine)?.volume(this.#volume); }
+  async setVolume(value: number): Promise<void> { this.#volume = Math.max(0, Math.min(1, value)); (await this.#engine)?.volume(this.#volume, this.track.gainDb); }
 }
