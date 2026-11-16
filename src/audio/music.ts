@@ -1,6 +1,7 @@
 import music from '../../audio/music.json' with { type: 'json' };
 import processorUrl from 'spessasynth_lib/dist/spessasynth_processor.min.js?url';
 import { assetUrl } from '../core/assets.ts';
+import type { AudioMixer } from './mixer.ts';
 
 export interface Track { id: string; title: string; mood: string; file: string }
 /** The parts of the synth the jukebox drives; tests swap in a fake. */
@@ -10,12 +11,12 @@ export interface MusicEngine { play(midi: ArrayBuffer): void; pause(): void; vol
  * Loads spessasynth_lib only on the first gesture (AudioContext rules, and it stays out of the boot
  * chunk), then plays the café cues on the original SF3 bank with endless loops on their markers.
  */
-async function loadEngine(): Promise<MusicEngine> {
+async function loadEngine(mixer: AudioMixer): Promise<MusicEngine> {
   const { WorkletSynthesizer, Sequencer } = await import('spessasynth_lib');
-  const context = new AudioContext(), gain = context.createGain();
+  const context = mixer.context, gain = context.createGain();
   await context.audioWorklet.addModule(processorUrl);
   const synth = new WorkletSynthesizer(context);
-  synth.connect(gain); gain.connect(context.destination);
+  synth.connect(gain); gain.connect(mixer.output);
   await synth.soundBankManager.addSoundBank(await (await fetch(assetUrl(music.bank))).arrayBuffer(), 'cafe');
   await synth.isReady;
   const sequencer = new Sequencer(synth);
@@ -31,7 +32,7 @@ export class Jukebox {
   readonly tracks: readonly Track[] = music.tracks;
   index = 0; playing = false;
   #engine: Promise<MusicEngine> | null = null; #volume: number; readonly #load: () => Promise<MusicEngine>;
-  constructor(volume: number, load: () => Promise<MusicEngine> = loadEngine) { this.#volume = volume; this.#load = load; }
+  constructor(volume: number, mixer: AudioMixer, load: () => Promise<MusicEngine> = () => loadEngine(mixer)) { this.#volume = volume; this.#load = load; }
   get track(): Track { return this.tracks[this.index]!; }
   async play(index = this.index): Promise<void> {
     this.index = (index + this.tracks.length) % this.tracks.length; this.playing = true;

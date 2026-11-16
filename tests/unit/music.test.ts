@@ -1,5 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import music from '../../audio/music.json' with { type: 'json' };
+import { AudioMixer } from '../../src/audio/mixer.ts';
 
 vi.mock('spessasynth_lib/dist/spessasynth_processor.min.js?url', () => ({ default: 'processor.js' }));
 vi.stubGlobal('fetch', vi.fn(async () => ({ arrayBuffer: async () => new ArrayBuffer(8) })));
@@ -7,7 +8,7 @@ const { Jukebox } = await import('../../src/audio/music.ts');
 
 it('cycles the style-guide cues and drives the engine without loading it before a gesture', async () => {
   const engine = { play: vi.fn(), pause: vi.fn(), volume: vi.fn() }, load = vi.fn(async () => engine);
-  const jukebox = new Jukebox(.6, load);
+  const jukebox = new Jukebox(.6, new AudioMixer(.85), load);
   expect(load).not.toHaveBeenCalled(); expect(jukebox.track.title).toBe('Morning Light');
   await jukebox.toggle(); expect(jukebox.playing).toBe(true); expect(engine.play).toHaveBeenCalledTimes(1); expect(engine.volume).toHaveBeenCalledWith(.6);
   await jukebox.next(); expect(jukebox.track.id).toBe('day');
